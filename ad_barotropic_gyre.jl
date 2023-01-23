@@ -1,3 +1,6 @@
+# now going to try a sample adjoint calculation. just going to look at the sensitivity of the final 
+# displacement in center of grid w.r.t. initial displacement. 
+
 using Enzyme, Plots
 
 include("build_structs.jl")
@@ -10,6 +13,8 @@ H = 5000.0
 A_h = 400
 rho_c = 1000.0
 tau0 = 0.1
+
+M = 10
 
 eps_ab = 0.1 
 
@@ -56,17 +61,9 @@ lastu = zeros(Nx, Ny)
 lastv = zeros(Nx, Ny)
 lastη = zeros(Nx, Ny)
 
-# lastu_t = zeros(Nx, Ny)
-# lastv_t = zeros(Nx, Ny)
-# lastη_t = zeros(Nx, Ny)
-
 u = lastu 
 v = lastv 
 η = lastη
-
-# nextu = u 
-# nextv = v 
-# nextη = η 
 
 u_v_eta = gyre(
     lastu,
@@ -77,10 +74,31 @@ u_v_eta = gyre(
     η
 )
 
-for t = 1:40000
+all_states = []
+push!(all_states, u_v_eta)
+
+# run the forward problem 
+for t = 1:M
     advance(u_v_eta, gyre_parameters)
+    push!(all_states, u_v_eta)
 end
 
-#heatmap(u_v_eta.η)
+# now moving on to running the backward problem 
 
+# structure for adjoint variables 
+adjoint_u_v_eta = deepcopy(u_v_eta)
 
+# setting the initial adjoint variables within structure 
+init_adj = 0.0 .* u_v_eta.η
+init_adj[31, 31] = 1.0
+
+adjoint_u_v_eta.lastu .= 0.
+adjoint_u_v_eta.lastv .= 0.
+adjoint_u_v_eta.lastη .= 0. 
+
+adjoint_u_v_eta.u .= 0.
+adjoint_u_v_eta.v .= 0. 
+adjoint_u_v_eta.η = init_adj
+
+# autodiff(advance, Duplicated(all_states[M], adjoint_u_v_eta), Const(gyre_parameters))
+# adjoint_u_v_eta = copy(adjoint_u_v_eta)

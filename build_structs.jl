@@ -5,32 +5,12 @@ mutable struct gyre
     lastu::Matrix{Float64}
     lastv::Matrix{Float64}
     lastη::Matrix{Float64} 
-
-    # lastu_t::Matrix{Float64}
-    # lastv_t::Matrix{Float64}
-    # lastη_t::Matrix{Float64}
-
+    
     u::Matrix{Float64}
     v::Matrix{Float64}
     η::Matrix{Float64}
 
-    # nextu::Matrix{Float64}
-    # nextv::Matrix{Float64}
-    # nextη::Matrix{Float64}
-
 end
-
-# mutable struct gyre_derivatives 
-
-#     lastu_t::Matrix{Float64}
-#     lastv_t::Matrix{Float64}
-#     lastη_t::Matrix{Float64}
-
-#     u_t::Matrix{Float64}
-#     v_t::Matrix{Float64}
-#     η_t::Matrix{Float64}
-
-# end
 
 mutable struct gyre_Parameters 
     g::Float64              # gravity
