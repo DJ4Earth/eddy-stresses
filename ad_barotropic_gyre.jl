@@ -14,7 +14,7 @@ A_h = 400
 rho_c = 1000.0
 tau0 = 0.1
 
-M = 10
+M = 5
 
 eps_ab = 0.1 
 
@@ -75,30 +75,61 @@ u_v_eta = gyre(
 )
 
 all_states = []
-push!(all_states, u_v_eta)
+push!(all_states, deepcopy(u_v_eta))
 
 # run the forward problem 
-for t = 1:M
+for t = 2:M
     advance(u_v_eta, gyre_parameters)
-    push!(all_states, u_v_eta)
+    push!(all_states, deepcopy(u_v_eta))
 end
 
 # now moving on to running the backward problem 
 
 # structure for adjoint variables 
-adjoint_u_v_eta = deepcopy(u_v_eta)
+initial_adjoint = deepcopy(u_v_eta)
 
 # setting the initial adjoint variables within structure 
-init_adj = 0.0 .* u_v_eta.η
-init_adj[31, 31] = 1.0
+init_adj_eta = 0.0 .* u_v_eta.η
+init_adj_eta[31, 31] = 1.0
 
-adjoint_u_v_eta.lastu .= 0.
-adjoint_u_v_eta.lastv .= 0.
-adjoint_u_v_eta.lastη .= 0. 
+initial_adjoint.lastu .= 0.
+initial_adjoint.lastv .= 0.
+initial_adjoint.lastη = copy(init_adj_eta)
 
-adjoint_u_v_eta.u .= 0.
-adjoint_u_v_eta.v .= 0. 
-adjoint_u_v_eta.η = init_adj
+initial_adjoint.u .= 0.
+initial_adjoint.v .= 0. 
+initial_adjoint.η = copy(init_adj_eta)
 
-# autodiff(advance, Duplicated(all_states[M], adjoint_u_v_eta), Const(gyre_parameters))
-# adjoint_u_v_eta = copy(adjoint_u_v_eta)
+function ad_calc(initial_ad_struct, states, params)
+
+    @show initial_ad_struct.η[31, 31]
+    adjoint_u_v_eta = deepcopy(initial_ad_struct)
+    @show adjoint_u_v_eta.η[31, 31]
+
+    for j = M:-1:1 
+        @show sum(abs.(adjoint_u_v_eta.lastη)), states[j].lastη[31, 31]
+        current_state = deepcopy(states[j])
+        autodiff(advance, Duplicated(current_state, adjoint_u_v_eta), params)
+        @show sum(abs.(adjoint_u_v_eta.lastη)), states[j].lastη[31, 31]
+        # adjoint_u_v_eta = deepcopy(adjoint_u_v_eta)
+    end
+
+    return adjoint_u_v_eta 
+
+end 
+
+# function ad_calc(ad_struct, state, params)
+
+#         @show ad_struct.η[31, 31]
+#         @show sum(abs.(ad_struct.η)), state.η[31, 31]
+
+#         autodiff(advance, Duplicated(state, ad_struct), params)
+
+#         @show sum(abs.(ad_struct.η)), state.η[31, 31]
+#         @show ad_struct.η[31,31]
+
+#         return ad_struct
+    
+# end 
+    
+ad_u_v_eta = ad_calc(initial_adjoint, all_states, gyre_parameters);

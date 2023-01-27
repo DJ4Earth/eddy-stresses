@@ -11,6 +11,8 @@ A_h = 400
 rho_c = 1000.0
 tau0 = 0.1
 
+M = 10
+
 eps_ab = 0.1 
 
 τ(y) = -tau0 + cos( pi * y / (1200e3) )
@@ -56,10 +58,10 @@ lastu = zeros(Nx, Ny)
 lastv = zeros(Nx, Ny)
 lastη = zeros(Nx, Ny)
 
+
 # lastu_t = zeros(Nx, Ny)
 # lastv_t = zeros(Nx, Ny)
 # lastη_t = zeros(Nx, Ny)
-
 u = lastu 
 v = lastv 
 η = lastη
@@ -77,10 +79,9 @@ u_v_eta = gyre(
     η
 )
 
-for t = 1:40000
+for t = 1:M
     advance(u_v_eta, gyre_parameters)
+    @show u_v_eta.η[31,31] 
 end
 
-#heatmap(u_v_eta.η)
-
-
+# heatmap(u_v_eta.η)
