@@ -14,8 +14,8 @@ include("compute_time_deriv.jl")
 
 Lx = 3840000                    # E-W length of the domain [meters]
 Ly = 3840000                    # N-S length of the domain [meters]
-nx = 50                         # number of cells in the x-direction
-ny = 50                         # number of cells in the y-direction
+nx = 5                         # number of cells in the x-direction
+ny = 5                         # number of cells in the y-direction
 
 # based on above values this returns more parameters related to the four grids 
 grid_params = build_grid(Lx, Ly, nx, ny)
@@ -30,7 +30,7 @@ advec_ops = build_advec(grid_params)
 # starting from rest ---> all initial conditions are zero 
 
 # how long to spinup the model for 
-Tspinup_days = 1*365 # [days] 
+Tspinup_days = 1 * 365 # [days] 
 
 # how long to run the model for after spinup
 Trun_days = 1 * 365     # [days] 

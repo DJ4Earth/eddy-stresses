@@ -8,30 +8,25 @@ function def_params(grid)
     Lx = grid.Lx
     Ly = grid.Ly
 
-    x = (dx/2):dx:Lx
-    y = dy/2:dy:Ly
+    x = grid.x 
+    y = grid.y
+    xu = grid.xu 
+    yu = grid.yu 
+    xv = grid.xv 
+    yv = grid.yv
+    xq = grid.xq
+    yq = grid.yq
 
-    xu = x[1:end-1] .+ dx/2 
-    yu = copy(y)
-    
-    xv = copy(x) 
-    yv = y[1:end-1] .+ dy/2 
-    
-    xq = 0:dx:(Lx + dx/2)
-    yq = 0:dy:(Ly + dy/2)
+    A_h = (128*540/(min(nx, ny))) * max(dx, dy)^2       # viscosity coefficient [meters^2 / second]
+    rho_c = 1000.0                                      # density
+
+    bottom_drag = 1e-5                                  # bottom-drag coefficient
 
     # our beta-plane approximation is centered at 30degrees (is this the correct way to phrase this?)
     omega = 2 * pi / (24 * 3600)
     R = 6.371e6
     f0 = 2 * omega * sin(30 * pi / 180)
     beta = (2 * omega / R) * cos(30 * pi / 180)
-
-    # viscosity coefficient, depends on the grid size 
-    A_h = (128*540/(min(nx, ny))) * max(dx, dy)^2       # viscosity coefficient [meters^2 / second]
-    rho_c = 1000.0  
-
-    # bottom drag coefficient
-    bottom_drag = 1e-5
 
     # building the vectors that will contain the coriolis force and wind stress (techincally forcings and not parameters I know)
     # come back to this, want to understand 

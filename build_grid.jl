@@ -35,7 +35,15 @@ function build_grid(Lx, Ly, Nx, Ny)
     Nv,
     Nq,
     dx, 
-    dy
+    dy,
+    x,
+    y,
+    xu,
+    yu,
+    xv,
+    yv,
+    xq,
+    yq
     )
     
     return grid_params
