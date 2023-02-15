@@ -9,22 +9,26 @@ function advance(u_v_eta, params, interp_ops, grad_ops, advec_ops)
     rk_a = [1/6, 1/3, 1/3, 1/6]
     rk_b = [1/2, 1/2, 1]
 
-    u0 = u_v_eta.u
-    v0 = u_v_eta.v
-    eta0 = u_v_eta.eta
+    u = copy(u_v_eta.u)
+    v = copy(u_v_eta.v)
+    eta = copy(u_v_eta.eta)
 
-    u1 = u_v_eta.u
-    v1 = u_v_eta.v
-    eta1 = u_v_eta.eta
+    u0 = copy(u_v_eta.u)
+    v0 = copy(u_v_eta.v)
+    eta0 = copy(u_v_eta.eta)
+
+    u1 = copy(u_v_eta.u)
+    v1 = copy(u_v_eta.v)
+    eta1 = copy(u_v_eta.eta)
 
     for j in 1:4
 
         u_t, v_t, eta_t = comp_u_v_eta_t(u1, v1, eta1, params, interp_ops, grad_ops, advec_ops)
 
-        if j < 3
-            u1 = copy(u0) + rk_b[j] * dt .* u_t
-            v1 = copy(v0) + rk_b[j] * dt .* v_t 
-            eta1 = copy(eta0) + rk_b[j] * dt .* eta_t
+        if j < 4
+            u1 = copy(u) + rk_b[j] * dt .* u_t
+            v1 = copy(v) + rk_b[j] * dt .* v_t 
+            eta1 = copy(eta) + rk_b[j] * dt .* eta_t
         end
 
         u0 += rk_a[j] * dt .* u_t

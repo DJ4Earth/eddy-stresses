@@ -24,14 +24,14 @@ function comp_u_v_eta_t(u, v, eta, params, interp_ops, grad_ops, advec_ops)
     # deal with the advection term 
     adv_u, adv_v = comp_advection(q, U, V, advec_ops)
 
-    Mu = params.A_h .* (grad_ops.Lu * grad_ops.Lu) * u
-    Mv = params.A_h .* (grad_ops.Lv * grad_ops.Lv) * v 
+    Mu = params.A_h .* grad_ops.LLu * u
+    Mv = params.A_h .* grad_ops.LLv * v 
 
     # S11 = grad_ops.Gux * u - grad_ops.Gvy * v 
     # S21 = grad_ops.Gvv * v + grad_ops.Guy * u
 
-    rhs_u = adv_u - grad_ops.GTx * p + params.wind_stress ./ h_u + Mu - bfric_u
-    rhs_v = adv_v - grad_ops.GTy * p + Mv - bfric_v 
+    rhs_u = adv_u - grad_ops.GTx * p + params.wind_stress ./ h_u - Mu - bfric_u
+    rhs_v = adv_v - grad_ops.GTy * p - Mv - bfric_v 
     rhs_eta = - (grad_ops.Gux * U + grad_ops.Gvy * V)
 
 

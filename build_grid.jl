@@ -2,8 +2,6 @@
 # the structue grid. The structure will contain all the needed information about 
 # the Arakawa C-grid that we're solving the equations on 
 
-include("build_structs.jl")
-
 function build_grid(Lx, Ly, Nx, Ny)
 
     dx = Lx / Nx 
@@ -26,7 +24,29 @@ function build_grid(Lx, Ly, Nx, Ny)
     
     xq = 0:dx:(Lx + dx/2)
     yq = 0:dy:(Ly + dy/2)
+
+    grid_params = Grid(
+    Lx, 
+    Ly,
+    nx, 
+    ny,
+    NT,
+    Nu, 
+    Nv,
+    Nq,
+    dx, 
+    dy
+    )
     
-    return dx, dy, NT, Nu, Nv, Nq, x, y, xu, yu, xv, yv, xq, yq
+    return grid_params
+
+end
+
+function days_to_seconds(Tspinup_days, Trun_days, dt)
+
+    Tspinup_seconds = Int(ceil((Tspinup_days * 24 * 3600) / dt))
+    Trun_seconds = Int(ceil((Trun_days * 24 * 3600) / dt))
+
+    return Tspinup_seconds, Trun_seconds
 
 end
