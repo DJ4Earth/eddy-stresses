@@ -28,22 +28,14 @@ function build_grid(Lx, Ly, Nx, Ny)
     grid_params = Grid(
     Lx, 
     Ly,
-    nx, 
-    ny,
+    Nx, 
+    Ny,
     NT,
     Nu, 
     Nv,
     Nq,
     dx, 
-    dy,
-    x,
-    y,
-    xu,
-    yu,
-    xv,
-    yv,
-    xq,
-    yq
+    dy
     )
     
     return grid_params

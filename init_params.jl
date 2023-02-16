@@ -8,19 +8,25 @@ function def_params(grid)
     Lx = grid.Lx
     Ly = grid.Ly
 
-    x = grid.x 
-    y = grid.y
-    xu = grid.xu 
-    yu = grid.yu 
-    xv = grid.xv 
-    yv = grid.yv
-    xq = grid.xq
-    yq = grid.yq
+    x = (dx/2):dx:Lx
+    y = dy/2:dy:Ly
 
-    A_h = (128*540/(min(nx, ny))) * max(dx, dy)^2       # viscosity coefficient [meters^2 / second]
-    rho_c = 1000.0                                      # density
+    xu = x[1:end-1] .+ dx/2 
+    yu = copy(y)
+    
+    xv = copy(x) 
+    yv = y[1:end-1] .+ dy/2 
+    
+    xq = 0:dx:(Lx + dx/2)
+    yq = 0:dy:(Ly + dy/2)
 
-    bottom_drag = 1e-5                                  # bottom-drag coefficient
+    nu_A = 128*540/(min(nx, ny))
+    A_h = nu_A * max(dx, dy)^2       # viscosity coefficient [meters^2 / second]
+    rho_c = 1000.0                   # density
+
+    bottom_drag = 1e-5    # bottom-drag coefficient
+    g = 10.0    # gravity [meters^2 / second]
+    H = 500.0   # depth of the box [meters]
 
     # our beta-plane approximation is centered at 30degrees (is this the correct way to phrase this?)
     omega = 2 * pi / (24 * 3600)
@@ -40,10 +46,7 @@ function def_params(grid)
     ws_sin = 2 .* sin.(pi .* ((Yu .- Ly/2)./Ly)  ) 
     wind_stress = 0.12 .* (ws_cos + ws_sin) ./rho_c
 
-    g = 9.81    # gravity [meters^2 / second]
-    H = 500.0   # depth of the box [meters]
-
-    dt = (0.9 * min(dx, dy)) / (sqrt(g * H))   # CFL condition for dt [seconds]
+    dt = floor((0.9 * min(dx, dy)) / (sqrt(g * H)))   # CFL condition for dt [seconds]
     
     gyre_params = Parameters(
     dt,

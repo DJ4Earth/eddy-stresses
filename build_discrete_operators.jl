@@ -27,10 +27,10 @@ function build_derivs(grid)
     GTy = (spdiagm(nx => ones(Nv)) - I)[1:end-nx, :] ./ dy
 
     # x-derivative from u-grid onto centers
-    Gux = -copy(GTx)'
+    Gux = -copy(GTx')
 
     # y-derivative from v-grid onto centers
-    Gvy = -copy(GTy)'
+    Gvy = -copy(GTy')
 
     # y-derivative from u-grid to q-grid, setup includes boundary conditions
     diag1 = ones(Nq)

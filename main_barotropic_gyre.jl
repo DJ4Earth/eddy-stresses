@@ -12,10 +12,10 @@ include("compute_time_deriv.jl")
 
 # setting up the grid parameters first
 
-Lx = 3840000                    # E-W length of the domain [meters]
-Ly = 3840000                    # N-S length of the domain [meters]
-nx = 5                         # number of cells in the x-direction
-ny = 5                         # number of cells in the y-direction
+Lx = 3840e3                    # E-W length of the domain [meters]
+Ly = 3840e3                    # N-S length of the domain [meters]
+nx = 30                         # number of cells in the x-direction
+ny = 30                         # number of cells in the y-direction
 
 # based on above values this returns more parameters related to the four grids 
 grid_params = build_grid(Lx, Ly, nx, ny)
@@ -30,7 +30,7 @@ advec_ops = build_advec(grid_params)
 # starting from rest ---> all initial conditions are zero 
 
 # how long to spinup the model for 
-Tspinup_days = 1 * 365 # [days] 
+Tspinup_days = 5 * 365  # [days] 
 
 # how long to run the model for after spinup
 Trun_days = 1 * 365     # [days] 
@@ -43,10 +43,10 @@ eta = zeros(grid_params.NT)
 
 u_v_eta = gyre_vector(u, v, eta)
 
-
-@time for t = 1:Tspinup
+@time for t in 1:Tspinup
     advance(u_v_eta, gyre_params, interp_ops, grad_ops, advec_ops) 
 end
 
+# @time advance(u_v_eta, Tspinup, gyre_params, interp_ops, grad_ops, advec_ops) 
 
 # heatmap(u_v_eta.η)

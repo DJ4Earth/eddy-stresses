@@ -42,14 +42,6 @@ mutable struct Grid
     Nq::Int             # total number of cells on vorticity grid 
     dx::Float64 
     dy::Float64 
-    x::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    y::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    xu::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    yu::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    xv::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    yv::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    xq::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
-    yq::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
 end 
 
 # The gyre model written by Kloewer and used by Zanna leaves all the states as vectors stacked 
@@ -112,4 +104,16 @@ mutable struct Advection
     Sbv::SparseMatrixCSC{Float64, Int64}
     Scv::SparseMatrixCSC{Float64, Int64}
     Sdv::SparseMatrixCSC{Float64, Int64}
+end
+
+# per a suggestion, I'm creating a new structure that will pre-allocate space to operators that only appear 
+# during the timestepping loop (and thus through the computation of the RHS equation mostly)
+mutable struct RHS_ops
+    rk_a::Vec{Float64}
+    rk_b::Vec{Float64}
+    
+    h::Vec{Float64}
+
+    kinetic::Vec{Float64}
+    
 end
