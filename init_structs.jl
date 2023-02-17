@@ -107,13 +107,42 @@ mutable struct Advection
 end
 
 # per a suggestion, I'm creating a new structure that will pre-allocate space to operators that only appear 
-# during the timestepping loop (and thus through the computation of the RHS equation mostly)
-mutable struct RHS_ops
-    rk_a::Vec{Float64}
-    rk_b::Vec{Float64}
-    
-    h::Vec{Float64}
-
-    kinetic::Vec{Float64}
-    
+# during the timestepping loop (mainly appear in the computation of the RHS equation)
+mutable struct RHS_terms
+    # Appear in advance
+    u0::Vector{Float64}
+    v0::Vector{Float64}
+    eta0::Vector{Float64}
+    u1::Vector{Float64}
+    v1::Vector{Float64}
+    eta1::Vector{Float64}
+    # Appear in comp_u_v_eta_t
+    h::Vector{Float64}          # height of water columns [meters]
+    h_u::Vector{Float64}        # height of water columns interpolated to u-grid 
+    h_v::Vector{Float64}        # height of water columns interpolated to v-grid 
+    h_q::Vector{Float64}
+    U::Vector{Float64}
+    V::Vector{Float64}
+    kinetic::Vector{Float64}
+    kinetic_sq::Vector{Float64}
+    q::Vector{Float64}
+    p::Vector{Float64}
+    bfric_u::Vector{Float64}
+    bfric_v::Vector{Float64}
+    Mu::Vector{Float64}
+    Mv::Vector{Float64}
+    rhs_u::Vector{Float64}
+    rhs_v::Vector{Float64}
+    rhs_eta::Vector{Float64}
+    # Appear in comp_advection 
+    AL1q::Vector{Float64}
+    AL2q::Vector{Float64}
+    AL1q_au::Vector{Float64}
+    AL1q_du::Vector{Float64}
+    AL1q_av::Vector{Float64}
+    AL1q_dv::Vector{Float64}
+    AL2q_bu::Vector{Float64}
+    AL2q_cu::Vector{Float64}
+    AL2q_bv::Vector{Float64}
+    AL2q_cv::Vector{Float64}
 end

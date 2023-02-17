@@ -250,7 +250,6 @@ function build_advec(grid)
     Nv = grid.Nv
     Nq = grid.Nq 
 
-
     index1 = 1:(Nq-nx-1)
     index1 = filter(x -> x ∉ [(nx + 1)*j for j in 1:(Nq-nx-1)], index1)
 
