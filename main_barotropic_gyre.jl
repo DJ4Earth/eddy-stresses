@@ -1,5 +1,10 @@
-# Mimicking the structure of Milan Kloewer's shallow water model (code found here: https://github.com/milankl/swm)
-# We'll solve the equations on an Arakawa C-grid
+# This is my attempt at a Julia equivalent of Milan Kloewer's shallow water model (code found here: https://github.com/milankl/swm)
+# We'll solve the following equations on an Arakawa C-grid setup:
+#       u_t = f v - g eta_x + A_h (u_xx + u_yy) + F_x 
+#       v_t = -f u - g eta_y + A_h (v_xx + v_yy)
+#       eta_t = - (H u_x + H v_y)
+# using a fully explicit solver. 
+# Will add more about how the code is structured at a future point.... 
 
 using Enzyme, Plots, SparseArrays
 
@@ -50,7 +55,5 @@ u_v_eta = gyre_vector(uout, vout, etaout)
 @time for t in 1:Tspinup
     advance(u_v_eta, gyre_params, interp_ops, grad_ops, advec_ops) 
 end
-
-# @time advance(u_v_eta, Tspinup, gyre_params, interp_ops, grad_ops, advec_ops) 
 
 # heatmap(u_v_eta.η)

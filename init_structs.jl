@@ -3,10 +3,7 @@
 mutable struct gyre_matrix
     u::Matrix{Float64}
     v::Matrix{Float64}
-    η::Matrix{Float64}
-    lastu_t::Matrix{Float64}
-    lastv_t::Matrix{Float64}
-    lastη_t::Matrix{Float64}
+    eta::Matrix{Float64}
 end
 
 mutable struct gyre_vector

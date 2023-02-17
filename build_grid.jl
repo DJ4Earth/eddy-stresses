@@ -1,7 +1,10 @@
-# this script will just contain one function, build_grid, which will initialize
-# the structue grid. The structure will contain all the needed information about 
-# the Arakawa C-grid that we're solving the equations on 
-
+# This function builds all the parameters relating to the grid. It takes 
+#       Lx - the length of the domain from E-W [meters]
+#       Ly - the length of the domain from N-S [meters]
+#       Nx - the number of cells in the E-W direction 
+#       Ny - the number of cells in the N-S direction 
+# and returns a structure with a bunch of different parameters all built
+# from the above inputs. 
 function build_grid(Lx, Ly, Nx, Ny)
 
     dx = Lx / Nx 
@@ -42,11 +45,27 @@ function build_grid(Lx, Ly, Nx, Ny)
 
 end
 
+# This function allows me to specify the number of days that we want to run the model, 
+# and convert that into the total steps to take 
 function days_to_seconds(Tspinup_days, Trun_days, dt)
 
     Tspinup_seconds = Int(ceil((Tspinup_days * 24 * 3600) / dt))
     Trun_seconds = Int(ceil((Trun_days * 24 * 3600) / dt))
 
     return Tspinup_seconds, Trun_seconds
+
+end
+
+# This function will just serve to take the vectors containing state information 
+# and transform them to matrices 
+function vec_to_mat(u, v, eta, grid)
+
+    state_matrices = gyre_matrix(
+        reshape(u, grid.ny, grid.nx-1),
+        reshape(v, grid.ny-1, grid.nx),
+        reshape(eta, grid.ny, grid.nx)
+    )
+
+    return state_matrices
 
 end
