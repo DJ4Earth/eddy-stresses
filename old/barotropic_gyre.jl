@@ -22,7 +22,7 @@ dy = (1e3 * 20.0) / adjust     # meters
 
 g = 9.81
 H = 5000.0
-dt = 1200 #0.5 * dx / (2 * sqrt(g * H))   # seconds
+dt = 0.5 * dx / (2 * sqrt(g * H))   # seconds
 
 x = 0:dx:dx*(Nx - 1)
 y = 0:dy:dy*(Ny - 1)

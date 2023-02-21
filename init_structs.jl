@@ -1,34 +1,34 @@
 # This script will contain the structures needed for a barotropic gyre model
 
-mutable struct gyre_matrix
+@with_kw mutable struct gyre_matrix
     u::Matrix{Float64}
     v::Matrix{Float64}
     eta::Matrix{Float64}
 end
 
-mutable struct gyre_vector
+@with_kw mutable struct gyre_vector
     u::Vector{Float64}
     v::Vector{Float64}
     eta::Vector{Float64}
 end
 
 # constants that appear in various places 
-mutable struct Parameters 
-    dt::Float64             # timestep
-    g::Float64              # gravity
-    f0::Float64             # Coriolis parameter
-    beta::Float64           # Coriolis parameter
-    H::Float64              # ocean depth 
-    A_h::Float64            # horizontal Laplacian viscosity 
-    ρ_c::Float64            # reference density 
-    bottom_drag::Float64    # bottom drag coefficient
+@with_kw mutable struct Params 
+    dt::Float64                     # timestep
+    g::Float64                      # gravity
+    f0::Float64                     # Coriolis parameter
+    beta::Float64                   # Coriolis parameter
+    H::Float64                      # ocean depth 
+    A_h::Float64                    # horizontal Laplacian viscosity 
+    ρ_c::Float64                    # reference density 
+    bottom_drag::Float64            # bottom drag coefficient
     wind_stress::Vector{Float64}    # wind stress values on the grid 
     coriolis::Vector{Float64}       # coriolis values on the grid 
 end
 
 
 # parameters relating to the grid 
-mutable struct Grid
+@with_kw mutable struct Grid
     Lx::Int             # length of box in x direction [meters]
     Ly::Int             # length of box in y direction [meters]
     nx::Int             # total number of grid cells in x direction
@@ -46,7 +46,7 @@ end
 # in this struct we store all of these operators for use in computing the RHS of the system 
 # (namely the time derivatives)
 
-mutable struct Derivatives
+@with_kw mutable struct Derivatives
     GTx::SparseMatrixCSC{Float64, Int64}
     GTy::SparseMatrixCSC{Float64, Int64}
     Gux::SparseMatrixCSC{Float64, Int64}
@@ -63,7 +63,7 @@ mutable struct Derivatives
     LLv::SparseMatrixCSC{Float64, Int64}
 end
 
-mutable struct Interps 
+@with_kw mutable struct Interps 
     Ivu::SparseMatrixCSC{Float64, Int64}
     Iuv::SparseMatrixCSC{Float64, Int64}
     IqT::SparseMatrixCSC{Float64, Int64}
@@ -78,7 +78,7 @@ mutable struct Interps
     ITq::SparseMatrixCSC{Float64, Int64}
 end
 
-mutable struct Advection
+@with_kw mutable struct Advection
     AL1::SparseMatrixCSC{Float64, Int64}
     AL2::SparseMatrixCSC{Float64, Int64}
     index_av::Vector{Int64}
@@ -105,41 +105,68 @@ end
 
 # per a suggestion, I'm creating a new structure that will pre-allocate space to operators that only appear 
 # during the timestepping loop (mainly appear in the computation of the RHS equation)
-mutable struct RHS_terms
+@with_kw mutable struct RHS_terms
+    
+    # To initialize struct just need to specify the following, the rest
+    # of the entries will follow
+    Nu::Int
+    Nv::Int
+    NT::Int
+    Nq::Int
+
     # Appear in advance
-    u0::Vector{Float64}
-    v0::Vector{Float64}
-    eta0::Vector{Float64}
-    u1::Vector{Float64}
-    v1::Vector{Float64}
-    eta1::Vector{Float64}
+    u0::Vector{Float64} = zeros(Nu) 
+    v0::Vector{Float64} = zeros(Nv)
+    eta0::Vector{Float64} = zeros(NT)
+    u1::Vector{Float64} = zeros(Nu)
+    v1::Vector{Float64} = zeros(Nv)
+    eta1::Vector{Float64} = zeros(NT)
+
     # Appear in comp_u_v_eta_t
-    h::Vector{Float64}          # height of water columns [meters]
-    h_u::Vector{Float64}        # height of water columns interpolated to u-grid 
-    h_v::Vector{Float64}        # height of water columns interpolated to v-grid 
-    h_q::Vector{Float64}
-    U::Vector{Float64}
-    V::Vector{Float64}
-    kinetic::Vector{Float64}
-    kinetic_sq::Vector{Float64}
-    q::Vector{Float64}
-    p::Vector{Float64}
-    bfric_u::Vector{Float64}
-    bfric_v::Vector{Float64}
-    Mu::Vector{Float64}
-    Mv::Vector{Float64}
-    rhs_u::Vector{Float64}
-    rhs_v::Vector{Float64}
-    rhs_eta::Vector{Float64}
+    h::Vector{Float64} = zeros(NT)          # height of water columns [meters]
+
+    h_u::Vector{Float64} = zeros(Nu)        # height of water columns interpolated to u-grid 
+    h_v::Vector{Float64} = zeros(Nv)        # height of water columns interpolated to v-grid 
+    h_q::Vector{Float64} = zeros(Nq)
+
+    U::Vector{Float64} = zeros(Nu)
+    V::Vector{Float64} = zeros(Nv)
+
+    IuT_u1::Vector{Float64} = zeros(NT)
+    IvT_v1::Vector{Float64} = zeros(NT)
+    kinetic::Vector{Float64} = zeros(NT)
+
+    kinetic_sq::Vector{Float64} = zeros(NT)
+
+    Gvx_v1::Vector{Float64} = zeros(Nq)
+    Guy_u1::Vector{Float64} = zeros(Nq)
+    q::Vector{Float64} = zeros(Nq)
+    p::Vector{Float64} = zeros(NT)
+
+    ITu_ksq::Vector{Float64} = zeros(Nu)
+    ITv_ksq::Vector{Float64} = zeros(Nv)
+    bfric_u::Vector{Float64} = zeros(Nu)
+    bfric_v::Vector{Float64} = zeros(Nv)
+
+    LLu_u1::Vector{Float64} = zeros(Nu)
+    LLv_v1::Vector{Float64} = zeros(Nv)
+    Mu::Vector{Float64} = zeros(Nu)
+    Mv::Vector{Float64} = zeros(Nv)
+
+    GTx_p::Vector{Float64} = zeros(Nu)
+    u_t::Vector{Float64} = zeros(Nu)
+    GTy_p::Vector{Float64} = zeros(Nv)
+    v_t::Vector{Float64} = zeros(Nv)
+    Gux_U::Vector{Float64} = zeros(NT)
+    Gvy_V::Vector{Float64} = zeros(NT)
+    eta_t::Vector{Float64} = zeros(NT)
+    adv_u::Vector{Float64} = zeros(Nu)
+    adv_v::Vector{Float64} = zeros(Nv)
+
     # Appear in comp_advection 
-    AL1q::Vector{Float64}
-    AL2q::Vector{Float64}
-    AL1q_au::Vector{Float64}
-    AL1q_du::Vector{Float64}
-    AL1q_av::Vector{Float64}
-    AL1q_dv::Vector{Float64}
-    AL2q_bu::Vector{Float64}
-    AL2q_cu::Vector{Float64}
-    AL2q_bv::Vector{Float64}
-    AL2q_cv::Vector{Float64}
+    AL1q::Vector{Float64} = zeros(NT)
+    AL2q::Vector{Float64} = zeros(NT)
+    # ALeur_q::Vector{Float64}
+    # ALeul_q::Vector{Float64}
+    
 end

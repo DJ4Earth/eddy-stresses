@@ -37,6 +37,10 @@ function advance(u_v_eta, params, interp_ops, grad_ops, advec_ops)
 
     end
 
+    # @assert all(x -> x < 5.0, u0)
+    # @assert all(x -> x < 5.0, v0)
+    # @assert all(x -> x < 5.0, eta0)
+
     copyto!(u_v_eta.u, u0)
     copyto!(u_v_eta.v, v0)
     copyto!(u_v_eta.eta, eta0)

@@ -61,9 +61,9 @@ end
 function vec_to_mat(u, v, eta, grid)
 
     state_matrices = gyre_matrix(
-        reshape(u, grid.ny, grid.nx-1),
-        reshape(v, grid.ny-1, grid.nx),
-        reshape(eta, grid.ny, grid.nx)
+        reshape(u, grid.ny, grid.nx-1)',
+        reshape(v, grid.ny-1, grid.nx)',
+        reshape(eta, grid.ny, grid.nx)'
     )
 
     return state_matrices

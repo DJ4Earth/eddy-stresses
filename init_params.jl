@@ -20,15 +20,14 @@ function def_params(grid)
     xq = 0:dx:(Lx + dx/2)
     yq = 0:dy:(Ly + dy/2)
 
+    # Zanna/Bolton setup
+
     nu_A = 128*540/(min(nx, ny))
     A_h = nu_A * max(dx, dy)^2       # viscosity coefficient [meters^2 / second]
     rho_c = 1000.0                   # density
-
     bottom_drag = 1e-5    # bottom-drag coefficient
     g = 10.0    # gravity [meters^2 / second]
     H = 500.0   # depth of the box [meters]
-
-    # our beta-plane approximation is centered at 30degrees (is this the correct way to phrase this?)
     omega = 2 * pi / (24 * 3600)
     R = 6.371e6
     f0 = 2 * omega * sin(30 * pi / 180)
@@ -46,9 +45,24 @@ function def_params(grid)
     ws_sin = 2 .* sin.(pi .* ((Yu .- Ly/2)./Ly)  ) 
     wind_stress = 0.12 .* (ws_cos + ws_sin) ./rho_c
 
-    dt = floor((0.9 * min(dx, dy)) / (sqrt(g * H)))   # CFL condition for dt [seconds]
+    # MIT GCM setup
+    # A_h = 400.0
+    # H = 5e3
+    # rho_c = 1000.0 
+    # g = 9.81
+    # bottom_drag = 0.0 
+    # beta = 1e-11 
+    # f0 = 1e-4 
+    # Yq = vec([k for k in yq, j in 1:nx+1]')
+    # f(y) = f0 + beta * y
+    # coriolis = vec(f.(Yq)')
+
+    # Yu = vec([k for k in yu, j in 1:length(xu)]')
+    # wind_stress = (-0.1 * sin.(pi * (Yu./Ly))) ./ rho_c
+
+    dt = Int(floor((0.9 * min(dx, dy)) / (sqrt(g * H))))   # CFL condition for dt [seconds]
     
-    gyre_params = Parameters(
+    gyre_params = Params(
     dt,
     g, 
     f0, 
