@@ -23,8 +23,8 @@ include("temp.jl")
 # Zanna / Bolton setup 
 Lx = 3840e3                    # E-W length of the domain [meters]
 Ly = 3840e3                    # N-S length of the domain [meters]
-nx = 7                         # number of cells in the x-direction
-ny = 7                        # number of cells in the y-direction
+nx = 100                         # number of cells in the x-direction
+ny = 100                        # number of cells in the y-direction
 
 ###### debugging 
 dx = Lx / nx 
@@ -72,31 +72,31 @@ advec_ops = build_advec(grid_params)
 # starting from rest ---> all initial conditions are zero 
 
 # how long to spinup the model for 
-Tspinup_days = 1 # [days] 
+Tspinup_days = 20 # [days] 
 
 # how long to run the model for after spinup
 Trun_days = 1 * 365     # [days] 
 
 Tspinup, Trun = days_to_seconds(Tspinup_days, Trun_days, gyre_params.dt)
 
-# uout = zeros(grid_params.Nu) 
-# vout = zeros(grid_params.Nv) 
-# etaout = zeros(grid_params.NT)
+uout = zeros(grid_params.Nu) 
+vout = zeros(grid_params.Nv) 
+etaout = zeros(grid_params.NT)
 
-uout = (collect(LinRange(0, grid_params.Nu - 1, grid_params.Nu)) ./ 1000).^2
-vout = (collect(LinRange(0, grid_params.Nv - 1, grid_params.Nv)) ./ 1000).^2
-etaout = (collect(LinRange(0, grid_params.NT - 1, grid_params.NT)) ./ 1000).^2
+# uout = (collect(LinRange(0, grid_params.Nu - 1, grid_params.Nu)) ./ 1000).^2
+# vout = (collect(LinRange(0, grid_params.Nv - 1, grid_params.Nv)) ./ 1000).^2
+# etaout = (collect(LinRange(0, grid_params.NT - 1, grid_params.NT)) ./ 1000).^2
 
-u_v_eta = gyre_vector((collect(LinRange(0, grid_params.Nu - 1, grid_params.Nu)) ./ 1000).^2, 
-(collect(LinRange(0, grid_params.Nv - 1, grid_params.Nv)) ./ 1000).^2, 
-(collect(LinRange(0, grid_params.NT - 1, grid_params.NT)) ./ 1000).^2)
+u_v_eta = gyre_vector(copy(uout), 
+copy(vout), 
+copy(etaout))
 
-# @time for t in 1:Tspinup
+@time for t in 1:Tspinup
     advance(u_v_eta, gyre_params, interp_ops, grad_ops, advec_ops) 
-# end
+end
 
-# u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)
-# heatmap(u_v_eta_mat.eta)
+u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)
+heatmap(u_v_eta_mat.eta)
 
 # u_v_eta_start = deepcopy(u_v_eta)
 

@@ -32,9 +32,7 @@ function comp_u_v_eta_t(u, v, eta, params, interp_ops, grad_ops, advec_ops)
 
     rhs_v = adv_v - grad_ops.GTy * p - Mv - bfric_v 
 
-    rhs_eta = - (grad_ops.Gux * U + grad_ops.Gvy * V)
-
-    print(norm(U .* V))
+    rhs_eta = - (grad_ops.Gux * U + grad_ops.Gvy * V) 
 
     return rhs_u, rhs_v, rhs_eta
 
