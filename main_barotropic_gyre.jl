@@ -72,7 +72,7 @@ advec_ops = build_advec(grid_params)
 # starting from rest ---> all initial conditions are zero 
 
 # how long to spinup the model for 
-Tspinup_days = 20 # [days] 
+Tspinup_days = 100 # [days] 
 
 # how long to run the model for after spinup
 Trun_days = 1 * 365     # [days] 

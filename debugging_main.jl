@@ -136,11 +136,12 @@ function comp_advection_check(rhs, advec)
 
 end
 
-function main()
+function debug_main()
+
 Lx = 3840e3                    # E-W length of the domain [meters]
 Ly = 3840e3                    # N-S length of the domain [meters]
-nx = 50                        # number of cells in the x-direction
-ny = 50                       # number of cells in the y-direction
+nx = 10                        # number of cells in the x-direction
+ny = 10                       # number of cells in the y-direction
 
 # based on above values this returns more parameters related to the four grids 
 grid_params = build_grid(Lx, Ly, nx, ny)
@@ -157,7 +158,7 @@ rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params
 # starting from rest ---> all initial conditions are zero 
 
 # how long to spinup the model for 
-Tspinup_days = 5*365 # [days] 
+Tspinup_days = 30 # [days] 
 
 # how long to run the model for after spinup
 Trun_days = 1 * 365     # [days] 
@@ -174,15 +175,4 @@ u_v_eta = gyre_vector(uout, vout, etaout)
     advance_check(u_v_eta, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
 end
 
-end
-
-if !isinteractive()
-    main()
-end
-# u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)
-# p = heatmap(u_v_eta_mat.eta, dpi = "300")
-# # xlabel!("x")
-# # ylabel!("y")
-# # title!("eta(t,x,y)")
-# # title = "please.png"
-# # savefig(p, title)
+end 

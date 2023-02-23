@@ -13,7 +13,7 @@ end
 end
 
 # constants that appear in various places 
-@with_kw mutable struct Params 
+struct Params 
     dt::Float64                     # timestep
     g::Float64                      # gravity
     f0::Float64                     # Coriolis parameter
@@ -28,7 +28,7 @@ end
 
 
 # parameters relating to the grid 
-@with_kw mutable struct Grid
+struct Grid
     Lx::Int             # length of box in x direction [meters]
     Ly::Int             # length of box in y direction [meters]
     nx::Int             # total number of grid cells in x direction
@@ -46,7 +46,7 @@ end
 # in this struct we store all of these operators for use in computing the RHS of the system 
 # (namely the time derivatives)
 
-@with_kw mutable struct Derivatives
+struct Derivatives
     GTx::SparseMatrixCSC{Float64, Int64}
     GTy::SparseMatrixCSC{Float64, Int64}
     Gux::SparseMatrixCSC{Float64, Int64}
@@ -63,7 +63,7 @@ end
     LLv::SparseMatrixCSC{Float64, Int64}
 end
 
-@with_kw mutable struct Interps 
+struct Interps 
     Ivu::SparseMatrixCSC{Float64, Int64}
     Iuv::SparseMatrixCSC{Float64, Int64}
     IqT::SparseMatrixCSC{Float64, Int64}
@@ -78,7 +78,7 @@ end
     ITq::SparseMatrixCSC{Float64, Int64}
 end
 
-@with_kw mutable struct Advection
+struct Advection
     AL1::SparseMatrixCSC{Float64, Int64}
     AL2::SparseMatrixCSC{Float64, Int64}
     index_av::Vector{Int64}
@@ -105,7 +105,7 @@ end
 
 # per a suggestion, I'm creating a new structure that will pre-allocate space to operators that only appear 
 # during the timestepping loop (mainly appear in the computation of the RHS equation)
-@with_kw mutable struct RHS_terms
+@with_kw struct RHS_terms
     
     # To initialize struct just need to specify the following, the rest
     # of the entries will follow

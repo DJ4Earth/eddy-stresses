@@ -15,7 +15,7 @@ function comp_u_v_eta_t(u, v, eta, params, interp_ops, grad_ops, advec_ops)
     # Bernoulli potential respectively. To avoid errors in my mimic I'm following 
     # along and doing the same 
     q = (params.coriolis + grad_ops.Gvx * v - grad_ops.Guy * u) ./ h_q 
-    p = @. 0.5 * kinetic + params.g * h
+    p = 0.5 * kinetic + params.g * h
 
     # bottom friction
     kinetic_sq = (kinetic).^(1/2)
