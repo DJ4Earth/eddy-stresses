@@ -1,3 +1,8 @@
+# This script is almost identical to main_barotropic_gyre, except here I'm trying to make things run faster.
+# This one uses different functions: advance_check, compute_time_deriv_check, and comp_advection_check
+# that instead use pre-allocated RHS terms, unlike main_barotropic_gyre. I'm keeping them separate until I know
+# everything is fine and works and then can combine them. 
+
 using Enzyme, Plots, SparseArrays, Parameters
 
 using InteractiveUtils
