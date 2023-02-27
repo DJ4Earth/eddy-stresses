@@ -47,60 +47,60 @@ end
 # (namely the time derivatives)
 
 struct Derivatives
-    GTx::SparseMatrixCSC{Float64, Int64}
-    GTy::SparseMatrixCSC{Float64, Int64}
-    Gux::SparseMatrixCSC{Float64, Int64}
-    Guy::SparseMatrixCSC{Float64, Int64}
-    Gvx::SparseMatrixCSC{Float64, Int64}
-    Gvy::SparseMatrixCSC{Float64, Int64}
-    Gqy::SparseMatrixCSC{Float64, Int64}
-    Gqx::SparseMatrixCSC{Float64, Int64}
-    Lu::SparseMatrixCSC{Float64, Int64}
-    Lv::SparseMatrixCSC{Float64, Int64}
-    LT::SparseMatrixCSC{Float64, Int64}
-    Lq::SparseMatrixCSC{Float64, Int64}
-    LLu::SparseMatrixCSC{Float64, Int64}
-    LLv::SparseMatrixCSC{Float64, Int64}
+    GTx::SparseMatrixCSR{Float64, Int64}
+    GTy::SparseMatrixCSR{Float64, Int64}
+    Gux::SparseMatrixCSR{Float64, Int64}
+    Guy::SparseMatrixCSR{Float64, Int64}
+    Gvx::SparseMatrixCSR{Float64, Int64}
+    Gvy::SparseMatrixCSR{Float64, Int64}
+    Gqy::SparseMatrixCSR{Float64, Int64}
+    Gqx::SparseMatrixCSR{Float64, Int64}
+    Lu::SparseMatrixCSR{Float64, Int64}
+    Lv::SparseMatrixCSR{Float64, Int64}
+    LT::SparseMatrixCSR{Float64, Int64}
+    Lq::SparseMatrixCSR{Float64, Int64}
+    LLu::SparseMatrixCSR{Float64, Int64}
+    LLv::SparseMatrixCSR{Float64, Int64}
 end
 
 struct Interps 
-    Ivu::SparseMatrixCSC{Float64, Int64}
-    Iuv::SparseMatrixCSC{Float64, Int64}
-    IqT::SparseMatrixCSC{Float64, Int64}
-    IuT::SparseMatrixCSC{Float64, Int64}
-    IvT::SparseMatrixCSC{Float64, Int64}
-    ITu::SparseMatrixCSC{Float64, Int64}
-    ITv::SparseMatrixCSC{Float64, Int64}
-    Iqu::SparseMatrixCSC{Float64, Int64}
-    Iqv::SparseMatrixCSC{Float64, Int64}
-    Iuq::SparseMatrixCSC{Float64, Int64}
-    Ivq::SparseMatrixCSC{Float64, Int64}
-    ITq::SparseMatrixCSC{Float64, Int64}
+    Ivu::SparseMatrixCSR{Float64, Int64}
+    Iuv::SparseMatrixCSR{Float64, Int64}
+    IqT::SparseMatrixCSR{Float64, Int64}
+    IuT::SparseMatrixCSR{Float64, Int64}
+    IvT::SparseMatrixCSR{Float64, Int64}
+    ITu::SparseMatrixCSR{Float64, Int64}
+    ITv::SparseMatrixCSR{Float64, Int64}
+    Iqu::SparseMatrixCSR{Float64, Int64}
+    Iqv::SparseMatrixCSR{Float64, Int64}
+    Iuq::SparseMatrixCSR{Float64, Int64}
+    Ivq::SparseMatrixCSR{Float64, Int64}
+    ITq::SparseMatrixCSR{Float64, Int64}
 end
 
 struct Advection
-    AL1::SparseMatrixCSC{Float64, Int64}
-    AL2::SparseMatrixCSC{Float64, Int64}
+    AL1::SparseMatrixCSR{Float64, Int64}
+    AL2::SparseMatrixCSR{Float64, Int64}
     index_av::Vector{Int64}
     index_bv::Vector{Int64}
     index_cv::Vector{Int64}
     index_dv::Vector{Int64}
-    ALeur::SparseMatrixCSC{Float64, Int64}
-    ALeul::SparseMatrixCSC{Float64, Int64}
-    Seul::SparseMatrixCSC{Float64, Int64}
-    Seur::SparseMatrixCSC{Float64, Int64}
-    Sau::SparseMatrixCSC{Float64, Int64}
-    Sbu::SparseMatrixCSC{Float64, Int64}
-    Scu::SparseMatrixCSC{Float64, Int64}
-    Sdu::SparseMatrixCSC{Float64, Int64}
-    ALpvu::SparseMatrixCSC{Float64, Int64}
-    ALpvd::SparseMatrixCSC{Float64, Int64}
-    Spvu::SparseMatrixCSC{Float64, Int64}
-    Spvd::SparseMatrixCSC{Float64, Int64}
-    Sav::SparseMatrixCSC{Float64, Int64}
-    Sbv::SparseMatrixCSC{Float64, Int64}
-    Scv::SparseMatrixCSC{Float64, Int64}
-    Sdv::SparseMatrixCSC{Float64, Int64}
+    ALeur::SparseMatrixCSR{Float64, Int64}
+    ALeul::SparseMatrixCSR{Float64, Int64}
+    Seul::SparseMatrixCSR{Float64, Int64}
+    Seur::SparseMatrixCSR{Float64, Int64}
+    Sau::SparseMatrixCSR{Float64, Int64}
+    Sbu::SparseMatrixCSR{Float64, Int64}
+    Scu::SparseMatrixCSR{Float64, Int64}
+    Sdu::SparseMatrixCSR{Float64, Int64}
+    ALpvu::SparseMatrixCSR{Float64, Int64}
+    ALpvd::SparseMatrixCSR{Float64, Int64}
+    Spvu::SparseMatrixCSR{Float64, Int64}
+    Spvd::SparseMatrixCSR{Float64, Int64}
+    Sav::SparseMatrixCSR{Float64, Int64}
+    Sbv::SparseMatrixCSR{Float64, Int64}
+    Scv::SparseMatrixCSR{Float64, Int64}
+    Sdv::SparseMatrixCSR{Float64, Int64}
 end
 
 # per a suggestion, I'm creating a new structure that will pre-allocate space to operators that only appear 
@@ -115,6 +115,9 @@ end
     Nq::Int
 
     # Appear in advance
+    umid::Vector{Float64} = zeros(Nu)
+    vmid::Vector{Float64} = zeros(Nv)
+    etamid::Vector{Float64} = zeros(NT)
     u0::Vector{Float64} = zeros(Nu) 
     v0::Vector{Float64} = zeros(Nv)
     eta0::Vector{Float64} = zeros(NT)
@@ -170,3 +173,57 @@ end
     # ALeul_q::Vector{Float64}
     
 end
+
+# @with_kw struct RHS_terms
+    
+#         # To initialize struct just need to specify the following, the rest
+#         # of the entries will follow
+#         Nu::Int
+#         Nv::Int
+#         NT::Int
+#         Nq::Int
+    
+#         # Appear in advance
+#         u0::Vector{Float64} = zeros(Nu) 
+#         v0::Vector{Float64} = zeros(Nv)
+#         eta0::Vector{Float64} = zeros(NT)
+#         u1::Vector{Float64} = zeros(Nu)
+#         v1::Vector{Float64} = zeros(Nv)
+#         eta1::Vector{Float64} = zeros(NT)
+    
+#         # Appear in comp_u_v_eta_t
+#         h::Vector{Float64} = zeros(NT)          # height of water columns [meters]
+    
+#         h_u::Vector{Float64} = zeros(Nu)        # height of water columns interpolated to u-grid 
+#         h_v::Vector{Float64} = zeros(Nv)        # height of water columns interpolated to v-grid 
+#         h_q::Vector{Float64} = zeros(Nq)
+    
+#         U::Vector{Float64} = zeros(Nu)
+#         V::Vector{Float64} = zeros(Nv)
+
+#         kinetic::Vector{Float64} = zeros(NT)
+#         kinetic_sq::Vector{Float64} = zeros(NT)
+
+#         q::Vector{Float64} = zeros(Nq)
+#         p::Vector{Float64} = zeros(NT)
+    
+#         bfric_u::Vector{Float64} = zeros(Nu)
+#         bfric_v::Vector{Float64} = zeros(Nv)
+    
+#         Mu::Vector{Float64} = zeros(Nu)
+#         Mv::Vector{Float64} = zeros(Nv)
+    
+#         u_t::Vector{Float64} = zeros(Nu)
+
+#         v_t::Vector{Float64} = zeros(Nv)
+
+#         eta_t::Vector{Float64} = zeros(NT)
+    
+#         # Appear in comp_advection 
+#         AL1q::Vector{Float64} = zeros(NT)
+#         AL2q::Vector{Float64} = zeros(NT)
+
+#         adv_u::Vector{Float64} = zeros(Nu)
+#         adv_v::Vector{Float64} = zeros(Nv)
+        
+#     end

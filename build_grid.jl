@@ -5,16 +5,16 @@
 #       Ny - the number of cells in the N-S direction 
 # and returns a structure with a bunch of different parameters all built
 # from the above inputs. 
-function build_grid(Lx, Ly, Nx, Ny)
+function build_grid(Lx, Ly, nx, ny)
 
-    dx = Lx / Nx 
-    dy = Ly / Ny 
+    dx = Lx / nx 
+    dy = Ly / ny 
 
-    NT = Nx * Ny 
+    NT = nx * ny 
 
-    Nu = (Nx - 1) * Ny 
-    Nv = (Ny - 1) * Nx 
-    Nq = (Nx + 1) * (Ny + 1)
+    Nu = (nx - 1) * ny 
+    Nv = (ny - 1) * nx 
+    Nq = (nx + 1) * (ny + 1)
 
     x = (dx/2):dx:Lx
     y = dy/2:dy:Ly
@@ -31,8 +31,8 @@ function build_grid(Lx, Ly, Nx, Ny)
     grid_params = Grid(
     Lx, 
     Ly,
-    Nx, 
-    Ny,
+    nx, 
+    ny,
     NT,
     Nu, 
     Nv,

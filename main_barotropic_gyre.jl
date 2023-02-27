@@ -12,7 +12,6 @@ include("init_structs.jl")
 include("init_params.jl")
 include("build_grid.jl")
 include("build_discrete_operators.jl")
-include("allocate_rhs.jl")
 include("advance_c_grid.jl")
 include("compute_time_deriv.jl")
 include("temp.jl")
@@ -23,8 +22,8 @@ include("temp.jl")
 # Zanna / Bolton setup 
 Lx = 3840e3                    # E-W length of the domain [meters]
 Ly = 3840e3                    # N-S length of the domain [meters]
-nx = 100                         # number of cells in the x-direction
-ny = 100                        # number of cells in the y-direction
+nx = 20                         # number of cells in the x-direction
+ny = 20                        # number of cells in the y-direction
 
 ###### debugging 
 dx = Lx / nx 
@@ -72,7 +71,7 @@ advec_ops = build_advec(grid_params)
 # starting from rest ---> all initial conditions are zero 
 
 # how long to spinup the model for 
-Tspinup_days = 100 # [days] 
+Tspinup_days = 500 # [days] 
 
 # how long to run the model for after spinup
 Trun_days = 1 * 365     # [days] 
