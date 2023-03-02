@@ -23,7 +23,7 @@ function comp_u_v_eta_t(nx, rhs, params, interp, grad, advec)
     rhs.bfric_v .= params.bottom_drag .* ((interp.ITv * rhs.kinetic_sq) .* rhs.v1) ./ rhs.h_v
 
     # deal with the advection term 
-    comp_advection_check(nx, rhs, advec)
+    comp_advection(nx, rhs, advec)
 
     rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
     rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
