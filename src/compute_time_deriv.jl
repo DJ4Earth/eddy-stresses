@@ -1,64 +1,66 @@
-function comp_u_v_eta_t(u, v, eta, params, interp_ops, grad_ops, advec_ops) 
+function comp_u_v_eta_t(nx, rhs, params, interp, grad, advec) 
 
-    h = eta .+ params.H 
+    rhs.h .= rhs.eta1 .+ params.H 
 
-    h_u = interp_ops.ITu * h
-    h_v = interp_ops.ITv * h
-    h_q = interp_ops.ITq * h
+    rhs.h_u .= interp.ITu * rhs.h
+    rhs.h_v .= interp.ITv * rhs.h
+    rhs.h_q .= interp.ITq * rhs.h
 
-    U = u .* h_u 
-    V = v .* h_v 
+    rhs.U .= rhs.u1 .* rhs.h_u 
+    rhs.V .= rhs.v1 .* rhs.h_v 
 
-    kinetic = interp_ops.IuT * (u.^2) + interp_ops.IvT * (v.^2)
+    rhs.kinetic .= interp.IuT * (rhs.u1.^2) .+ interp.IvT * (rhs.v1.^2)
 
     # Kloewer defined new terms q and p corresponding to potential vorticity and 
     # Bernoulli potential respectively. To avoid errors in my mimic I'm following 
     # along and doing the same 
-    q = (params.coriolis + grad_ops.Gvx * v - grad_ops.Guy * u) ./ h_q 
-    p = 0.5 * kinetic + params.g * h
+    rhs.q .= (params.coriolis .+ grad.Gvx * rhs.v1 .- grad.Guy * rhs.u1) ./ rhs.h_q 
+    rhs.p .= 0.5 .* rhs.kinetic .+ params.g .* rhs.h
 
     # bottom friction
-    kinetic_sq = (kinetic).^(1/2)
-    bfric_u =  params.bottom_drag * ((interp_ops.ITu * kinetic_sq) .* u) ./ h_u
-    bfric_v =  params.bottom_drag * ((interp_ops.ITv * kinetic_sq) .* v) ./ h_v
+    rhs.kinetic_sq .= (rhs.kinetic).^(1/2)
+    rhs.bfric_u .= params.bottom_drag .* ((interp.ITu * rhs.kinetic_sq) .* rhs.u1) ./ rhs.h_u
+    rhs.bfric_v .= params.bottom_drag .* ((interp.ITv * rhs.kinetic_sq) .* rhs.v1) ./ rhs.h_v
 
     # deal with the advection term 
-    adv_u, adv_v = comp_advection(q, U, V, advec_ops)
+    comp_advection_check(nx, rhs, advec)
 
-    Mu =  params.A_h .* (grad_ops.LLu * u)
-    Mv =  params.A_h .* (grad_ops.LLv * v) 
+    rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
+    rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
 
-    rhs_u = adv_u - grad_ops.GTx * p + params.wind_stress ./ h_u - Mu - bfric_u
+    rhs.u_t .= rhs.adv_u .- grad.GTx * rhs.p .+ params.wind_stress ./ rhs.h_u .- rhs.Mu .- rhs.bfric_u
 
-    rhs_v = adv_v - grad_ops.GTy * p - Mv - bfric_v 
+    rhs.v_t .= rhs.adv_v .- grad.GTy * rhs.p .- rhs.Mv .- rhs.bfric_v 
 
-    rhs_eta = - (grad_ops.Gux * U + grad_ops.Gvy * V) 
+    rhs.eta_t .= - (grad.Gux * rhs.U .+ grad.Gvy * rhs.V)
 
-    return rhs_u, rhs_v, rhs_eta
+    return nothing
 
 end 
 
-function comp_advection(q, U, V, advec_ops)
+function comp_advection(nx, rhs, advec)
 
-    AL1q = advec_ops.AL1 * q 
-    AL2q = advec_ops.AL2 * q 
+    rhs.AL1q .= advec.AL1 * rhs.q 
+    rhs.AL2q .= advec.AL2 * rhs.q 
 
-    # adv_u = advec_ops.Seur * ((advec_ops.ALeur * q) .* U) + advec_ops.Seul * ((advec_ops.ALeul * q) .* U) +
-    # advec_ops.Sau * (AL1q[1:end-nx] .* V) + advec_ops.Sbu * (AL2q[nx+1:end] .* V) + 
-    # advec_ops.Scu * (AL2q[1:end-nx] .* V) + advec_ops.Sdu * (AL1q[nx+1:end] .* V)
-    
-    # adv_v = advec_ops.Spvu * ((advec_ops.ALpvu * q) .* U) + advec_ops.Spvd * ((advec_ops.ALpvd * q) .* V) -
-    # advec_ops.Sav * (AL1q[advec_ops.index_av] .* U) - advec_ops.Sbv * (AL2q[advec_ops.index_bv] .* U) - 
-    # advec_ops.Scv * (AL2q[advec_ops.index_cv] .* U) - advec_ops.Sdv * (AL1q[advec_ops.index_dv] .* U)
+    AL1q_au = @view rhs.AL1q[1:end-nx]
+    AL2q_bu = @view rhs.AL2q[nx+1:end]
+    AL2q_cu = @view rhs.AL2q[1:end-nx]
+    AL1q_du = @view rhs.AL1q[nx+1:end]
 
-    adv_u = advec_ops.Seur * ((advec_ops.ALeur * q) .* U) + advec_ops.Seul * ((advec_ops.ALeul * q) .* U) +
-    advec_ops.Sau * (AL1q[1:end-nx] .* V) + advec_ops.Sbu * (AL2q[nx+1:end] .* V) + 
-    advec_ops.Scu * (AL2q[1:end-nx] .* V) + advec_ops.Sdu * (AL1q[nx+1:end] .* V)
-    
-    adv_v = advec_ops.Spvu * ((advec_ops.ALpvu * q) .* V) + advec_ops.Spvd * ((advec_ops.ALpvd * q) .* V) -
-    advec_ops.Sav * (AL1q[advec_ops.index_av] .* U) - advec_ops.Sbv * (AL2q[advec_ops.index_bv] .* U) - 
-    advec_ops.Scv * (AL2q[advec_ops.index_cv] .* U) - advec_ops.Sdv * (AL1q[advec_ops.index_dv] .* U)
+    AL1q_av = @view rhs.AL1q[advec.index_av]
+    AL2q_bv = @view rhs.AL2q[advec.index_bv]
+    AL2q_cv = @view rhs.AL2q[advec.index_cv]
+    AL1q_dv = @view rhs.AL1q[advec.index_dv]
 
-    return adv_u, adv_v
+    rhs.adv_u .= advec.Seur * (advec.ALeur * rhs.q .* rhs.U) .+ advec.Seul * (advec.ALeul * rhs.q .* rhs.U) .+
+    advec.Sau * (AL1q_au .* rhs.V) .+ advec.Sbu * (AL2q_bu .* rhs.V) .+ 
+    advec.Scu * (AL2q_cu .* rhs.V) .+ advec.Sdu * (AL1q_du .* rhs.V)
+
+    rhs.adv_v .= advec.Spvu * ((advec.ALpvu * rhs.q) .* rhs.V) .+ advec.Spvd * ((advec.ALpvd * rhs.q) .* rhs.V) .-
+    advec.Sav * (AL1q_av .* rhs.U) .- advec.Sbv * (AL2q_bv .* rhs.U) .- 
+    advec.Scv * (AL2q_cv .* rhs.U) .- advec.Sdv * (AL1q_dv .* rhs.U)
+
+    return nothing
 
 end

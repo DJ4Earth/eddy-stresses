@@ -47,12 +47,11 @@ end
 
 # This function allows me to specify the number of days that we want to run the model, 
 # and convert that into the total steps to take 
-function days_to_seconds(Tspinup_days, Trun_days, dt)
+function days_to_seconds(T, dt)
 
-    Tspinup_seconds = Int(ceil((Tspinup_days * 24 * 3600) / dt))
-    Trun_seconds = Int(ceil((Trun_days * 24 * 3600) / dt))
+    Trun_seconds = Int(ceil((T * 24 * 3600) / dt))
 
-    return Tspinup_seconds, Trun_seconds
+    return Trun_seconds
 
 end
 

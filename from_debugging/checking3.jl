@@ -4,6 +4,7 @@
 # everything is fine and works and then can combine them. 
 
 using Enzyme, Plots, SparseArrays, Parameters
+using JLD2
 
 using InteractiveUtils
 
@@ -132,12 +133,13 @@ function comp_advection_check(nx, rhs, advec)
 
 end
 
-function main(Tspinup, Trun)
+# This function needs to be given 
+#           T - how many days to integrate the model for
+#           nx, ny - how many grid cells in x and y directions, respectively
+function main(T, nx, ny)
     
 Lx = 3840e3                     # E-W length of the domain [meters]
 Ly = 3840e3                     # N-S length of the domain [meters]
-nx = 50                        # number of cells in the x-direction
-ny = 50                        # number of cells in the y-direction
 
 grid_params = build_grid(Lx, Ly, nx, ny)
 gyre_params = def_params(grid_params)
@@ -150,13 +152,7 @@ rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params
 
 # starting from rest ---> all initial conditions are zero 
 
-# how long to spinup the model for 
-Tspinup_days = Tspinup # [days] 
-
-# how long to run the model for after spinup
-Trun_days = Trun       # [days] 
-
-Tspinup, Trun = days_to_seconds(Tspinup_days, Trun_days, gyre_params.dt)
+Trun = days_to_seconds(T, gyre_params.dt)
 
 uout = zeros(grid_params.Nu) 
 vout = zeros(grid_params.Nv) 
@@ -164,17 +160,16 @@ etaout = zeros(grid_params.NT)
 
 u_v_eta = gyre_vector(uout, vout, etaout)
 
-# @profile 
-for t in 1:Tspinup
-    advance_check(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
-end
+# @profile for t in 1:Tspinup
+#     advance_check(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
+# end
 
 # PProf.Allocs.pprof(;out="allocs.pb.gz")
 # PProf.pprof(;out="time.pb.gz")
 
-# @time for t in 1:Tspinup
-#     advance_check(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
-# end
+@time for t in 1:Trun
+    advance_check(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
+end
 
 u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)
 
