@@ -8,7 +8,7 @@ function advance(u_v_eta, grid, rhs, params, interp, grad, advec)
 
     # we now use RK4 as the timestepper, here I'm storing the coefficients needed for this 
     rk_a = [1/6, 1/3, 1/3, 1/6]
-    rk_b = [1/2, 1/2, 1]
+    rk_b = [1/2, 1/2, 1.]
 
     rhs.umid .= u_v_eta.u
     rhs.vmid .= u_v_eta.v

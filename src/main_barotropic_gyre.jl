@@ -27,24 +27,6 @@ include("build_discrete_operators.jl")
 include("compute_time_deriv.jl")
 include("advance_c_grid.jl")
 
-function setup(nx, ny)
-
-    Lx = 3840e3                     # E-W length of the domain [meters]
-    Ly = 3840e3                     # N-S length of the domain [meters]
-
-    grid_params = build_grid(Lx, Ly, nx, ny)
-    gyre_params = def_params(grid_params)
-    
-    # building discrete operators 
-    grad_ops = build_derivs(grid_params)                # discrete gradient operators 
-    interp_ops = build_interp(grid_params, grad_ops)    # discrete interpolation operators (travels between grids)
-    advec_ops = build_advec(grid_params)
-    rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params.NT, Nq = grid_params.Nq)
-
-    return grid_params, gyre_params, grad_ops, interp_ops, advec_ops, rhs_terms
-
-end
-
 # This function needs to be given 
 #           T - how many days to integrate the model for
 #           nx, ny - how many grid cells in x and y directions, respectively
@@ -75,7 +57,7 @@ function integrate(T, nx, ny)
     u_v_eta = gyre_vector(uout, vout, etaout)
     
     @time for t in 1:Trun
-        advance_check(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
+        advance(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops) 
     end
     
     u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)
@@ -93,7 +75,7 @@ end
 #           interp - structure with interpolation operators 
 #           advec - structure with advection operators (special interpolations)
 #           rhs - preallocated rhs terms 
-function main(Trun, u_v_eta, grid, params, grad, interp, advec, rhs)
+function main(Trun, u_v_eta, grid, rhs, params, interp, grad, advec)
 
     for t in 1:Trun
         advance(u_v_eta, grid, rhs, params, interp, grad, advec) 
@@ -101,28 +83,36 @@ function main(Trun, u_v_eta, grid, params, grad, interp, advec, rhs)
     
     return nothing  
     
-    end
-    
+end
 
-T = 10              # how many days to integrate for
-nx = 30             # grid resolution in x-direction
-ny = 30             # grid resolution in y-direction
+nx = 20             # grid resolution in x-direction
+ny = 20             # grid resolution in y-direction
 
-# setup all necessary structures 
-grid_params, gyre_params, grad_ops, interp_ops, advec_ops, rhs_terms = setup(nx, ny)
+Lx = 3840e3                     # E-W length of the domain [meters]
+Ly = 3840e3                     # N-S length of the domain [meters]
 
-Trun = days_to_seconds(T, gyre_params.dt)
+grid_params = build_grid(Lx, Ly, nx, ny)
+gyre_params = def_params(grid_params)
 
-uout = zeros(grid_params.Nu)
-vout = zeros(grid_params.Nv)
-etaout = zeros(grid_params.NT)
+# building discrete operators 
+grad_ops = build_derivs(grid_params)                # discrete gradient operators 
+interp_ops = build_interp(grid_params, grad_ops)    # discrete interpolation operators (travels between grids)
+advec_ops = build_advec(grid_params)
+rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params.NT, Nq = grid_params.Nq)
 
-u_v_eta = gyre_vector(uout, vout, etaout)
-
-# trying to add Enzyme 
+u_v_eta = gyre_vector(zeros(grid_params.Nu), zeros(grid_params.Nv), zeros(grid_params.NT))
 ad_u_v_eta = gyre_vector(zeros(grid_params.Nu), zeros(grid_params.Nv), zeros(grid_params.NT))
-autodiff(advance,
-    # Const(Trun),
+
+ad_grad_ops = deepcopy(grad_ops)
+ad_interp_ops = deepcopy(interp_ops)
+ad_advec_ops = deepcopy(advec_ops)
+
+# checking that the function does in fact run
+Trun = days_to_seconds(10, gyre_params.dt)
+main(Trun, u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops);
+
+autodiff(main,
+    Const(Trun),
     Duplicated(u_v_eta, ad_u_v_eta),
     grid_params,
     rhs_terms,
