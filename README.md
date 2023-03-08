@@ -1,5 +1,7 @@
 # Estimation and UQ of eddy momentum stresses
 
+![Surface displacement after ten years of integration](./10yr_eta.png)
+
 The goal of this project is to leverage a differentiable Oceananigans.jl to estimate eddy momentum stresses in an idealized domain. We are also interested in quantifying the uncertainties in these eddy momentum stresses.
 
 **Eddy momentum stresses** (often referred to as Reynolds stresses) represent the effect of small-scale (mesoscale) eddies on the large-scale mean flow. Since ocean models are often too coarse to resolve small-scale eddy effects (like eddy momentum stresses), these effects need to be parameterized in ocean models. For more background information on mesoscale eddies, mesoscale eddy parameterizations, eddy momentum stresses, and techniques to estimate the latter, see the issue "Background material".
