@@ -1,5 +1,6 @@
 # minimizing the error I'm getting from Enzyme
-using Enzyme, Parameters
+using Parameters
+using Enzyme_jll#main
 
 mutable struct gyre_vector
     u::Vector{Float64}
@@ -14,7 +15,7 @@ end
 
 function advance(u_v_eta, rhs)
 
-    rk_b = [1/2, 1/2, 1.]
+    rk_b = [1/2, 1/2, 1]
     rhs.u0 .= u_v_eta.u
     rhs.u0 .= rhs.u0 
 
