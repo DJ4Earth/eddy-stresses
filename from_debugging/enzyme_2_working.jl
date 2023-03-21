@@ -1,7 +1,6 @@
 using Plots, SparseArrays, Parameters
 using JLD2
-using Enzyme 
-# using Enzyme_jll#main
+using Enzyme#main
 
 include("init_structs.jl")
 include("init_params.jl")
@@ -10,8 +9,8 @@ include("build_discrete_operators.jl")
 include("compute_time_deriv.jl")
 include("advance_c_grid.jl")
 
-nx = 10            # grid resolution in x-direction
-ny = 10             # grid resolution in y-direction
+nx = 50            # grid resolution in x-direction
+ny = 50             # grid resolution in y-direction
 
 Lx = 3840e3                     # E-W length of the domain [meters]
 Ly = 3840e3                     # N-S length of the domain [meters]
@@ -44,7 +43,7 @@ u_v_eta = gyre_vector(uout, vout, etaout)
     push!(eta, copy(u_v_eta.eta))
 end
 
-# statem = vec_to_mat(u[end], v[end], eta[end], grid_params)
+ad_rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params.NT, Nq = grid_params.Nq)
 
 ad_eta = zeros(grid_params.NT)
 ad_eta[13] = 0.0;
@@ -56,15 +55,15 @@ u_v_eta_ = gyre_vector(copy(u[end]), copy(v[end]), copy(eta[end]))
 @show ad_u_v_eta
 @show ad_u_v_eta.eta[13]
 @show maximum(u_v_eta_.u), maximum(u_v_eta_.v), maximum(u_v_eta_.eta)
-autodiff(advance, 
-    Duplicated(u_v_eta_, ad_u_v_eta),
-    Const(grid_params),
-    Const(rhs_terms), 
-    Const(gyre_params),
-    Const(interp_ops),
-    Const(grad_ops),
-    Const(advec_ops)
-)
+autodiff(Reverse, advance,
+        Duplicated(u_v_eta_, ad_u_v_eta),
+        Const(grid_params),
+        Duplicated(rhs_terms, ad_rhs_terms),
+        Const(gyre_params),
+        Const(interp_ops),
+        Const(grad_ops),
+        Const(advec_ops)
+    )
 @show ad_u_v_eta.eta[13]
 
 # runs but creates divergences for some reason  

@@ -96,12 +96,7 @@ end
 
 function ad_calc(grid, rhs, params, interp, grad, advec)
 
-    ad_grid = deepcopy(grid)
-    ad_grad = deepcopy(grad)
-    ad_interp = deepcopy(interp)
-    ad_advec = deepcopy(advec)
-    ad_params = deepcopy(params)
-    ad_rhs = deepcopy(rhs)
+    ad_rhs = RHS_terms(grid.Nu, grid.Nv, grid.NT, grid.Nq)
 
     T = days_to_seconds(2, params.dt)
 
@@ -152,7 +147,5 @@ advec_ops = build_advec(grid_params)
 rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params.NT, Nq = grid_params.Nq)
 
 u, v, eta, ad = ad_calc(grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops)
-
-Enzyme.API.printtype!(true)
 
 # u_v_eta = gyre_vector(zeros(grid_params.Nu), zeros(grid_params.Nv), zeros(grid_params.NT))

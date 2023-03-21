@@ -1,0 +1,18 @@
+ERROR: LoadError: MethodError: no method matching autodiff(::typeof(advance), ::Duplicated{gyre_vector}, ::Const{Grid}, ::Const{RHS_terms}, ::Const{Params}, ::Const{Interps}, ::Const{Derivatives}, ::Const{Advection})
+Closest candidates are:
+  autodiff(::F, !Matched::EnzymeCore.Mode, ::Any...) where F at ~/.julia/packages/Enzyme/wSCid/src/Enzyme.jl:318
+  autodiff(!Matched::CMode, ::FA, ::Any...) where {FA<:EnzymeCore.Annotation, CMode<:EnzymeCore.Mode} at ~/.julia/packages/Enzyme/wSCid/src/Enzyme.jl:219
+  autodiff(!Matched::CMode, ::F, ::Any...) where {F, CMode<:EnzymeCore.Mode} at ~/.julia/packages/Enzyme/wSCid/src/Enzyme.jl:210
+  ...
+Stacktrace:
+ [1] top-level scope
+   @ ~/Documents/GitHub/eddy-stresses/src/enzyme_2.jl:58
+in expression starting at /Users/swilliamson/Documents/GitHub/eddy-stresses/src/enzyme_2.jl:58
+  0.996020 seconds (5.98 M allocations: 544.179 MiB, 7.06% gc time, 84.69% compilation time)
+ad_u_v_eta = gyre_vector
+  u: Array{Float64}((90,)) [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  v: Array{Float64}((90,)) [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  eta: Array{Float64}((100,)) [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+ad_u_v_eta.eta[13] = 0.0
+(maximum(u_v_eta_.u), maximum(u_v_eta_.v), maximum(u_v_eta_.eta)) = (0.27617526855289026, 0.6616202768015059, 0.9059620083579067)
