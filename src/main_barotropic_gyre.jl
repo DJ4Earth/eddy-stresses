@@ -14,7 +14,6 @@
 using Plots, SparseArrays, Parameters
 using JLD2
 using Enzyme 
-# using Enzyme_jll#main
 
 using InteractiveUtils
 
@@ -94,42 +93,42 @@ function main(Trun, u_v_eta, grid, rhs, params, interp, grad, advec)
     
 end
 
-function ad_calc(grid, rhs, params, interp, grad, advec)
+# function ad_calc(grid, rhs, params, interp, grad, advec)
 
-    ad_rhs = RHS_terms(grid.Nu, grid.Nv, grid.NT, grid.Nq)
+#     ad_rhs = RHS_terms(grid.Nu, grid.Nv, grid.NT, grid.Nq)
 
-    T = days_to_seconds(2, params.dt)
+#     T = days_to_seconds(2, params.dt)
 
-    ad_eta = zeros(grid.NT)
-    ad_eta[13] = 1.0;
-    ad_u_v_eta = gyre_vector(zeros(grid.Nu), zeros(grid.Nv), ad_eta)
+#     ad_eta = zeros(grid.NT)
+#     ad_eta[13] = 1.0;
+#     ad_u_v_eta = gyre_vector(zeros(grid.Nu), zeros(grid.Nv), ad_eta)
 
-    u_v_eta = gyre_vector(zeros(grid.Nu), zeros(grid.Nv), ad_eta)
-    main(T, u_v_eta, grid, rhs, params, interp, grad, advec)
+#     u_v_eta = gyre_vector(zeros(grid.Nu), zeros(grid.Nv), ad_eta)
+#     main(T, u_v_eta, grid, rhs, params, interp, grad, advec)
 
-    # computing and storing all the states 
-    # u, v, eta = integrate(1, 5, 5)
+#     # computing and storing all the states 
+#     # u, v, eta = integrate(1, 5, 5)
 
-    for j in T+1:-1:1 
+#     for j in T+1:-1:1 
 
-        u_v_eta = gyre_vector(u[end], v[end], eta[end])
+#         u_v_eta = gyre_vector(u[end], v[end], eta[end])
 
-        autodiff(main, 
-            T,
-            Duplicated(u_v_eta, ad_u_v_eta),
-            DuplicatedNoNeed(grid, ad_grid),
-            DuplicatedNoNeed(rhs, ad_rhs),
-            DuplicatedNoNeed(params, ad_params),
-            DuplicatedNoNeed(interp, ad_interp),
-            DuplicatedNoNeed(grad, ad_grad),
-            DuplicatedNoNeed(advec, ad_advec)
-        )
+#         autodiff(main, 
+#             T,
+#             Duplicated(u_v_eta, ad_u_v_eta),
+#             DuplicatedNoNeed(grid, ad_grid),
+#             DuplicatedNoNeed(rhs, ad_rhs),
+#             DuplicatedNoNeed(params, ad_params),
+#             DuplicatedNoNeed(interp, ad_interp),
+#             DuplicatedNoNeed(grad, ad_grad),
+#             DuplicatedNoNeed(advec, ad_advec)
+#         )
 
-    end
+#     end
 
-    return u, v, eta, ad_u_v_eta
+#     return u, v, eta, ad_u_v_eta
 
-end
+# end
 
 nx = 5             # grid resolution in x-direction
 ny = 5             # grid resolution in y-direction

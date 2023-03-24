@@ -12,6 +12,80 @@ end
     eta::Vector{Float64}
 end
 
+@with_kw mutable struct SWM_pde
+    # To initialize struct just need to specify the following, the rest
+    # of the entries will follow
+
+    Nu::Int
+    Nv::Int
+    NT::Int
+    Nq::Int
+
+    u::Vector{Float64} = zeros(Nu)
+    v::Vector{Float64} = zeros(Nv)
+    eta::Vector{Float64} = zeros(NT)
+
+    # since everything that matters to the derivative needs to live in a single structure, 
+    # this will also contain all of the placeholders for terms on the RHS of the system
+
+    # Appear in advance
+    umid::Vector{Float64} = zeros(Nu)
+    vmid::Vector{Float64} = zeros(Nv)
+    etamid::Vector{Float64} = zeros(NT)
+    u0::Vector{Float64} = zeros(Nu) 
+    v0::Vector{Float64} = zeros(Nv)
+    eta0::Vector{Float64} = zeros(NT)
+    u1::Vector{Float64} = zeros(Nu)
+    v1::Vector{Float64} = zeros(Nv)
+    eta1::Vector{Float64} = zeros(NT)
+
+    # Appear in comp_u_v_eta_t
+    h::Vector{Float64} = zeros(NT)          # height of water columns [meters]
+
+    h_u::Vector{Float64} = zeros(Nu)        # height of water columns interpolated to u-grid 
+    h_v::Vector{Float64} = zeros(Nv)        # height of water columns interpolated to v-grid 
+    h_q::Vector{Float64} = zeros(Nq)
+
+    U::Vector{Float64} = zeros(Nu)
+    V::Vector{Float64} = zeros(Nv)
+
+    IuT_u1::Vector{Float64} = zeros(NT)
+    IvT_v1::Vector{Float64} = zeros(NT)
+    kinetic::Vector{Float64} = zeros(NT)
+
+    kinetic_sq::Vector{Float64} = zeros(NT)
+
+    Gvx_v1::Vector{Float64} = zeros(Nq)
+    Guy_u1::Vector{Float64} = zeros(Nq)
+    q::Vector{Float64} = zeros(Nq)
+    p::Vector{Float64} = zeros(NT)
+
+    ITu_ksq::Vector{Float64} = zeros(Nu)
+    ITv_ksq::Vector{Float64} = zeros(Nv)
+    bfric_u::Vector{Float64} = zeros(Nu)
+    bfric_v::Vector{Float64} = zeros(Nv)
+
+    LLu_u1::Vector{Float64} = zeros(Nu)
+    LLv_v1::Vector{Float64} = zeros(Nv)
+    Mu::Vector{Float64} = zeros(Nu)
+    Mv::Vector{Float64} = zeros(Nv)
+
+    GTx_p::Vector{Float64} = zeros(Nu)
+    u_t::Vector{Float64} = zeros(Nu)
+    GTy_p::Vector{Float64} = zeros(Nv)
+    v_t::Vector{Float64} = zeros(Nv)
+    Gux_U::Vector{Float64} = zeros(NT)
+    Gvy_V::Vector{Float64} = zeros(NT)
+    eta_t::Vector{Float64} = zeros(NT)
+    adv_u::Vector{Float64} = zeros(Nu)
+    adv_v::Vector{Float64} = zeros(Nv)
+
+    # Appear in comp_advection 
+    AL1q::Vector{Float64} = zeros(NT)
+    AL2q::Vector{Float64} = zeros(NT)
+
+end
+
 # constants that appear in various places 
 struct Params 
     dt::Float64                     # timestep
@@ -33,7 +107,7 @@ struct Grid
     Ly::Int             # length of box in y direction [meters]
     nx::Int             # total number of grid cells in x direction
     ny::Int             # total number of grid cells in y direction
-    NT::Int              # total number of cells on eta-grid 
+    NT::Int             # total number of cells on eta-grid 
     Nu::Int             # total number of cells on u-grid
     Nv::Int             # total number of cells on v-grid
     Nq::Int             # total number of cells on vorticity grid 
@@ -169,8 +243,6 @@ end
     # Appear in comp_advection 
     AL1q::Vector{Float64} = zeros(NT)
     AL2q::Vector{Float64} = zeros(NT)
-    # ALeur_q::Vector{Float64}
-    # ALeul_q::Vector{Float64}
     
 end
 

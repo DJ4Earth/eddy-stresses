@@ -19,8 +19,8 @@ function main(T, u_v_eta, grid, rhs, params, interp, grad, advec)
     
 end
 
-nx = 10            # grid resolution in x-direction
-ny = 10             # grid resolution in y-direction
+nx = 15             # grid resolution in x-direction
+ny = 15             # grid resolution in y-direction
 
 Lx = 3840e3                     # E-W length of the domain [meters]
 Ly = 3840e3                     # N-S length of the domain [meters]

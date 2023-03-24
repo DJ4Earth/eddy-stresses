@@ -1,5 +1,4 @@
-# Contains one function advance, which just takes a single step forward in time. 
-# This will differ from advance.jl: here I'm going to try and implement a C-grid scheme 
+# Contains one function advance, which just takes a single step forward in time.
 
 function advance(u_v_eta, grid, rhs, params, interp, grad, advec) 
 
@@ -38,13 +37,58 @@ function advance(u_v_eta, grid, rhs, params, interp, grad, advec)
 
     end
 
-    @assert all(x -> x < 10.0, rhs.u0)
-    @assert all(x -> x < 10.0, rhs.v0)
-    @assert all(x -> x < 10.0, rhs.eta0)
+    @assert all(x -> x < 7.0, rhs.u0)
+    @assert all(x -> x < 7.0, rhs.v0)
+    @assert all(x -> x < 7.0, rhs.eta0)
 
     copyto!(u_v_eta.u, rhs.u0)
     copyto!(u_v_eta.v, rhs.v0)
     copyto!(u_v_eta.eta, rhs.eta0)
+
+    return nothing 
+
+end 
+
+function advance2(states_rhs::SWM_pde, grid::Grid, params::Params, interp::Interps, grad::Derivatives, advec::Advection) 
+
+    nx = grid.nx 
+    dt = params.dt
+
+    # we now use RK4 as the timestepper, here I'm storing the coefficients needed for this 
+    rk_a = [1/6, 1/3, 1/3, 1/6]
+    rk_b = [1/2, 1/2, 1.]
+
+    states_rhs.umid .= states_rhs.u
+    states_rhs.vmid .= states_rhs.v
+    states_rhs.etamid .= states_rhs.eta
+
+    states_rhs.u0 .= states_rhs.u
+    states_rhs.v0 .= states_rhs.v
+    states_rhs.eta0 .= states_rhs.eta
+
+    states_rhs.u1 .= states_rhs.u
+    states_rhs.v1 .= states_rhs.v
+    states_rhs.eta1 .= states_rhs.eta
+
+    for j in 1:4
+
+        comp_u_v_eta_t(nx, states_rhs, params, interp, grad, advec)
+
+        if j < 4
+            states_rhs.u1 .= states_rhs.umid .+ rk_b[j] .* dt .* states_rhs.u_t
+            states_rhs.v1 .= states_rhs.vmid .+ rk_b[j] .* dt .* states_rhs.v_t
+            states_rhs.eta1 .= states_rhs.etamid .+ rk_b[j] .* dt .* states_rhs.eta_t
+        end
+
+        states_rhs.u0 .= states_rhs.u0 .+ rk_a[j] .* dt .* states_rhs.u_t
+        states_rhs.v0 .= states_rhs.v0 .+ rk_a[j] .* dt .* states_rhs.v_t 
+        states_rhs.eta0 .= states_rhs.eta0 .+ rk_a[j] .* dt .* states_rhs.eta_t 
+
+    end
+
+    @assert all(x -> x < 7.0, states_rhs.u0)
+    @assert all(x -> x < 7.0, states_rhs.v0)
+    @assert all(x -> x < 7.0, states_rhs.eta0)
 
     return nothing 
 
