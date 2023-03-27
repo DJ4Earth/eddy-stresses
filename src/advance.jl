@@ -1,6 +1,18 @@
-# Contains one function advance, which just takes a single step forward in time.
+# Contains two functions that ultimately do the same thing: they advance the model one step forward in time 
+# using an RK4 timestep. The difference between the two comes from the function call itself, one takes 
+# my structure RHS_terms, which just allocated space to terms on the RHS of the system. Say, anything that 
+# appears in the computation of the time derivatives. The second version was edited to use with Checkpointing.jl, 
+# I needed all of the terms that matter to the derivative to appear in a *single* structure, so keeping 
+# RHS_terms separate from the states was no longer a good idea. 
 
-function advance(u_v_eta, grid, rhs, params, interp, grad, advec) 
+function advance(u_v_eta::gyre_vector, 
+        grid::Grid, 
+        rhs::RHS_terms, 
+        params::Params, 
+        interp::Interps, 
+        grad::Derivatives, 
+        advec::Advection
+    ) 
 
     nx = grid.nx 
     dt = params.dt
@@ -49,7 +61,13 @@ function advance(u_v_eta, grid, rhs, params, interp, grad, advec)
 
 end 
 
-function advance2(states_rhs::SWM_pde, grid::Grid, params::Params, interp::Interps, grad::Derivatives, advec::Advection) 
+function advance(states_rhs::SWM_pde, 
+        grid::Grid, 
+        params::Params, 
+        interp::Interps, 
+        grad::Derivatives, 
+        advec::Advection
+    ) 
 
     nx = grid.nx 
     dt = params.dt

@@ -1,4 +1,4 @@
-# This script will contain the structures needed for the barotropic gyre model
+# This script will contain the structures needed for a barotropic gyre model
 
 @with_kw mutable struct gyre_matrix
     u::Matrix{Float64}
@@ -12,7 +12,6 @@ end
     eta::Vector{Float64}
 end
 
-# Combines the contents of gyre_vector with RHS_terms, explicitly needed for Checkpointing.jl
 @with_kw mutable struct SWM_pde
     # To initialize struct just need to specify the following, the rest
     # of the entries will follow
@@ -87,7 +86,7 @@ end
 
 end
 
-# Parameters that appear in the model in various places
+# constants that appear in various places 
 struct Params 
     dt::Float64                     # timestep
     g::Float64                      # gravity
@@ -102,7 +101,7 @@ struct Params
 end
 
 
-# Grid constants
+# parameters relating to the grid 
 struct Grid
     Lx::Int             # length of box in x direction [meters]
     Ly::Int             # length of box in y direction [meters]
@@ -118,16 +117,11 @@ end
 
 # The gyre model written by Kloewer and used by Zanna leaves all the states as vectors stacked 
 # row-wise. So, computing things like gradients, Laplacians, etc. become matrix operations, and 
-# in the following structures we store all of these operators for use in computing the RHS of the system 
-# (namely the time derivatives). Boundary conditions are built into the derivative operators. 
+# in this struct we store all of these operators for use in computing the RHS of the system 
+# (namely the time derivatives)
 
-# Discrete derivative operators. To avoid mistakes (and because the convention is nice) I mimicked Milan's 
-# method for labelling these operators. For example, GTx is the x-derivative for elements living in cell-centers 
-# and applying this operator results in a vector whose elements live on the u-grid 
 struct Derivatives
-
-    # Discrete gradients 
-    GTx::SparseMatrixCSC{Float64, Int64}        
+    GTx::SparseMatrixCSC{Float64, Int64}
     GTy::SparseMatrixCSC{Float64, Int64}
     Gux::SparseMatrixCSC{Float64, Int64}
     Guy::SparseMatrixCSC{Float64, Int64}
@@ -135,8 +129,6 @@ struct Derivatives
     Gvy::SparseMatrixCSC{Float64, Int64}
     Gqy::SparseMatrixCSC{Float64, Int64}
     Gqx::SparseMatrixCSC{Float64, Int64}
-
-    # Discrete Laplacian operators 
     Lu::SparseMatrixCSC{Float64, Int64}
     Lv::SparseMatrixCSC{Float64, Int64}
     LT::SparseMatrixCSC{Float64, Int64}
@@ -145,8 +137,6 @@ struct Derivatives
     LLv::SparseMatrixCSC{Float64, Int64}
 end
 
-# Interpolation operators, move from one grid to another. For example Ivu moves from the v-grid (horizontal faces)
-# to elements on the u-grid
 struct Interps 
     Ivu::SparseMatrixCSC{Float64, Int64}
     Iuv::SparseMatrixCSC{Float64, Int64}
@@ -162,8 +152,6 @@ struct Interps
     ITq::SparseMatrixCSC{Float64, Int64}
 end
 
-# These are very specific operators that appear only in the computation of the advection terms. 
-# The best place to read about them is in Milan's lovely documentation for his Python code 
 struct Advection
     AL1::SparseMatrixCSC{Float64, Int64}
     AL2::SparseMatrixCSC{Float64, Int64}

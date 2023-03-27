@@ -26,7 +26,7 @@ include("init_params.jl")
 include("build_grid.jl")
 include("build_discrete_operators.jl")
 include("compute_time_deriv.jl")
-include("advance_c_grid.jl")
+include("advance.jl")
 
 # This function needs to be given 
 #           T - how many days to integrate the model for

@@ -18,7 +18,7 @@ include("init_params.jl")
 include("build_grid.jl")
 include("build_discrete_operators.jl")
 include("compute_time_deriv.jl")
-include("advance_c_grid.jl")
+include("advance.jl")
 
 function setup(; nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
 

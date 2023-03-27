@@ -19,7 +19,6 @@ function build_grid(Lx, Ly, nx, ny)
     x = (dx/2):dx:Lx
     y = dy/2:dy:Ly
 
-    # I don't currently return these vectors but might need them later so leaving them here 
     xu = x[1:end-1] .+ dx/2 
     yu = copy(y)
     

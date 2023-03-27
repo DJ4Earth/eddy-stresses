@@ -1,4 +1,60 @@
-function comp_u_v_eta_t(nx::Int, rhs::SWM_pde, params::Params, interp::Interps, grad::Derivatives, advec::Advection) 
+# Contains two functions: one that computes the time derivatives and another that 
+# computes the advection term (needed for the time derivatives). Two versions of each function
+# that just depend on what type of structure I'm passing for rhs
+
+function comp_u_v_eta_t(nx::Int, 
+        rhs::RHS_terms, 
+        params::Params, 
+        interp::Interps, 
+        grad::Derivatives, 
+        advec::Advection
+    ) 
+
+    rhs.h .= rhs.eta1 .+ params.H 
+
+    rhs.h_u .= interp.ITu * rhs.h
+    rhs.h_v .= interp.ITv * rhs.h
+    rhs.h_q .= interp.ITq * rhs.h
+
+    rhs.U .= rhs.u1 .* rhs.h_u 
+    rhs.V .= rhs.v1 .* rhs.h_v 
+
+    rhs.kinetic .= interp.IuT * (rhs.u1.^2) .+ interp.IvT * (rhs.v1.^2)
+
+    # Kloewer defined new terms q and p corresponding to potential vorticity and 
+    # Bernoulli potential respectively. To avoid errors in my mimic I'm following 
+    # along and doing the same 
+    rhs.q .= (params.coriolis .+ grad.Gvx * rhs.v1 .- grad.Guy * rhs.u1) ./ rhs.h_q 
+    rhs.p .= 0.5 .* rhs.kinetic .+ params.g .* rhs.h
+
+    # bottom friction
+    rhs.kinetic_sq .= (rhs.kinetic).^(1/2)
+    rhs.bfric_u .= params.bottom_drag .* ((interp.ITu * rhs.kinetic_sq) .* rhs.u1) ./ rhs.h_u
+    rhs.bfric_v .= params.bottom_drag .* ((interp.ITv * rhs.kinetic_sq) .* rhs.v1) ./ rhs.h_v
+
+    # deal with the advection term 
+    comp_advection(nx, rhs, advec)
+
+    rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
+    rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
+
+    rhs.u_t .= rhs.adv_u .- grad.GTx * rhs.p .+ params.wind_stress ./ rhs.h_u .- rhs.Mu .- rhs.bfric_u
+
+    rhs.v_t .= rhs.adv_v .- grad.GTy * rhs.p .- rhs.Mv .- rhs.bfric_v 
+
+    rhs.eta_t .= - (grad.Gux * rhs.U .+ grad.Gvy * rhs.V)
+
+    return nothing
+
+end 
+
+function comp_u_v_eta_t(nx::Int, 
+        rhs::SWM_pde, 
+        params::Params, 
+        interp::Interps, 
+        grad::Derivatives, 
+        advec::Advection
+    ) 
 
     rhs.h .= rhs.eta1 .+ params.H 
 
@@ -91,43 +147,3 @@ function comp_advection(nx::Int, rhs::RHS_terms, advec::Advection)
     return nothing
 
 end
-
-function comp_u_v_eta_t(nx::Int, rhs::RHS_terms, params::Params, interp::Interps, grad::Derivatives, advec::Advection) 
-
-    rhs.h .= rhs.eta1 .+ params.H 
-
-    rhs.h_u .= interp.ITu * rhs.h
-    rhs.h_v .= interp.ITv * rhs.h
-    rhs.h_q .= interp.ITq * rhs.h
-
-    rhs.U .= rhs.u1 .* rhs.h_u 
-    rhs.V .= rhs.v1 .* rhs.h_v 
-
-    rhs.kinetic .= interp.IuT * (rhs.u1.^2) .+ interp.IvT * (rhs.v1.^2)
-
-    # Kloewer defined new terms q and p corresponding to potential vorticity and 
-    # Bernoulli potential respectively. To avoid errors in my mimic I'm following 
-    # along and doing the same 
-    rhs.q .= (params.coriolis .+ grad.Gvx * rhs.v1 .- grad.Guy * rhs.u1) ./ rhs.h_q 
-    rhs.p .= 0.5 .* rhs.kinetic .+ params.g .* rhs.h
-
-    # bottom friction
-    rhs.kinetic_sq .= (rhs.kinetic).^(1/2)
-    rhs.bfric_u .= params.bottom_drag .* ((interp.ITu * rhs.kinetic_sq) .* rhs.u1) ./ rhs.h_u
-    rhs.bfric_v .= params.bottom_drag .* ((interp.ITv * rhs.kinetic_sq) .* rhs.v1) ./ rhs.h_v
-
-    # deal with the advection term 
-    comp_advection(nx, rhs, advec)
-
-    rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
-    rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
-
-    rhs.u_t .= rhs.adv_u .- grad.GTx * rhs.p .+ params.wind_stress ./ rhs.h_u .- rhs.Mu .- rhs.bfric_u
-
-    rhs.v_t .= rhs.adv_v .- grad.GTy * rhs.p .- rhs.Mv .- rhs.bfric_v 
-
-    rhs.eta_t .= - (grad.Gux * rhs.U .+ grad.Gvy * rhs.V)
-
-    return nothing
-
-end 
