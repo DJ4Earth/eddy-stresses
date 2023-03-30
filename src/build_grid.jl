@@ -46,16 +46,6 @@ function build_grid(Lx, Ly, nx, ny)
 
 end
 
-# This function allows me to specify the number of days that we want to run the model, 
-# and convert that into the total steps to take 
-function days_to_seconds(T, dt)
-
-    Trun = Int(ceil((T * 24 * 3600) / dt))
-
-    return Trun
-
-end
-
 # This function will just serve to take the vectors containing state information 
 # and transform them to matrices 
 function vec_to_mat(u, v, eta, grid)

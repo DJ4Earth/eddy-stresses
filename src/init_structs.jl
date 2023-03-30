@@ -29,6 +29,13 @@ end
     # Placeholder for cost function computation 
     J::Float64 = 0.0
 
+    # Placeholder for total steps to integrate for 
+    T::Int 
+
+    # Place to store the data from the high-resolution run and the scaling that we chose 
+    scaling::Int
+    data::Matrix{Float64}
+
     # since everything that matters to the derivative needs to live in a single structure, 
     # this will also contain all of the placeholders for terms on the RHS of the system
 

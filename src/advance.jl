@@ -158,6 +158,9 @@ function integrate(T, nx, ny; Lx = 3840e3, Ly = 3840e3)
     
 end
 
+# ****IMPORTANT**** not yet sure if I'm moving between high and low res grids, need to check with Patrick
+# and come back here if there are issues with how I did it
+
 # This function needs to be given 
 #           Trun - how many days to integrate the model for
 #           nx_lowres, ny_lowres - grid resolution (number of cells in the x and y directions
@@ -166,7 +169,7 @@ end
 #                    manually if needed 
 # Theoretically, we should only ever run this function *once*, from there 
 # the data points will be stored as a JLD2 data file 
-function create_data(days, nx_lowres, ny_lowres; scaling = 2, Lx = 3840e3, Ly = 3840e3)
+function create_data(days, nx_lowres, ny_lowres; scaling = 5, Lx = 3840e3, Ly = 3840e3)
 
     nx_highres = nx_lowres * scaling
     ny_highres = ny_lowres * scaling 
@@ -193,11 +196,18 @@ function create_data(days, nx_lowres, ny_lowres; scaling = 2, Lx = 3840e3, Ly = 
         Nq = Nq
     )
 
-    data = zeros(grid_lowres.Nu + grid_lowres.Nv + grid_lowres.NT, Trun+1)
+    data = zeros(grid_lowres.Nu + grid_lowres.Nv + grid_lowres.NT, Trun)
 
     temp_u = zeros(grid_lowres.Nu)
     temp_v = zeros(grid_lowres.Nv)
     temp_eta = zeros(grid_lowres.NT)
+
+    # the steps where we want data in the high res model correspond to (roughly) scaling * t for t 
+    # in the low res model. for simplicity I'm going to keep the times in the low res where I want to have 
+    # data and then just scale them in the for loop to find corresponding high res data points  
+
+    # for an initial effort I'm just going to assume data at every timestep for simplicity, 
+    # and will be running pretty course resolution models for both the high and low res 
 
     temp_matrices = vec_to_mat(u_v_eta_rhs.u, u_v_eta_rhs.v, u_v_eta_rhs.eta, grid_highres)
     
@@ -206,7 +216,8 @@ function create_data(days, nx_lowres, ny_lowres; scaling = 2, Lx = 3840e3, Ly = 
     temp_eta .= reshape(temp_matrices.eta[scaling:scaling:end, scaling:scaling:end]', grid_lowres.NT)
 
     data[:, 1] .= [temp_u; temp_v; temp_eta]
-    for t in 2:Trun+1
+
+    for t in 2:Trun
 
         advance(u_v_eta_rhs, grid_highres, params, interp, grad, advec) 
 
@@ -222,6 +233,6 @@ function create_data(days, nx_lowres, ny_lowres; scaling = 2, Lx = 3840e3, Ly = 
 
     end
     
-    return data, u_v_eta_rhs
+    return data
     
 end

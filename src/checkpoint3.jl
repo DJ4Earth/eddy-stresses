@@ -1,6 +1,5 @@
-# ****this script is just for debugging, I don't like editing main code directly until I know what I'm doing works
-# This script is almost identical to main_barotropic_gyre, except here I'm attempting to add in
-# the Julia package Checkpointing, as I was running into memory issues applying Enzyme
+# making an effort at the whole experiment here, done with Enzyme + checkpointing 
+# once this is running and working will structure a main file with it. 
 
 using Plots, SparseArrays, Parameters, UnPack
 using JLD2, LinearAlgebra
@@ -14,8 +13,9 @@ include("advance.jl")
 include("cost_func.jl")
 include("compute_time_deriv.jl")
 
-
-function setup(; days = 5, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
+# This function will setup the structures needed to integrate the model. Comes with default values, but
+# these can be specified if desired. 
+function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -32,22 +32,23 @@ function setup(; days = 5, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
 
     T = days_to_seconds(days, params.dt)
 
+    data = create_data(T, nx, ny)
+
     states_rhs = SWM_pde(Nu = Nu, 
         Nv = Nv,
         NT = NT, 
         Nq = Nq, 
-        T = T
+        T = T,
+        scaling = 5,
+        data = data
     )
-
-    data = create_data(days, nx, ny)
 
     return grid, params, grad, interp, advec, states_rhs, data
 end
 
 
-
 function chkpt_maybe(
-    chkpt_struct::SWM_pde_debug,
+    chkpt_struct::SWM_pde,
     chkpt_scheme::Scheme,
     grid::Grid,
     params::Params,
@@ -55,30 +56,39 @@ function chkpt_maybe(
     grad::Derivatives,
     advec::Advection
 )
-    @checkpoint_struct chkpt_scheme chkpt_struct for j in 1:chkpt_struct.T
+    data_timesteps = [2:2:chkpt_struct.T]
 
-        advance_debug1(chkpt_struct, grid, params, interp, grad, advec)
+    @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
 
-        costfunction(state, data(t))
+        advance(chkpt_struct, grid, params, interp, grad, advec)
+
+        if t in data_timesteps 
+            chkpt_struct.J += cost_func(chkpt_struct.data[:, t*chkpt_struct.scaling], 
+                chkpt_struct.u0,
+                chkpt_struct.v0,
+                chkpt_struct.eta0
+            )
+        end
+
         copyto!(chkpt_struct.u, chkpt_struct.u0)
         copyto!(chkpt_struct.v, chkpt_struct.v0)
         copyto!(chkpt_struct.eta, chkpt_struct.eta0)
 
     end
-    return 
+
 end
 
 grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct = setup()
 
 snaps = 3
 verbose = 0
-revolve = Revolve{SWM_pde_debug}(chkpt_struct.T, snaps; verbose=verbose)
+revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 
 
 # for checking that the forward integration still works 
 
 for t = 1:chkpt_struct.T
-    advance_debug1(chkpt_struct, grid, gyre_params, interp_ops, grad_ops, advec_ops)
+    advance(chkpt_struct, grid, gyre_params, interp_ops, grad_ops, advec_ops)
     copyto!(chkpt_struct.u, chkpt_struct.u0)
     copyto!(chkpt_struct.v, chkpt_struct.v0)
     copyto!(chkpt_struct.eta, chkpt_struct.eta0)
