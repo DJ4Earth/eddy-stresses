@@ -62,8 +62,9 @@ function def_params(grid)
     # Yu = vec([k for k in yu, j in 1:length(xu)]')
     # wind_stress = (-0.1 * sin.(pi * (Yu./Ly))) ./ rho_c
 
-    dt = Int(floor((0.9 * min(dx, dy)) / (sqrt(g * H))))   # CFL condition for dt [seconds]
-    
+    # dt = Int(floor((0.9 * min(dx, dy)) / (sqrt(g * H))))   # CFL condition for dt [seconds]
+    dt = (0.9 * min(dx, dy)) / (sqrt(g * H))   # CFL condition for dt [seconds]
+
     gyre_params = Params(
     dt,
     g, 

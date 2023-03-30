@@ -1,8 +1,8 @@
 # This function builds all the parameters relating to the grid. It takes 
 #       Lx - the length of the domain from E-W [meters]
 #       Ly - the length of the domain from N-S [meters]
-#       Nx - the number of cells in the E-W direction 
-#       Ny - the number of cells in the N-S direction 
+#       nx - the number of cells in the E-W direction 
+#       ny - the number of cells in the N-S direction 
 # and returns a structure with a bunch of different parameters all built
 # from the above inputs. 
 function build_grid(Lx, Ly, nx, ny)
@@ -50,9 +50,9 @@ end
 # and convert that into the total steps to take 
 function days_to_seconds(T, dt)
 
-    Trun_seconds = Int(ceil((T * 24 * 3600) / dt))
+    Trun = Int(ceil((T * 24 * 3600) / dt))
 
-    return Trun_seconds
+    return Trun
 
 end
 
@@ -67,5 +67,17 @@ function vec_to_mat(u, v, eta, grid)
     )
 
     return state_matrices
+
+end
+
+function mat_to_vec(um, vm, etam, grid)
+
+    state_vectors = gyre_vector(
+        reshape(um', grid.Nu),
+        reshape(vm', grid.Nv),
+        reshape(etam', grid.NT)
+    )
+
+    return state_vectors 
 
 end
