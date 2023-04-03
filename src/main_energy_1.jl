@@ -1,6 +1,9 @@
 # making an effort at the whole experiment here, done with Enzyme + checkpointing 
 # once this is running and working will structure a main file with it. 
 
+# This one will try to use Enzyme + checkpointing for an energy sensitivity
+# similar to the Burgers equation
+
 using Plots, SparseArrays, Parameters, UnPack
 using JLD2, LinearAlgebra
 using Enzyme, Checkpointing, Zygote
@@ -77,7 +80,7 @@ snaps = 3
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 
-energy = Zygote.gradient(chkpt_maybe, 
+denergy = Zygote.gradient(chkpt_maybe, 
     chkpt_struct, 
     revolve, 
     grid, 
