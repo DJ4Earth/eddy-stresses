@@ -77,10 +77,10 @@ uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.6"
 
 [[deps.Checkpointing]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "7f1ebfb6f3f4613324a96164ca04b21a69c48813"
+deps = ["ChainRulesCore", "DataStructures", "Enzyme", "HDF5", "LinearAlgebra", "Serialization"]
+git-tree-sha1 = "5ab88ae913faf9214094cb3ce0211886225d1ba5"
 uuid = "eb46d486-4f9c-4c3d-b445-a617f2a2f1ca"
-version = "0.1.0"
+version = "0.6.3"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -299,9 +299,9 @@ version = "3.3.8+0"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
-git-tree-sha1 = "7a2e790b1e2e6f648cfb25c4500c5de1f7b375ef"
+git-tree-sha1 = "9ade6983c3dbbd492cf5729f865fe030d1541463"
 uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-version = "8.6.5"
+version = "8.6.6"
 
 [[deps.GPUArraysCore]]
 deps = ["Adapt"]
@@ -355,6 +355,18 @@ version = "2.50.0+1"
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
+
+[[deps.HDF5]]
+deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Random", "Requires", "UUIDs"]
+git-tree-sha1 = "3dab31542b3da9f25a6a1d11159d4af8fdce7d67"
+uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+version = "0.16.14"
+
+[[deps.HDF5_jll]]
+deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "OpenSSL_jll", "Pkg", "Zlib_jll"]
+git-tree-sha1 = "4cc2bb72df6ff40b055295fdef6d92955f9dede8"
+uuid = "0234f1f7-429e-5d53-9886-15a909be8d59"
+version = "1.12.2+2"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "Dates", "IniFile", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
@@ -670,9 +682,9 @@ uuid = "91d4177d-7536-5919-b921-800302f37372"
 version = "1.3.2+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "d78db6df34313deaca15c5c0b9ff562c704fe1ab"
+git-tree-sha1 = "d321bf2de576bf25ec4d3e4360faca399afca282"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.5.0"
+version = "1.6.0"
 
 [[deps.PCRE2_jll]]
 deps = ["Artifacts", "Libdl"]

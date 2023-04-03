@@ -162,7 +162,7 @@ end
 # and come back here if there are issues with how I did it
 
 # This function needs to be given 
-#           Trun - how many days to integrate the model for
+#           days - how many days to integrate the model for
 #           nx_lowres, ny_lowres - grid resolution (number of cells in the x and y directions
 #                    respectively) of the courser grid
 #           Lx, Ly - size of the domain, have a default value but can set 

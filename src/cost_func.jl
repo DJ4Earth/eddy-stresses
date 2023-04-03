@@ -6,3 +6,9 @@ function data_misfit(d, u, v, eta)
     return dot((d - [u; v; eta]), (d - [u; v; eta]))
 
 end
+
+function energy(grid, u, v) 
+
+    return sum(u.^2 .+ v.^2) / (grid.nx * grid.ny)
+    
+end
