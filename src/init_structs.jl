@@ -30,6 +30,9 @@ end
     J::Float64 = 0.0
     energy::Float64 = 0.0 
 
+    # Placeholder for the scaling factor between the highres and lowres models 
+    scaling::Float64 = 0.0
+
     # Placeholder for total steps to integrate for 
     T::Int = 0
 

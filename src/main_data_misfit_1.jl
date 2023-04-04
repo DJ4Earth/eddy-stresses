@@ -32,15 +32,14 @@ function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     T = days_to_seconds(days, params.dt)
 
-    data = create_data(T, nx, ny)
+    data = create_data(T, nx, ny, [2:10:T])
 
     states_rhs = SWM_pde(Nu = Nu, 
         Nv = Nv,
         NT = NT, 
         Nq = Nq, 
         T = T,
-        scaling = 5,
-        data = data
+        scaling = 5
     )
 
     return grid, params, grad, interp, advec, states_rhs, data
@@ -50,20 +49,21 @@ end
 function chkpt_maybe(
     chkpt_struct::SWM_pde,
     chkpt_scheme::Scheme,
+    data::Matrix{Float64},
     grid::Grid,
     params::Params,
     interp::Interps,
     grad::Derivatives,
     advec::Advection
 )
-    data_timesteps = [2:2:chkpt_struct.T]
+    data_timesteps = [2:10:chkpt_struct.T]
 
     @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
 
         advance(chkpt_struct, grid, params, interp, grad, advec)
 
         if t in data_timesteps 
-            chkpt_struct.J += cost_func(chkpt_struct.data[:, t*chkpt_struct.scaling], 
+            chkpt_struct.J += cost_func(data[:, t*chkpt_struct.scaling], 
                 chkpt_struct.u0,
                 chkpt_struct.v0,
                 chkpt_struct.eta0
@@ -84,12 +84,15 @@ snaps = 3
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 
+Zygote.gradient(
 
-# for checking that the forward integration still works 
+)
 
-for t = 1:chkpt_struct.T
-    advance(chkpt_struct, grid, gyre_params, interp_ops, grad_ops, advec_ops)
-    copyto!(chkpt_struct.u, chkpt_struct.u0)
-    copyto!(chkpt_struct.v, chkpt_struct.v0)
-    copyto!(chkpt_struct.eta, chkpt_struct.eta0)
-end
+# # for checking that the forward integration still works 
+
+# for t = 1:chkpt_struct.T
+#     advance(chkpt_struct, grid, gyre_params, interp_ops, grad_ops, advec_ops)
+#     copyto!(chkpt_struct.u, chkpt_struct.u0)
+#     copyto!(chkpt_struct.v, chkpt_struct.v0)
+#     copyto!(chkpt_struct.eta, chkpt_struct.eta0)
+# end

@@ -18,7 +18,7 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
+function setup(; days = 10, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -35,8 +35,6 @@ function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     T = days_to_seconds(days, params.dt)
 
-    data = create_data(days, nx, ny)
-
     states_rhs = SWM_pde(Nu = Nu, 
         Nv = Nv,
         NT = NT, 
@@ -44,7 +42,7 @@ function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
         T = T
     )
 
-    return grid, params, grad, interp, advec, states_rhs, data
+    return grid, params, grad, interp, advec, states_rhs
 end
 
 
@@ -74,9 +72,9 @@ function chkpt_maybe(
 
 end
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, _ = setup()
+grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct = setup()
 
-snaps = 3
+snaps = 50
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 

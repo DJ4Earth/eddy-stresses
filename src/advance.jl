@@ -167,14 +167,14 @@ end
 #                    respectively) of the courser grid
 #           Lx, Ly - size of the domain, have a default value but can set 
 #                    manually if needed 
+#           data_steps - which timesteps we want to store data at
 # Theoretically, we should only ever run this function *once*, from there 
 # the data points will be stored as a JLD2 data file 
-function create_data(days, nx_lowres, ny_lowres; scaling = 5, Lx = 3840e3, Ly = 3840e3)
+function create_data(days, nx_lowres, ny_lowres, data_steps; scaling = 5, Lx = 3840e3, Ly = 3840e3)
 
     nx_highres = nx_lowres * scaling
     ny_highres = ny_lowres * scaling 
 
-    grid_lowres = build_grid(Lx, Ly, nx_lowres, ny_lowres)
     grid_highres = build_grid(Lx, Ly, nx_highres, ny_highres)
     params = def_params(grid_highres)
 
@@ -196,11 +196,7 @@ function create_data(days, nx_lowres, ny_lowres; scaling = 5, Lx = 3840e3, Ly = 
         Nq = Nq
     )
 
-    data = zeros(grid_lowres.Nu + grid_lowres.Nv + grid_lowres.NT, Trun)
-
-    temp_u = zeros(grid_lowres.Nu)
-    temp_v = zeros(grid_lowres.Nv)
-    temp_eta = zeros(grid_lowres.NT)
+    data = zeros(grid_highres.Nu + grid_highres.Nv + grid_highres.NT, Trun)
 
     # the steps where we want data in the high res model correspond to (roughly) scaling * t for t 
     # in the low res model. for simplicity I'm going to keep the times in the low res where I want to have 
@@ -209,23 +205,15 @@ function create_data(days, nx_lowres, ny_lowres; scaling = 5, Lx = 3840e3, Ly = 
     # for an initial effort I'm just going to assume data at every timestep for simplicity, 
     # and will be running pretty course resolution models for both the high and low res 
 
-    temp_matrices = vec_to_mat(u_v_eta_rhs.u, u_v_eta_rhs.v, u_v_eta_rhs.eta, grid_highres)
-    
-    temp_u .= reshape(temp_matrices.u[scaling:scaling:end, scaling:scaling:end]', grid_lowres.Nu)
-    temp_v .= reshape(temp_matrices.v[scaling:scaling:end, scaling:scaling:end]', grid_lowres.Nv)
-    temp_eta .= reshape(temp_matrices.eta[scaling:scaling:end, scaling:scaling:end]', grid_lowres.NT)
-
-    data[:, 1] .= [temp_u; temp_v; temp_eta]
+    data[:, 1] .= [u_v_eta_rhs.u; u_v_eta_rhs.v; u_v_eta_rhs.eta]
 
     for t in 2:Trun
 
         advance(u_v_eta_rhs, grid_highres, params, interp, grad, advec) 
 
-        temp_matrices = vec_to_mat(u_v_eta_rhs.u0, u_v_eta_rhs.v0, u_v_eta_rhs.eta0, grid_highres)
-        temp_u .= reshape(temp_matrices.u[scaling:scaling:end, scaling:scaling:end]', grid_lowres.Nu)
-        temp_v .= reshape(temp_matrices.v[scaling:scaling:end, scaling:scaling:end]', grid_lowres.Nv)
-        temp_eta .= reshape(temp_matrices.eta[scaling:scaling:end, scaling:scaling:end]', grid_lowres.NT)
-        data[:, t] .= [temp_u; temp_v; temp_eta]
+        if t in data_steps 
+            data[:, t] .= [temp_u; temp_v; temp_eta]
+        end
 
         copyto!(u_v_eta_rhs.u, u_v_eta_rhs.u0)
         copyto!(u_v_eta_rhs.v, u_v_eta_rhs.v0)

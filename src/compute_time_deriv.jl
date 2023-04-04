@@ -1,6 +1,6 @@
 # Contains two functions: one that computes the time derivatives and another that 
 # computes the advection term (needed for the time derivatives). Two versions of each function
-# that just depend on what type of structure I'm passing for rhs
+# are defined, each just depends on what type of structure I'm passing for RHS 
 
 function comp_u_v_eta_t(nx::Int, 
         rhs::RHS_terms, 
