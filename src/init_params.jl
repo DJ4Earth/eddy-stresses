@@ -8,6 +8,8 @@ function def_params(grid)
     Lx = grid.Lx
     Ly = grid.Ly
 
+    NT = grid.NT
+
     x = (dx/2):dx:Lx
     y = dy/2:dy:Ly
 
@@ -24,6 +26,9 @@ function def_params(grid)
 
     nu_A = 128*540/(min(nx, ny))     # harmonic mixing coefficient (chosen so that nu_A = 540 meters^2 / sec when dx = 30 km)
     A_h = nu_A * max(dx, dy)^2       # biharmonic mixing coefficient coefficient [meters^2 / second]
+
+    nu = A_h .* ones(NT)             # placing the viscosity coefficient on the tracer grid (cell centers)
+
     rho_c = 1000.0                   # density
     bottom_drag = 1e-5               # bottom-drag coefficient
     g = 9.81                         # gravity [meters^2 / second]
@@ -74,6 +79,7 @@ function def_params(grid)
     beta, 
     H, 
     A_h,
+    nu, 
     rho_c, 
     bottom_drag,  
     wind_stress, 

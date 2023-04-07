@@ -35,8 +35,11 @@ function comp_u_v_eta_t(nx::Int,
     # deal with the advection term 
     comp_advection(nx, rhs, advec)
 
-    rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
-    rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
+    # rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
+    # rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
+    
+    rhs.Mu .= (interp.ITu * params.nu) .* (grad.LLu * rhs.u1)
+    rhs.Mv .= (interp.ITv * params.nu) .* (grad.LLv * rhs.v1) 
 
     rhs.u_t .= rhs.adv_u .- grad.GTx * rhs.p .+ params.wind_stress ./ rhs.h_u .- rhs.Mu .- rhs.bfric_u
 
@@ -81,8 +84,11 @@ function comp_u_v_eta_t(nx::Int,
     # deal with the advection term 
     comp_advection(nx, rhs, advec)
 
-    rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
-    rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
+    # rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
+    # rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
+
+    rhs.Mu .= (interp.ITu * params.nu) .* (grad.LLu * rhs.u1)
+    rhs.Mv .= (interp.ITv * params.nu) .* (grad.LLv * rhs.v1) 
 
     rhs.u_t .= rhs.adv_u .- grad.GTx * rhs.p .+ params.wind_stress ./ rhs.h_u .- rhs.Mu .- rhs.bfric_u
 

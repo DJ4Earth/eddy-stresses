@@ -15,7 +15,7 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
+function setup(; days = 100, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -32,17 +32,20 @@ function setup(; days = 100, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     T = days_to_seconds(days, params.dt)
 
-    data = create_data(T, nx, ny, [2:10:T])
+    data_steps = 2:10:T
+    scaling = 4
+
+    data, M = create_data(days, nx, ny, data_steps, scaling = scaling)
 
     states_rhs = SWM_pde(Nu = Nu, 
         Nv = Nv,
         NT = NT, 
         Nq = Nq, 
         T = T,
-        scaling = 5
+        scaling = scaling
     )
 
-    return grid, params, grad, interp, advec, states_rhs, data
+    return grid, params, grad, interp, advec, states_rhs, data, data_steps, M
 end
 
 
@@ -50,24 +53,27 @@ function chkpt_maybe(
     chkpt_struct::SWM_pde,
     chkpt_scheme::Scheme,
     data::Matrix{Float64},
+    data_steps,
+    M, 
     grid::Grid,
     params::Params,
     interp::Interps,
     grad::Derivatives,
     advec::Advection
 )
-    data_timesteps = [2:10:chkpt_struct.T]
 
-    @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
+    j = 1
+    @checkpoint_struct chkpt_scheme chkpt_struct for t = 1:chkpt_struct.T
 
         advance(chkpt_struct, grid, params, interp, grad, advec)
 
-        if t in data_timesteps 
-            chkpt_struct.J += cost_func(data[:, t*chkpt_struct.scaling], 
+        if t in data_steps 
+            chkpt_struct.J += cost_func(M, data[:, j], 
                 chkpt_struct.u0,
                 chkpt_struct.v0,
                 chkpt_struct.eta0
             )
+            j += 1
         end
 
         copyto!(chkpt_struct.u, chkpt_struct.u0)
@@ -78,14 +84,23 @@ function chkpt_maybe(
 
 end
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct = setup()
+grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data, data_steps, M = setup();
 
 snaps = 3
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 
-Zygote.gradient(
-
+dnu = Zygote.gradient(chkpt_maybe, 
+    chkpt_struct, 
+    revolve, 
+    data,
+    data_steps,
+    M, 
+    grid, 
+    gyre_params, 
+    interp_ops, 
+    grad_ops, 
+    advec_ops
 )
 
 # # for checking that the forward integration still works 

@@ -30,6 +30,10 @@ end
     J::Float64 = 0.0
     energy::Float64 = 0.0 
 
+    # # interpolation operators to move the viscosity parameter to velocity grids 
+    # Inu_u::Matrix{Float64} 
+    # Inu_v::Matrix{Float64}
+
     # Placeholder for the scaling factor between the highres and lowres models 
     scaling::Float64 = 0.0
 
@@ -43,9 +47,11 @@ end
     umid::Vector{Float64} = zeros(Nu)
     vmid::Vector{Float64} = zeros(Nv)
     etamid::Vector{Float64} = zeros(NT)
+
     u0::Vector{Float64} = zeros(Nu) 
     v0::Vector{Float64} = zeros(Nv)
     eta0::Vector{Float64} = zeros(NT)
+
     u1::Vector{Float64} = zeros(Nu)
     v1::Vector{Float64} = zeros(Nv)
     eta1::Vector{Float64} = zeros(NT)
@@ -105,6 +111,7 @@ struct Params
     beta::Float64                   # Coriolis parameter
     H::Float64                      # ocean depth 
     A_h::Float64                    # horizontal Laplacian viscosity 
+    nu::Vector{Float64}             # matrix of nu values (not yet sure if this is the right idea, but its a start)
     ρ_c::Float64                    # reference density 
     bottom_drag::Float64            # bottom drag coefficient
     wind_stress::Vector{Float64}    # wind stress values on the grid 
