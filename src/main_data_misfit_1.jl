@@ -1,10 +1,12 @@
 # making an effort at the whole experiment here, done with Enzyme + checkpointing 
 # once this is running and working will structure a main file with it. 
 
+# Writing this here to keep track of the setup: initially, I'm running a low and lower 
+# resolution run to debug. The setups will use 
+
 using Plots, SparseArrays, Parameters, UnPack
 using JLD2, LinearAlgebra
 using Enzyme, Checkpointing, Zygote
-
 include("init_structs.jl")
 include("init_params.jl")
 include("build_grid.jl")
@@ -15,7 +17,7 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-function setup(; days = 100, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
+function setup(; days = 1, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -90,18 +92,18 @@ snaps = 3
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 
-dnu = Zygote.gradient(chkpt_maybe, 
-    chkpt_struct, 
-    revolve, 
-    data,
-    data_steps,
-    M, 
-    grid, 
-    gyre_params, 
-    interp_ops, 
-    grad_ops, 
-    advec_ops
-)
+# dnu = Zygote.gradient(chkpt_maybe, 
+#     chkpt_struct, 
+#     revolve, 
+#     data,
+#     data_steps,
+#     M, 
+#     grid, 
+#     gyre_params, 
+#     interp_ops, 
+#     grad_ops, 
+#     advec_ops
+# )
 
 # # for checking that the forward integration still works 
 
