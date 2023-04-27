@@ -77,7 +77,7 @@ function comp_u_v_eta_t(nx::Int,
     rhs.p .= 0.5 .* rhs.kinetic .+ params.g .* rhs.h
 
     # bottom friction
-    rhs.kinetic_sq .= (rhs.kinetic).^(1/2)
+    rhs.kinetic_sq .= sqrt.(rhs.kinetic)
     rhs.bfric_u .= params.bottom_drag .* ((interp.ITu * rhs.kinetic_sq) .* rhs.u1) ./ rhs.h_u
     rhs.bfric_v .= params.bottom_drag .* ((interp.ITv * rhs.kinetic_sq) .* rhs.v1) ./ rhs.h_v
 
