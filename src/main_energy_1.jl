@@ -18,7 +18,7 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-function setup(; days = 10, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
+function setup(; days = 30, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -39,7 +39,7 @@ function setup(; days = 10, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
         Nv = Nv,
         NT = NT, 
         Nq = Nq, 
-        T = 10
+        T = T
     )
 
     return grid, params, grad, interp, advec, states_rhs
@@ -73,9 +73,13 @@ function chkpt_maybe(
 
 end
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup()
+days = 10 
+nx = 50
+ny = 50
 
-# snaps = 2
+grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(days=days, nx=nx, ny=ny)
+
+# snaps = 300
 # verbose = 0
 # revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=verbose)
 
@@ -89,7 +93,9 @@ grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup()
 #     advec_ops
 # )
 
-# gradient check with the results from checkpointing - passed
+#### from here these are derivative checks ####
+
+# gradient check with the results from checkpointing (only run for one single step) - passed
 
 # du = denergy[1].u
 # dv = denergy[1].v
@@ -129,90 +135,89 @@ grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup()
 
 # end
 
-
-# check to see if the adjoints diverge without checkpointing - passed 
+# first check to see if the adjoints diverge without checkpointing - passed, seem to be fine 
 
 # integrate forward so we have the final states 
-for t = 1:50
+# for t = 1:chkpt_struct_outer.T
 
-    advance(chkpt_struct_outer, grid, gyre_params, interp_ops, grad_ops, advec_ops)
-    copyto!(chkpt_struct_outer.u, chkpt_struct_outer.u0)
-    copyto!(chkpt_struct_outer.v, chkpt_struct_outer.v0)
-    copyto!(chkpt_struct_outer.eta, chkpt_struct_outer.eta0)
+#     advance(chkpt_struct_outer, grid, gyre_params, interp_ops, grad_ops, advec_ops)
+#     copyto!(chkpt_struct_outer.u, chkpt_struct_outer.u0)
+#     copyto!(chkpt_struct_outer.v, chkpt_struct_outer.v0)
+#     copyto!(chkpt_struct_outer.eta, chkpt_struct_outer.eta0)
 
-end
+# end
 
-function for_enzyme(
-    chkpt_struct::SWM_pde,
-    grid::Grid,
-    params::Params,
-    interp::Interps,
-    grad::Derivatives,
-    advec::Advection
-)
+# function for_enzyme(
+#     chkpt_struct::SWM_pde,
+#     grid::Grid,
+#     params::Params,
+#     interp::Interps,
+#     grad::Derivatives,
+#     advec::Advection
+# )
 
-    for t = 1:50
+#     for t = 1:chkpt_struct.T
 
-        advance(chkpt_struct, grid, params, interp, grad, advec)
-        copyto!(chkpt_struct.u, chkpt_struct.u0)
-        copyto!(chkpt_struct.v, chkpt_struct.v0)
-        copyto!(chkpt_struct.eta, chkpt_struct.eta0)
+#         advance(chkpt_struct, grid, params, interp, grad, advec)
+#         copyto!(chkpt_struct.u, chkpt_struct.u0)
+#         copyto!(chkpt_struct.v, chkpt_struct.v0)
+#         copyto!(chkpt_struct.eta, chkpt_struct.eta0)
 
-    end
+#     end
 
-end
+# end
+ 
+# T = days_to_seconds(days, gyre_params.dt)
 
-ad_chkpt_struct = SWM_pde(Nu = grid.Nu, 
-Nv = grid.Nv,
-NT = grid.NT, 
-Nq = grid.Nq, 
-T = 50
-)
+# ad_chkpt_struct = SWM_pde(Nu = grid.Nu, 
+# Nv = grid.Nv,
+# NT = grid.NT, 
+# Nq = grid.Nq, 
+# T = T
+# )
 
-ad_chkpt_struct.eta[13] = 1.0
+# ad_chkpt_struct.eta[13] = 1.0
 
-state_for_checking = copy(chkpt_struct_outer.eta[13])
+# state_for_checking = copy(chkpt_struct_outer.eta[13])
 
-GC.enable(false)
-autodiff(Reverse, for_enzyme, 
-    Duplicated(chkpt_struct_outer, ad_chkpt_struct),
-    grid,
-    gyre_params, 
-    interp_ops,
-    grad_ops, 
-    advec_ops
-)
-GC.enable(true)
+# autodiff(Reverse, for_enzyme, 
+#     Duplicated(chkpt_struct_outer, ad_chkpt_struct),
+#     grid,
+#     gyre_params, 
+#     interp_ops,
+#     grad_ops, 
+#     advec_ops
+# )
 
-# check the derivative 
-use_to_check = ad_chkpt_struct.u[33]
+# # check the derivative 
+# use_to_check = ad_chkpt_struct.u[33]
 
-steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]
+# steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]
 
-diffs = []
-new_eta = []
-for s in steps 
+# diffs = []
+# new_eta = []
+# for s in steps 
 
-    chkpt_struct_new1 = SWM_pde(Nu = grid.Nu, 
-        Nv = grid.Nv,
-        NT = grid.NT, 
-        Nq = grid.Nq, 
-        T = 50
-    )
+#     chkpt_struct_new1 = SWM_pde(Nu = grid.Nu, 
+#         Nv = grid.Nv,
+#         NT = grid.NT, 
+#         Nq = grid.Nq, 
+#         T = 50
+#     )
 
-    chkpt_struct_new1.u[33] = s
+#     chkpt_struct_new1.u[33] = s
     
-    for t = 1:50
-        advance(chkpt_struct_new1, grid, gyre_params, interp_ops, grad_ops, advec_ops)
-        copyto!(chkpt_struct_new1.u, chkpt_struct_new1.u0)
-        copyto!(chkpt_struct_new1.v, chkpt_struct_new1.v0)
-        copyto!(chkpt_struct_new1.eta, chkpt_struct_new1.eta0)
-    end
-    push!(new_eta, chkpt_struct_new1.eta[13])
+#     for t = 1:50
+#         advance(chkpt_struct_new1, grid, gyre_params, interp_ops, grad_ops, advec_ops)
+#         copyto!(chkpt_struct_new1.u, chkpt_struct_new1.u0)
+#         copyto!(chkpt_struct_new1.v, chkpt_struct_new1.v0)
+#         copyto!(chkpt_struct_new1.eta, chkpt_struct_new1.eta0)
+#     end
+#     push!(new_eta, chkpt_struct_new1.eta[13])
 
-    push!(diffs, (chkpt_struct_new1.eta[13] - state_for_checking) / s)
+#     push!(diffs, (chkpt_struct_new1.eta[13] - state_for_checking) / s)
 
-end
+# end
 
 # chkpt_maybe(
 #     chkpt_struct, 

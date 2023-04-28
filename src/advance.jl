@@ -147,9 +147,6 @@ function integrate(T, nx, ny; Lx = 3840e3, Ly = 3840e3)
     
     @time for t in 1:Trun
         advance(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops)
-        # push!(u, copy(u_v_eta.u))
-        # push!(v, copy(u_v_eta.v))
-        # push!(eta, copy(u_v_eta.eta))
     end
     
     # u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)

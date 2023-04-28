@@ -18,8 +18,8 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-timesteps = 10
-function setup(; days = 10, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
+days_to_integrate = 30
+function setup(; days = 10, nx = 50, ny = 50, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -40,7 +40,7 @@ function setup(; days = 10, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
         Nv = Nv,
         NT = NT, 
         Nq = Nq, 
-        T = timesteps
+        T = T
     )
 
     return grid, params, grad, interp, advec, states_rhs
@@ -74,9 +74,9 @@ function chkpt_maybe(
 
 end
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup()
+grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(days=days_to_integrate)
 
-snaps = 2
+snaps = 2000
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=verbose)
 
@@ -100,14 +100,16 @@ steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]
 
 use_to_check = du[88]
 
+T = days_to_seconds(days_to_integrate, gyre_params.dt)
+
 chkpt_struct_new = SWM_pde(Nu = grid.Nu, 
 Nv = grid.Nv,
 NT = grid.NT, 
 Nq = grid.Nq, 
-T = timesteps
+T = T
 )
 
-for t = 1:timesteps
+for t = 1:T
     advance(chkpt_struct_new, grid, gyre_params, interp_ops, grad_ops, advec_ops)
     copyto!(chkpt_struct_new.u, chkpt_struct_new.u0)
     copyto!(chkpt_struct_new.v, chkpt_struct_new.v0)
@@ -122,12 +124,12 @@ for s in steps
         Nv = grid.Nv,
         NT = grid.NT, 
         Nq = grid.Nq, 
-        T = timesteps
+        T = T
     )
 
     chkpt_struct_new.u[88] = s
 
-    for t = 1:timesteps
+    for t = 1:T
         advance(chkpt_struct_new, grid, gyre_params, interp_ops, grad_ops, advec_ops)
         copyto!(chkpt_struct_new.u, chkpt_struct_new.u0)
         copyto!(chkpt_struct_new.v, chkpt_struct_new.v0)
