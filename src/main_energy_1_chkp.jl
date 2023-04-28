@@ -18,8 +18,12 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-days_to_integrate = 30
-function setup(; days = 10, nx = 50, ny = 50, Lx = 3840e3, Ly = 3840e3)
+# Now has an option to not start the integration from rest and instead specify the initial fields 
+# u0, v0, eta0. If these are specified, the arguments nx and ny should also be adjusted to match the 
+# dimensions of the initial conditions. I don't know how to force this to happen, so for now just need
+# to remember 
+days_to_integrate = 1
+function setup(;u0 = 0.0, v0 = 0.0, eta0 = 0.0, days = 10, nx = 50, ny = 50, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -36,19 +40,31 @@ function setup(; days = 10, nx = 50, ny = 50, Lx = 3840e3, Ly = 3840e3)
 
     T = days_to_seconds(days, params.dt)
 
-    states_rhs = SWM_pde(Nu = Nu, 
-        Nv = Nv,
-        NT = NT, 
-        Nq = Nq, 
-        T = T
-    )
+    if u0 != 0.0 
+        states_rhs = SWM_pde(Nu = Nu, 
+            Nv = Nv,
+            NT = NT,
+            Nq = Nq,
+            T = T, 
+            u = u0,
+            v = v0, 
+            eta = eta0
+        )
+    else
+        states_rhs = SWM_pde(Nu = Nu, 
+            Nv = Nv,
+            NT = NT, 
+            Nq = Nq, 
+            T = T
+        )
+    end
 
     return grid, params, grad, interp, advec, states_rhs
 
 end
 
 
-function chkpt_maybe(
+function chkpt_integration(
     chkpt_struct::SWM_pde,
     chkpt_scheme::Scheme,
     grid::Grid,
@@ -74,13 +90,22 @@ function chkpt_maybe(
 
 end
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(days=days_to_integrate)
+@load "u_v_eta_nx128_ny128_10yr.jld2" u_v_eta_init_cond
 
-snaps = 2000
+# remember to change nx and ny
+grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(days=days_to_integrate, 
+    u0 = u_v_eta_init_cond.u,
+    v0 = u_v_eta_init_cond.v,
+    eta0 = u_v_eta_init_cond.eta, 
+    nx = 128,
+    ny = 128
+)
+
+snaps = 50
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=verbose)
 
-denergy = Zygote.gradient(chkpt_maybe, 
+denergy = Zygote.gradient(chkpt_integration, 
     chkpt_struct_outer, 
     revolve, 
     grid, 
@@ -103,10 +128,13 @@ use_to_check = du[88]
 T = days_to_seconds(days_to_integrate, gyre_params.dt)
 
 chkpt_struct_new = SWM_pde(Nu = grid.Nu, 
-Nv = grid.Nv,
-NT = grid.NT, 
-Nq = grid.Nq, 
-T = T
+    Nv = grid.Nv,
+    NT = grid.NT,
+    Nq = grid.Nq,
+    T = T, 
+    u = u_v_eta_init_cond.u,
+    v = u_v_eta_init_cond.v, 
+    eta = u_v_eta_init_cond.eta
 )
 
 for t = 1:T
@@ -122,12 +150,15 @@ for s in steps
 
     chkpt_struct_new = SWM_pde(Nu = grid.Nu, 
         Nv = grid.Nv,
-        NT = grid.NT, 
-        Nq = grid.Nq, 
-        T = T
+        NT = grid.NT,
+        Nq = grid.Nq,
+        T = T, 
+        u = u_v_eta_init_cond.u,
+        v = u_v_eta_init_cond.v, 
+        eta = u_v_eta_init_cond.eta
     )
 
-    chkpt_struct_new.u[88] = s
+    chkpt_struct_new.u[88] = u_v_eta_init_cond.u[88] + s
 
     for t = 1:T
         advance(chkpt_struct_new, grid, gyre_params, interp_ops, grad_ops, advec_ops)

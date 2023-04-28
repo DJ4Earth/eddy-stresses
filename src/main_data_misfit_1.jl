@@ -17,7 +17,11 @@ include("compute_time_deriv.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
-function setup(; days = 1, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
+# Now has an option to not start the integration from rest and instead specify the initial fields 
+# u0, v0, eta0. If these are specified, the arguments nx and ny should also be adjusted to match the 
+# dimensions of the initial conditions. I don't know how to force this to happen, so for now just need
+# to remember 
+function setup(;u0 = 0.0, v0 = 0.0, eta0 = 0.0, days = 10, nx = 20, ny = 20, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -35,17 +39,28 @@ function setup(; days = 1, nx = 10, ny = 10, Lx = 3840e3, Ly = 3840e3)
     T = days_to_seconds(days, params.dt)
 
     data_steps = 2:10:T
-    scaling = 4
+    scaling = 2
 
     data, M = create_data(days, nx, ny, data_steps, scaling = scaling)
 
-    states_rhs = SWM_pde(Nu = Nu, 
-        Nv = Nv,
-        NT = NT, 
-        Nq = Nq, 
-        T = T,
-        scaling = scaling
-    )
+    if u0 != 0.0 
+        states_rhs = SWM_pde(Nu = Nu, 
+            Nv = Nv,
+            NT = NT,
+            Nq = Nq,
+            T = T, 
+            u = u0,
+            v = v0, 
+            eta = eta0
+        )
+    else
+        states_rhs = SWM_pde(Nu = Nu, 
+            Nv = Nv,
+            NT = NT, 
+            Nq = Nq, 
+            T = T
+        )
+    end
 
     return grid, params, grad, interp, advec, states_rhs, data, data_steps, M
 end
@@ -65,12 +80,13 @@ function chkpt_maybe(
 )
 
     j = 1
-    @checkpoint_struct chkpt_scheme chkpt_struct for t = 1:chkpt_struct.T
+    @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
 
         advance(chkpt_struct, grid, params, interp, grad, advec)
+        @show t
 
         if t in data_steps 
-            chkpt_struct.J += cost_func(M, data[:, j], 
+            chkpt_struct.J += data_misfit(M, data[:, j], 
                 chkpt_struct.u0,
                 chkpt_struct.v0,
                 chkpt_struct.eta0
@@ -86,24 +102,24 @@ function chkpt_maybe(
 
 end
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data, data_steps, M = setup();
+grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data, data_steps, M = setup()
 
 snaps = 3
 verbose = 0
 revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
 
-# dnu = Zygote.gradient(chkpt_maybe, 
-#     chkpt_struct, 
-#     revolve, 
-#     data,
-#     data_steps,
-#     M, 
-#     grid, 
-#     gyre_params, 
-#     interp_ops, 
-#     grad_ops, 
-#     advec_ops
-# )
+dnu = Zygote.gradient(chkpt_maybe, 
+    chkpt_struct, 
+    revolve, 
+    data,
+    data_steps,
+    M, 
+    grid, 
+    gyre_params, 
+    interp_ops, 
+    grad_ops, 
+    advec_ops
+)
 
 # # for checking that the forward integration still works 
 
