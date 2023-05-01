@@ -2,7 +2,8 @@
 # computes the advection term (needed for the time derivatives). Two versions of each function
 # are defined, each just depends on what type of structure I'm passing for RHS 
 
-function comp_u_v_eta_t(nx::Int, 
+function comp_u_v_eta_t!(
+        nx::Int, 
         rhs::RHS_terms, 
         params::Params, 
         interp::Interps, 
@@ -51,7 +52,7 @@ function comp_u_v_eta_t(nx::Int,
 
 end 
 
-function comp_u_v_eta_t(nx::Int, 
+function comp_u_v_eta_t!(nx::Int, 
         rhs::SWM_pde, 
         params::Params, 
         interp::Interps, 
@@ -82,7 +83,7 @@ function comp_u_v_eta_t(nx::Int,
     rhs.bfric_v .= params.bottom_drag .* ((interp.ITv * rhs.kinetic_sq) .* rhs.v1) ./ rhs.h_v
 
     # deal with the advection term 
-    comp_advection(nx, rhs, advec)
+    comp_advection!(nx, rhs, advec)
 
     # rhs.Mu .= params.A_h .* (grad.LLu * rhs.u1)
     # rhs.Mv .= params.A_h .* (grad.LLv * rhs.v1) 
@@ -100,7 +101,11 @@ function comp_u_v_eta_t(nx::Int,
 
 end 
 
-function comp_advection(nx::Int, rhs::SWM_pde, advec::Advection)
+function comp_advection!(
+    nx::Int, 
+    rhs::SWM_pde, 
+    advec::Advection
+)
 
     rhs.AL1q .= advec.AL1 * rhs.q 
     rhs.AL2q .= advec.AL2 * rhs.q 

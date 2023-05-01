@@ -83,7 +83,6 @@ function chkpt_maybe(
     @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
 
         advance(chkpt_struct, grid, params, interp, grad, advec)
-        @show t
 
         if t in data_steps 
             chkpt_struct.J += data_misfit(M, data[:, j], 

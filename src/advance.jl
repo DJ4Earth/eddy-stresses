@@ -62,7 +62,7 @@ function advance(u_v_eta::gyre_vector,
 
 end 
 
-function advance(states_rhs::SWM_pde, 
+function advance!(states_rhs::SWM_pde, 
         grid::Grid, 
         params::Params, 
         interp::Interps, 
@@ -91,7 +91,7 @@ function advance(states_rhs::SWM_pde,
 
     for j in 1:4
 
-        comp_u_v_eta_t(nx, states_rhs, params, interp, grad, advec)
+        comp_u_v_eta_t!(nx, states_rhs, params, interp, grad, advec)
 
         if j < 4
             states_rhs.u1 .= states_rhs.umid .+ rk_b[j] .* dt .* states_rhs.u_t
@@ -120,38 +120,38 @@ end
 #           Ly - N-S length of the domain [meters], also has a default 
 # mostly keeping because I like having a function that just integrates for some amount
 # of time 
-function integrate(T, nx, ny; Lx = 3840e3, Ly = 3840e3)                 
+function integrate(days, nx, ny; Lx = 3840e3, Ly = 3840e3)                 
     
-    grid_params = build_grid(Lx, Ly, nx, ny)
-    gyre_params = def_params(grid_params)
-    
-    # building discrete operators 
-    grad_ops = build_derivs(grid_params)                # discrete gradient operators 
-    interp_ops = build_interp(grid_params, grad_ops)    # discrete interpolation operators (travels between grids)
-    advec_ops = build_advec(grid_params)
-    rhs_terms = RHS_terms(Nu = grid_params.Nu, Nv = grid_params.Nv, NT = grid_params.NT, Nq = grid_params.Nq)
-    
-    # starting from rest ---> all initial conditions are zero 
-    
-    Trun = days_to_seconds(T, gyre_params.dt)
-    
-    uout = zeros(grid_params.Nu) 
-    vout = zeros(grid_params.Nv) 
-    etaout = zeros(grid_params.NT)
-    
-    # u = [zeros(grid_params.Nu)]
-    # v = [zeros(grid_params.Nv)]
-    # eta = [zeros(grid_params.NT)]
+    grid = build_grid(Lx, Ly, nx, ny)
+    params = def_params(grid)
 
-    u_v_eta = gyre_vector(uout, vout, etaout)
+    # building discrete operators
+    grad = build_derivs(grid)            # discrete gradient operators
+    interp = build_interp(grid, grad)    # discrete interpolation operators (travels between grids)
+    advec = build_advec(grid)
+
+    Nu = grid.Nu
+    Nv = grid.Nv
+    NT = grid.NT
+    Nq = grid.Nq 
+
+    T = days_to_seconds(days, params.dt)
+
+    states_rhs = SWM_pde(Nu = Nu, 
+        Nv = Nv,
+        NT = NT, 
+        Nq = Nq, 
+        T = T
+    )
     
-    @time for t in 1:Trun
-        advance(u_v_eta, grid_params, rhs_terms, gyre_params, interp_ops, grad_ops, advec_ops)
+    @time for t in 1:T
+        advance!(states_rhs, grid, params, interp, grad, advec)
+        copyto!(states_rhs.u, states_rhs.u0)
+        copyto!(states_rhs.v, states_rhs.v0)
+        copyto!(states_rhs.eta, states_rhs.eta0)
     end
-    
-    # u_v_eta_mat = vec_to_mat(u_v_eta.u, u_v_eta.v, u_v_eta.eta, grid_params)
-    
-    return u_v_eta
+        
+    return states_rhs
     
 end
 
