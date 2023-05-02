@@ -232,7 +232,7 @@ function create_data(days, nx_lowres, ny_lowres, data_steps; scaling = 4, Lx = 3
 
     for t in 2:Trun
 
-        advance(u_v_eta_rhs, grid_highres, params, interp, grad, advec) 
+        advance!(u_v_eta_rhs, grid_highres, params, interp, grad, advec) 
 
         if t in scaling .* data_steps 
             data[:, j] .= [u_v_eta_rhs.u; u_v_eta_rhs.v; u_v_eta_rhs.eta]

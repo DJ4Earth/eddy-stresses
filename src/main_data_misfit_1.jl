@@ -80,11 +80,11 @@ function chkpt_maybe(
 )
 
     j = 1
-    @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
+    @checkpoint_struct chkpt_scheme chkpt_struct for chkpt_struct.t in 1:chkpt_struct.T
 
-        advance(chkpt_struct, grid, params, interp, grad, advec)
+        advance!(chkpt_struct, grid, params, interp, grad, advec)
 
-        if t in data_steps 
+        if chkpt_struct.t in data_steps 
             chkpt_struct.J += data_misfit(M, data[:, j], 
                 chkpt_struct.u0,
                 chkpt_struct.v0,
@@ -99,6 +99,7 @@ function chkpt_maybe(
 
     end
 
+    return chkpt_struct.J
 end
 
 grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data, data_steps, M = setup()
