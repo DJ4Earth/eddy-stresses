@@ -23,7 +23,7 @@ include("compute_time_deriv.jl")
 # u0, v0, eta0. If these are specified, the arguments nx and ny should also be adjusted to match the 
 # dimensions of the initial conditions. I don't know how to force this to happen, so for now just need
 # to remember 
-function setup(;days = 10, nx = 30, ny = 30, Lx = 3840e3, Ly = 3840e3)
+function setup(;days = 1, nx = 30, ny = 30, Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)
@@ -77,7 +77,8 @@ function setup(
 
     T = days_to_seconds(days, params.dt)
 
-    states_rhs = SWM_pde(Nu = Nu, 
+    states_rhs = SWM_pde(
+        Nu = Nu, 
         Nv = Nv,
         NT = NT,
         Nq = Nq,
@@ -120,11 +121,14 @@ end
 
 function run_checkpointing(days_to_integrate, nx, ny, snaps)
 
-    # @load "u_v_eta_nx128_ny128_10yr.jld2" u_v_eta_init_cond
+    @load "u_v_eta_nx128_ny128_10yr.jld2" u_v_eta_init_cond
 
-    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(days=days_to_integrate, 
-        nx = nx,
-        ny = ny
+    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(u_v_eta_init_cond.u, 
+    u_v_eta_init_cond.v,
+    u_v_eta_init_cond.eta,
+    nx,
+    ny,
+    days=days_to_integrate
     )
 
     snaps = snaps
@@ -145,7 +149,7 @@ function run_checkpointing(days_to_integrate, nx, ny, snaps)
 
 end
 
-# @time denergy = run_checkpointing()
+@time denergy = run_checkpointing(10, 128, 128, 5)
 
 # gradient check with the results from checkpointing - passed
 
