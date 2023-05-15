@@ -6,8 +6,7 @@
 
 using Plots, SparseArrays, Parameters, UnPack
 using JLD2, LinearAlgebra
-using Enzyme, Checkpointing, Zygote
-using .Threads
+using Enzyme, Checkpointing, Zygote 
 
 include("init_structs.jl")
 include("init_params.jl")
@@ -16,6 +15,7 @@ include("build_discrete_operators.jl")
 include("advance.jl")
 include("cost_func.jl")
 include("compute_time_deriv.jl")
+include("temp.jl")
 
 # This function will setup the structures needed to integrate the model. Comes with default values, but
 # these can be specified if desired. 
@@ -149,7 +149,7 @@ function run_checkpointing(days_to_integrate, nx, ny, snaps)
 
 end
 
-@time denergy = run_checkpointing(10, 128, 128, 5)
+# @time denergy = run_checkpointing(10, 128, 128, 5)
 
 # gradient check with the results from checkpointing - passed
 

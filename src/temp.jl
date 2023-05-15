@@ -6,7 +6,7 @@ function find_non_zeros(A)
         for k = 1:size(A)[2]
 
             if A[j,k] != 0.0
-                @printf "(%i, %i) \n" j k 
+                @printf "(%i, %i) = %f \n" j k A[j, k]
             end
 
         end
