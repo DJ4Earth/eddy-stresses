@@ -104,7 +104,7 @@ function chkpt_integration(
 
     @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
 
-        advance!(chkpt_struct, grid, params, interp, grad, advec)
+        advance(chkpt_struct, grid, params, interp, grad, advec)
 
         copyto!(chkpt_struct.u, chkpt_struct.u0)
         copyto!(chkpt_struct.v, chkpt_struct.v0)
@@ -121,13 +121,10 @@ end
 
 function run_checkpointing(days_to_integrate, nx, ny, snaps)
 
-    @load "u_v_eta_nx128_ny128_10yr.jld2" u_v_eta_init_cond
+    # @load "u_v_eta_nx128_ny128_10yr.jld2" u_v_eta_init_cond
 
-    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(u_v_eta_init_cond.u, 
-    u_v_eta_init_cond.v,
-    u_v_eta_init_cond.eta,
-    nx,
-    ny,
+    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup(nx = nx,
+    ny = ny,
     days=days_to_integrate
     )
 
@@ -149,7 +146,8 @@ function run_checkpointing(days_to_integrate, nx, ny, snaps)
 
 end
 
-# @time denergy = run_checkpointing(10, 128, 128, 5)
+days_to_integrate = 10
+@time denergy = run_checkpointing(days_to_integrate, 10, 10, 2)
 
 # gradient check with the results from checkpointing - passed
 
