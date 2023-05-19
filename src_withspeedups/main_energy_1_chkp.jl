@@ -149,7 +149,7 @@ function run_checkpointing(days_to_integrate, nx, ny, snaps)
 end
 
 # days_to_integrate = 10
-# @time denergy = run_checkpointing(days_to_integrate, 10, 10, 2)
+# @time denergy = run_checkpointing(days_to_integrate, 50, 50, 2)
 
 # gradient check with the results from checkpointing - passed
 
