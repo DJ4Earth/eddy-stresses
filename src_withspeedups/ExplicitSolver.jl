@@ -10,7 +10,8 @@ include("build_grid.jl")
 include("build_discrete_operators.jl")
 include("advance.jl")
 include("compute_time_deriv.jl")
-include("main_energy_1_chkp.jl")
+include("main_energy_chkp.jl")
+include("main_data_misfit.jl")
 
 Enzyme.API.runtimeActivity!(true)
 

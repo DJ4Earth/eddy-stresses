@@ -34,6 +34,11 @@ end
     # Inu_u::Matrix{Float64} 
     # Inu_v::Matrix{Float64}
 
+    scratch_u::Vector{Float64} = zeros(Nu)
+    scratch_v::Vector{Float64} = zeros(Nv)
+    scratch_T::Vector{Float64} = zeros(NT)
+    scratch_q::Vector{Float64} = zeros(Nq)
+
     # Placeholder for the scaling factor between the highres and lowres models 
     scaling::Float64 = 0.0
 
@@ -212,76 +217,4 @@ struct Advection
     Sdv::SparseMatrixCSC{Float64, Int64}
 end
 
-
-#### Removing, not needed anymore 
-
-# # per a suggestion, I'm creating a new structure that will pre-allocate space to operators that only appear 
-# # during the timestepping loop (mainly appear in the computation of the RHS equation)
-# # this might become obsolete as I add checkpointing, as all of the advection operators matter to the gradient
-# @with_kw struct RHS_terms
-    
-#     # To initialize struct just need to specify the following, the rest
-#     # of the entries will follow
-#     Nu::Int
-#     Nv::Int
-#     NT::Int
-#     Nq::Int
-
-#     # Appear in advance
-#     umid::Vector{Float64} = zeros(Nu)
-#     vmid::Vector{Float64} = zeros(Nv)
-#     etamid::Vector{Float64} = zeros(NT)
-#     u0::Vector{Float64} = zeros(Nu) 
-#     v0::Vector{Float64} = zeros(Nv)
-#     eta0::Vector{Float64} = zeros(NT)
-#     u1::Vector{Float64} = zeros(Nu)
-#     v1::Vector{Float64} = zeros(Nv)
-#     eta1::Vector{Float64} = zeros(NT)
-
-#     # Appear in comp_u_v_eta_t
-#     h::Vector{Float64} = zeros(NT)          # height of water columns [meters]
-
-#     h_u::Vector{Float64} = zeros(Nu)        # height of water columns interpolated to u-grid 
-#     h_v::Vector{Float64} = zeros(Nv)        # height of water columns interpolated to v-grid 
-#     h_q::Vector{Float64} = zeros(Nq)
-
-#     U::Vector{Float64} = zeros(Nu)
-#     V::Vector{Float64} = zeros(Nv)
-
-#     IuT_u1::Vector{Float64} = zeros(NT)
-#     IvT_v1::Vector{Float64} = zeros(NT)
-#     kinetic::Vector{Float64} = zeros(NT)
-
-#     kinetic_sq::Vector{Float64} = zeros(NT)
-
-#     Gvx_v1::Vector{Float64} = zeros(Nq)
-#     Guy_u1::Vector{Float64} = zeros(Nq)
-#     q::Vector{Float64} = zeros(Nq)
-#     p::Vector{Float64} = zeros(NT)
-
-#     ITu_ksq::Vector{Float64} = zeros(Nu)
-#     ITv_ksq::Vector{Float64} = zeros(Nv)
-#     bfric_u::Vector{Float64} = zeros(Nu)
-#     bfric_v::Vector{Float64} = zeros(Nv)
-
-#     LLu_u1::Vector{Float64} = zeros(Nu)
-#     LLv_v1::Vector{Float64} = zeros(Nv)
-#     Mu::Vector{Float64} = zeros(Nu)
-#     Mv::Vector{Float64} = zeros(Nv)
-
-#     GTx_p::Vector{Float64} = zeros(Nu)
-#     u_t::Vector{Float64} = zeros(Nu)
-#     GTy_p::Vector{Float64} = zeros(Nv)
-#     v_t::Vector{Float64} = zeros(Nv)
-#     Gux_U::Vector{Float64} = zeros(NT)
-#     Gvy_V::Vector{Float64} = zeros(NT)
-#     eta_t::Vector{Float64} = zeros(NT)
-#     adv_u::Vector{Float64} = zeros(Nu)
-#     adv_v::Vector{Float64} = zeros(Nv)
-
-#     # Appear in comp_advection 
-#     AL1q::Vector{Float64} = zeros(NT)
-#     AL2q::Vector{Float64} = zeros(NT)
-    
-# end
 
