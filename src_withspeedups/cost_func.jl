@@ -3,9 +3,6 @@
 
 function data_misfit(d, u, v, eta)
 
-    @show size(u)
-    @show size(v)
-    @show size(eta)
     return dot((d - [u; v; eta]), (d - [u; v; eta]))
 
 end
