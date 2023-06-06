@@ -4,16 +4,17 @@
 # Writing this here to keep track of the setup: initially, I'm running a low and lower 
 # resolution run to debug. The setups will use 
 
-# using Plots, SparseArrays, Parameters, UnPack
-# using JLD2, LinearAlgebra
-# using Enzyme, Checkpointing, Zygote
-# include("init_structs.jl")
-# include("init_params.jl")
-# include("build_grid.jl")
-# include("build_discrete_operators.jl")
-# include("advance.jl")
-# include("cost_func.jl")
-# include("compute_time_deriv.jl")
+using Plots, SparseArrays, Parameters, UnPack
+using JLD2, LinearAlgebra
+using Enzyme, Checkpointing, Zygote
+
+include("init_structs.jl")
+include("init_params.jl")
+include("build_grid.jl")
+include("build_discrete_operators.jl")
+include("advance.jl")
+include("cost_func.jl")
+include("compute_time_deriv.jl")
 
 
 function setup_data_misfit(
@@ -70,11 +71,11 @@ function chkpt_func(
 )
 
     j = 1
-    @checkpoint_struct chkpt_scheme chkpt_struct for t in 1:chkpt_struct.T
+    @checkpoint_struct chkpt_scheme chkpt_struct for chkpt_struct.t in 1:chkpt_struct.T
 
         advance(chkpt_struct, grid, params, interp, grad, advec)
 
-        if t in data_steps 
+        if chkpt_struct.t in data_steps 
             chkpt_struct.J += data_misfit(data[:, j], 
                 interp.IuT * chkpt_struct.u0,
                 interp.IvT * chkpt_struct.v0,
@@ -89,13 +90,15 @@ function chkpt_func(
 
     end
 
+    return chkpt_struct.J
+
 end
 
 function run_checkpointing_dataex(
-    ;days_to_integrate = 30, 
-    nx = 50, 
-    ny = 50, 
-    snaps = 5, 
+    ;days_to_integrate = 1, 
+    nx = 20, 
+    ny = 20, 
+    snaps = 1, 
     scaling = 4
     )
 
@@ -126,6 +129,8 @@ function run_checkpointing_dataex(
     return dnu
 
 end
+
+dnu = run_checkpointing_dataex()
 
 # Gradient check with finite differences 
 
