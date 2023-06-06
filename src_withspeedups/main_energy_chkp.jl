@@ -28,6 +28,7 @@ Enzyme.API.runtimeActivity!(true)
 #
 # Example usage:
 # (1) if there are no initial conditions to specify (starting the model from rest)
+# include("ExplicitSolver.jl")
 # days_to_integrate = 30 
 # nx = 50
 # ny = 50 
@@ -35,6 +36,7 @@ Enzyme.API.runtimeActivity!(true)
 # denergy = run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
 # 
 # (2) if there are non-zero initial condtions (starting from a spun-up state)
+# include("ExplicitSolver.jl")
 # @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
 # u0 = states_nx128_ny128_10yr_060523.u 
 # v0 = states_nx128_ny128_10yr_060523.v
