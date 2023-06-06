@@ -70,18 +70,17 @@ function chkpt_func(
     advec::Advection
 )
 
-    j = 1
     @checkpoint_struct chkpt_scheme chkpt_struct for chkpt_struct.t in 1:chkpt_struct.T
 
         advance(chkpt_struct, grid, params, interp, grad, advec)
 
         if chkpt_struct.t in data_steps 
-            chkpt_struct.J += data_misfit(data[:, j], 
+            chkpt_struct.J += data_misfit(data[:, chkpt_struct.j], 
                 interp.IuT * chkpt_struct.u0,
                 interp.IvT * chkpt_struct.v0,
                 chkpt_struct.eta0
             )
-            j += 1
+            chkpt_struct.j += 1
         end
 
         copyto!(chkpt_struct.u, chkpt_struct.u0)
