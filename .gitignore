@@ -58,3 +58,17 @@ src/error2.txt
 time.pb.gz
 src/error_1_energy.txt
 src_withspeedups/for_sverdrup.bash
+src_withspeedups_playground/advance.jl
+src_withspeedups_playground/build_discrete_operators.jl
+src_withspeedups_playground/build_grid.jl
+src_withspeedups_playground/compute_time_deriv.jl
+src_withspeedups_playground/cost_func.jl
+src_withspeedups_playground/ExplicitSolver.jl
+src_withspeedups_playground/init_params.jl
+src_withspeedups_playground/init_structs.jl
+src_withspeedups_playground/main_data_misfit.jl
+src_withspeedups_playground/main_energy_chkp.jl
+src_withspeedups_playground/Manifest.toml
+src_withspeedups_playground/Project.toml
+src_withspeedups_playground/temp.jl
+src_withspeedups_playground/.DS_Store
