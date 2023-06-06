@@ -59,13 +59,13 @@ function build_derivs(grid)
     diag1[end-nx+1:end] .= 0.0
 
     Guy1 = spdiagm(diag1)[:, index3][:, nx:end]
-    Guy2 = reverse(reverse(Guy1, dims=1), dims=2)
+    Guy2 = Base.reverse(Base.reverse(Guy1, dims=1), dims=2)
     Guy = (Guy2 - Guy1) ./ dy 
 
     # y-derivative from q-grid to u-grid, again including boundary conditions
     diag1[end-nx+1:end] .= 1.0
     Gqy1 = spdiagm(diag1)[:,index3][:, nx:end]
-    Gqy2 = reverse(reverse(Gqy1, dims=1), dims=2)
+    Gqy2 = Base.reverse(Base.reverse(Gqy1, dims=1), dims=2)
     Gqy = (Gqy1 - Gqy2)' ./ dy
 
     # x-derivative from v-grid to q-grid

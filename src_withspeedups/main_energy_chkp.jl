@@ -4,31 +4,50 @@
 # This one will try to use Enzyme + checkpointing for an energy sensitivity
 # similar to the Burgers equation
 
-# using Plots, SparseArrays, Parameters, UnPack
-# using JLD2, LinearAlgebra
-# using Enzyme, Checkpointing, Zygote 
+using Plots, SparseArrays, Parameters, UnPack
+using JLD2, LinearAlgebra
+using Enzyme, Checkpointing, Zygote 
 
-# include("init_structs.jl")
-# include("init_params.jl")
-# include("build_grid.jl")
-# include("build_discrete_operators.jl")
-# include("advance.jl")
-# include("cost_func.jl")
-# include("compute_time_deriv.jl")
-# include("temp.jl")
+include("init_structs.jl")
+include("init_params.jl")
+include("build_grid.jl")
+include("build_discrete_operators.jl")
+include("advance.jl")
+include("cost_func.jl")
+include("compute_time_deriv.jl")
+include("temp.jl")
 
-# Enzyme.API.runtimeActivity!(true)
+Enzyme.API.runtimeActivity!(true)
 
-# This function will setup the structures needed to integrate the model. Comes with default values, but
-# these can be specified if desired. 
-# Now has an option to not start the integration from rest and instead specify the initial fields 
-# u0, v0, eta0. If these are specified, the arguments nx and ny should also be adjusted to match the 
-# dimensions of the initial conditions. I don't know how to force this to happen, so for now just need
-# to remember 
-function setup_energy(
-    ;days = 1, 
-    nx = 30, 
-    ny = 30, 
+# This script will run an example of Enzyme + Checkpointing being used to compute a sensitivity 
+# of the final energy to initial conditions. Five functions are defined. The first two set up the entire experiment by 
+# building structures related to the grid, discrete operators, and the structure that contains all variables relevant to the derivatives. 
+# The third function defined is the loop that will be checkpointed. It runs a full integration as well as 
+# a final computation of the energy (the cost function evaluation). The last two functions puts the setup and checkpointing
+# together for the whole experiment. 
+#
+# Example usage:
+# (1) if there are no initial conditions to specify (starting the model from rest)
+# days_to_integrate = 30 
+# nx = 50
+# ny = 50 
+# snaps = 5
+# denergy = run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
+# 
+# (2) if there are non-zero initial condtions (starting from a spun-up state)
+# @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
+# u0 = states_nx128_ny128_10yr_060523.u 
+# v0 = states_nx128_ny128_10yr_060523.v
+# eta0 = states_nx128_ny128_10yr_060523.eta
+# snaps = 5
+# days_to_integrate = 30
+# nx = 128 
+# ny = 128
+# denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps)
+
+function setup_energy(days, 
+    nx, 
+    ny; 
     Lx = 3840e3, 
     Ly = 3840e3
     )
@@ -63,9 +82,9 @@ function setup_energy(
     u0::Vector{Float64}, 
     v0::Vector{Float64}, 
     eta0::Vector{Float64},
+    days,
     nx, 
-    ny;
-    days = 10, 
+    ny; 
     Lx = 3840e3, 
     Ly = 3840e3
 )
@@ -127,14 +146,11 @@ function chkpt_integration(
 end
 
 
-function run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
+function run_checkpointing_energyex(days, nx, ny, snaps)
 
-    # @load "u_v_eta_nx128_ny128_10yr.jld2" u_v_eta_init_cond
-
-    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup_energy(
-    nx = nx,
-    ny = ny,
-    days=days_to_integrate
+    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup_energy(days, 
+    nx, 
+    ny
     )
 
     snaps = snaps
@@ -155,10 +171,46 @@ function run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
 
 end
 
-# days_to_integrate = 10
-# @time denergy = run_checkpointing(days_to_integrate, 50, 50, 2)
+function run_checkpointing_energyex(u0, v0, eta0, days, nx, ny, snaps)
+
+    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup_energy(u0,
+    v0, 
+    eta0,
+    days, 
+    nx, 
+    ny
+    )
+
+    snaps = snaps
+    verbose = 0
+    revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=verbose)
+
+    denergy = Zygote.gradient(chkpt_integration, 
+        chkpt_struct_outer, 
+        revolve, 
+        grid, 
+        gyre_params, 
+        interp_ops, 
+        grad_ops, 
+        advec_ops
+    )
+
+    return denergy
+
+end
 
 # gradient check with the results from checkpointing - passed
+
+# nx = 128
+# ny = 128
+# days_to_integrate = 1
+# snaps = 6
+# @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
+# u0 = states_nx128_ny128_10year_060523.u
+# v0 = states_nx128_ny128_10year_060523.v
+# eta0 = states_nx128_ny128_10year_060523.eta
+
+# @time denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps)
 
 # du = denergy[1].u
 # dv = denergy[1].v
@@ -170,44 +222,49 @@ end
 
 # T = days_to_seconds(days_to_integrate, gyre_params.dt)
 
-# chkpt_struct_new = SWM_pde(Nu = grid.Nu, 
-#     Nv = grid.Nv,
-#     NT = grid.NT,
-#     Nq = grid.Nq,
-#     T = 1
+# grid_, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer = setup_energy(
+#     days_to_integrate, 
+#     nx, 
+#     ny
+# )
+
+# chkpt_struct_new = SWM_pde(Nu = grid_.Nu, 
+#     Nv = grid_.Nv,
+#     NT = grid_.NT,
+#     Nq = grid_.Nq,
+#     T = T
 # )
 
 # for t = 1:T
-#     advance(chkpt_struct_new, grid, gyre_params, interp_ops, grad_ops, advec_ops)
+#     advance(chkpt_struct_new, grid_, gyre_params, interp_ops, grad_ops, advec_ops)
 #     copyto!(chkpt_struct_new.u, chkpt_struct_new.u0)
 #     copyto!(chkpt_struct_new.v, chkpt_struct_new.v0)
 #     copyto!(chkpt_struct_new.eta, chkpt_struct_new.eta0)
 # end
-# energy_to_check = energy(grid, chkpt_struct_new.u0, chkpt_struct_new.v0)
+# energy_to_check = energy(grid_, chkpt_struct_new.u0, chkpt_struct_new.v0)
 
 # diffs = []
 # for s in steps 
 
-#     chkpt_struct_new = SWM_pde(Nu = grid.Nu, 
-#         Nv = grid.Nv,
-#         NT = grid.NT,
-#         Nq = grid.Nq,
-#         T = 1
-#         #u_v_eta_init_cond.u,
-#         #u_v_eta_init_cond.v, 
-#         #u_v_eta_init_cond.eta
+#     T = days_to_seconds(days_to_integrate, gyre_params.dt)
+
+#     chkpt_struct_new = SWM_pde(Nu = grid_.Nu, 
+#         Nv = grid_.Nv,
+#         NT = grid_.NT,
+#         Nq = grid_.Nq,
+#         T = T
 #     )
 
 #     chkpt_struct_new.u[88] = s
 
 #     for t = 1:T
-#         advance(chkpt_struct_new, grid, gyre_params, interp_ops, grad_ops, advec_ops)
+#         advance(chkpt_struct_new, grid_, gyre_params, interp_ops, grad_ops, advec_ops)
 #         copyto!(chkpt_struct_new.u, chkpt_struct_new.u0)
 #         copyto!(chkpt_struct_new.v, chkpt_struct_new.v0)
 #         copyto!(chkpt_struct_new.eta, chkpt_struct_new.eta0)
 #     end
 
-#     new_energy = energy(grid, chkpt_struct_new.u0, chkpt_struct_new.v0)
+#     new_energy = energy(grid_, chkpt_struct_new.u0, chkpt_struct_new.v0)
 
 #     push!(diffs, (new_energy - energy_to_check) / s)
 

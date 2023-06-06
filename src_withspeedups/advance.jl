@@ -93,11 +93,98 @@ function integrate(days, nx, ny; Lx = 3840e3, Ly = 3840e3)
     )
     
     @time for t in 1:T
+
         advance(states_rhs, grid, params, interp, grad, advec)
+
         copyto!(states_rhs.u, states_rhs.u0)
         copyto!(states_rhs.v, states_rhs.v0)
         copyto!(states_rhs.eta, states_rhs.eta0)
+        
     end
+        
+    return states_rhs
+
+end
+
+function integrate(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)                 
+
+    grid = build_grid(Lx, Ly, nx, ny)
+    params = def_params(grid)
+
+    # building discrete operators
+    grad = build_derivs(grid)            # discrete gradient operators
+    interp = build_interp(grid, grad)    # discrete interpolation operators (travels between grids)
+    advec = build_advec(grid)
+
+    Nu = grid.Nu
+    Nv = grid.Nv
+    NT = grid.NT
+    Nq = grid.Nq 
+
+    T = days_to_seconds(days, params.dt)
+
+    states_rhs = SWM_pde(Nu = Nu, 
+        Nv = Nv,
+        NT = NT, 
+        Nq = Nq, 
+        T = T,
+        u = u0,
+        v = v0,
+        eta = eta0
+    )
+    
+    for t in 1:T
+
+        advance(states_rhs, grid, params, interp, grad, advec)
+        heatmap(reshape(states_rhs.eta, 128, 128)')
+        copyto!(states_rhs.u, states_rhs.u0)
+        copyto!(states_rhs.v, states_rhs.v0)
+        copyto!(states_rhs.eta, states_rhs.eta0)
+        
+    end 
+        
+    return states_rhs
+
+end
+
+function create_gif(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)                 
+
+    grid = build_grid(Lx, Ly, nx, ny)
+    params = def_params(grid)
+
+    # building discrete operators
+    grad = build_derivs(grid)            # discrete gradient operators
+    interp = build_interp(grid, grad)    # discrete interpolation operators (travels between grids)
+    advec = build_advec(grid)
+
+    Nu = grid.Nu
+    Nv = grid.Nv
+    NT = grid.NT
+    Nq = grid.Nq 
+
+    T = days_to_seconds(days, params.dt)
+
+    states_rhs = SWM_pde(Nu = Nu, 
+        Nv = Nv,
+        NT = NT, 
+        Nq = Nq, 
+        T = T,
+        u = u0,
+        v = v0,
+        eta = eta0
+    )
+    
+    anim = @animate for t in 1:T
+
+        advance(states_rhs, grid, params, interp, grad, advec)
+        heatmap(reshape(states_rhs.eta, 128, 128)')
+        copyto!(states_rhs.u, states_rhs.u0)
+        copyto!(states_rhs.v, states_rhs.v0)
+        copyto!(states_rhs.eta, states_rhs.eta0)
+        
+    end every 100
+
+    gif(anim, "eta_integration.gif", fps = 30)
         
     return states_rhs
 
@@ -115,10 +202,12 @@ end
 #           data_steps - which timesteps we want to store data at
 # Theoretically, we should only ever run this function *once*, from there 
 # the data points will be stored as a JLD2 data file 
-function create_data(days, nx_lowres, ny_lowres, data_steps; scaling = 4, Lx = 3840e3, Ly = 3840e3)
+function create_data(days, nx_lowres, ny_lowres, data_steps, scaling; Lx = 3840e3, Ly = 3840e3)
 
 nx_highres = nx_lowres * scaling
 ny_highres = ny_lowres * scaling 
+
+grid_lowres = build_grid(Lx, Ly, nx_lowres, ny_lowres)
 
 grid_highres = build_grid(Lx, Ly, nx_highres, ny_highres)
 params = def_params(grid_highres)
@@ -141,11 +230,11 @@ u_v_eta_rhs = SWM_pde(Nu = Nu,
     Nq = Nq
 )
 
-# In order to compare high res data to low res velocities I'm going to (1) interpolate 
-# the velocities to the T-grid (cell centers) (2) average the high
-# res data points down to the low res grid (3) interpolate the low 
-# res results to the cell centers. Then I'll be comparing apples to apples (hopefully)
-# will check with Patrick that this is a valid method 
+# In order to compare high res data to low res velocities I'm going to 
+# (1) interpolate the velocities to the T-grid (cell centers) 
+# (2) average the high res data points down to the low res grid 
+# (3) interpolate the low res results to the cell centers. 
+# Then I'll be comparing apples to apples (hopefully) (will check with Patrick that this is a valid method)
 
 # Building the averaging operator needed for step (2) above
 diag1 = (1 / scaling^2) .* ones(NT)
@@ -163,7 +252,7 @@ end
 M = M[index1, :]
 
 # initializing where to store the data 
-data = zeros(grid_highres.Nu + grid_highres.Nv + grid_highres.NT, length(data_steps))
+data = zeros(3 * grid_lowres.NT, length(data_steps))
 
 # the steps where we want data in the high res model correspond to (roughly) scaling * t for t 
 # in the low res model. for simplicity I'm going to keep the times in the low res where I want to have 
@@ -172,7 +261,10 @@ data = zeros(grid_highres.Nu + grid_highres.Nv + grid_highres.NT, length(data_st
 # for an initial effort I'm just going to run pretty course resolution models for both the high and low res 
 
 if 1 in scaling .* data_steps 
-    data[:, 1] .= [u_v_eta_rhs.u; u_v_eta_rhs.v; u_v_eta_rhs.eta]
+    data[:, 1] .= [M * (interp.IuT * u_v_eta_rhs.u); 
+        M * (interp.IvT * u_v_eta_rhs.v); 
+        M * u_v_eta_rhs.eta
+    ]
     j = 2
 else
     j = 1
@@ -183,7 +275,10 @@ for t in 2:Trun
     advance(u_v_eta_rhs, grid_highres, params, interp, grad, advec) 
 
     if t in scaling .* data_steps 
-        data[:, j] .= [u_v_eta_rhs.u; u_v_eta_rhs.v; u_v_eta_rhs.eta]
+        data[:, j] .= [M * (interp.IuT * u_v_eta_rhs.u); 
+        M * (interp.IvT * u_v_eta_rhs.v); 
+        M * u_v_eta_rhs.eta
+    ]
         j += 1
     end
 

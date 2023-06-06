@@ -15,20 +15,12 @@
 # include("cost_func.jl")
 # include("compute_time_deriv.jl")
 
-# This function will setup the structures needed to integrate the model. Comes with default values, but
-# these can be specified if desired. 
-# Now has an option to not start the integration from rest and instead specify the initial fields 
-# u0, v0, eta0. If these are specified, the arguments nx and ny should also be adjusted to match the 
-# dimensions of the initial conditions. I don't know how to force this to happen, so for now just need
-# to remember 
+
 function setup_data_misfit(
-    ;u0 = 0.0, 
-    v0 = 0.0, 
-    eta0 = 0.0, 
-    days = 10, 
-    nx = 20, 
-    ny = 20, 
-    scaling = 4,
+    days, 
+    nx, 
+    ny, 
+    scaling;
     Lx = 3840e3,    
     Ly = 3840e3
 )
@@ -50,26 +42,14 @@ function setup_data_misfit(
 
     data_steps = 2:100:T
 
-    data, M = create_data(days, nx, ny, data_steps, scaling = scaling)
+    data, M = create_data(days, nx, ny, data_steps, scaling)
 
-    if u0 != 0.0 
-        states_rhs = SWM_pde(Nu = Nu, 
-            Nv = Nv,
-            NT = NT,
-            Nq = Nq,
-            T = T, 
-            u = u0,
-            v = v0, 
-            eta = eta0
-        )
-    else
-        states_rhs = SWM_pde(Nu = Nu, 
-            Nv = Nv,
-            NT = NT, 
-            Nq = Nq, 
-            T = T
-        )
-    end
+    states_rhs = SWM_pde(Nu = Nu, 
+        Nv = Nv,
+        NT = NT, 
+        Nq = Nq, 
+        T = T
+    )
 
     return grid, params, grad, interp, advec, states_rhs, data, data_steps, M
 
@@ -95,9 +75,9 @@ function chkpt_func(
         advance(chkpt_struct, grid, params, interp, grad, advec)
 
         if t in data_steps 
-            chkpt_struct.J += data_misfit(M, data[:, j], 
-                chkpt_struct.u0,
-                chkpt_struct.v0,
+            chkpt_struct.J += data_misfit(data[:, j], 
+                interp.IuT * chkpt_struct.u0,
+                interp.IvT * chkpt_struct.v0,
                 chkpt_struct.eta0
             )
             j += 1
@@ -120,10 +100,10 @@ function run_checkpointing_dataex(
     )
 
     grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data, data_steps, M = setup_data_misfit(
-        days = days_to_integrate, 
-        nx = nx,
-        ny = ny, 
-        scaling = scaling
+        days_to_integrate, 
+        nx,
+        ny, 
+        scaling
     )
 
     snaps = snaps
@@ -147,6 +127,7 @@ function run_checkpointing_dataex(
 
 end
 
+# Gradient check with finite differences 
 
 # # for checking that the forward integration still works 
 

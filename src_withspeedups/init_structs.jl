@@ -34,11 +34,6 @@ end
     # Inu_u::Matrix{Float64} 
     # Inu_v::Matrix{Float64}
 
-    scratch_u::Vector{Float64} = zeros(Nu)
-    scratch_v::Vector{Float64} = zeros(Nv)
-    scratch_T::Vector{Float64} = zeros(NT)
-    scratch_q::Vector{Float64} = zeros(Nq)
-
     # Placeholder for the scaling factor between the highres and lowres models 
     scaling::Float64 = 0.0
 
@@ -216,5 +211,3 @@ struct Advection
     Scv::SparseMatrixCSC{Float64, Int64}
     Sdv::SparseMatrixCSC{Float64, Int64}
 end
-
-

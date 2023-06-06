@@ -1,4 +1,4 @@
-using Printf
+using Printf, JLD2
 
 function find_non_zeros(A)
 
@@ -30,17 +30,24 @@ function find_values(A, val)
 
 end
 
-using Checkpointing
-using Plots
-using Zygote
 
-mutable struct Heat
-    Tnext::Vector{Float64}
-    Tlast::Vector{Float64}
-    n::Int
-    λ::Float64
-    tsteps::Int
-end
+# @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
+# u0 = states_nx128_ny128_10year_060523.u
+# v0 = states_nx128_ny128_10year_060523.v
+# eta0 = states_nx128_ny128_10year_060523.eta
+# states, a = ExplicitSolver.integrate(u0, v0, eta0, 30, 128, 128)
+
+# using Checkpointing
+# using Plots
+# using Zygote
+
+# mutable struct Heat
+#     Tnext::Vector{Float64}
+#     Tlast::Vector{Float64}
+#     n::Int
+#     λ::Float64
+#     tsteps::Int
+# end
 
 # function advance(heat)
 #     next = heat.Tnext
