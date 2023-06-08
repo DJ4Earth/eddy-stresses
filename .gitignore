@@ -72,3 +72,8 @@ src_withspeedups_playground/Manifest.toml
 src_withspeedups_playground/Project.toml
 src_withspeedups_playground/temp.jl
 src_withspeedups_playground/.DS_Store
+figures/eta_integration_90days.gif
+figures/eta_integration_6months.gif
+figures/u_integration_1month.gif
+sverdrup_files/for_sverdrup.bash
+sverdrup_files/spinup_for_sverdrup.jl

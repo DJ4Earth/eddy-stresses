@@ -92,7 +92,7 @@ function integrate(days, nx, ny; Lx = 3840e3, Ly = 3840e3)
         T = T
     )
     
-    @time for t in 1:T
+    for t in 1:states_rhs.T
 
         advance(states_rhs, grid, params, interp, grad, advec)
 
@@ -133,58 +133,14 @@ function integrate(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)
         eta = eta0
     )
     
-    for t in 1:T
+    @btime for t in 1:T
 
         advance(states_rhs, grid, params, interp, grad, advec)
-        heatmap(reshape(states_rhs.eta, 128, 128)')
         copyto!(states_rhs.u, states_rhs.u0)
         copyto!(states_rhs.v, states_rhs.v0)
         copyto!(states_rhs.eta, states_rhs.eta0)
         
     end 
-        
-    return states_rhs
-
-end
-
-function create_gif(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)                 
-
-    grid = build_grid(Lx, Ly, nx, ny)
-    params = def_params(grid)
-
-    # building discrete operators
-    grad = build_derivs(grid)            # discrete gradient operators
-    interp = build_interp(grid, grad)    # discrete interpolation operators (travels between grids)
-    advec = build_advec(grid)
-
-    Nu = grid.Nu
-    Nv = grid.Nv
-    NT = grid.NT
-    Nq = grid.Nq 
-
-    T = days_to_seconds(days, params.dt)
-
-    states_rhs = SWM_pde(Nu = Nu, 
-        Nv = Nv,
-        NT = NT, 
-        Nq = Nq, 
-        T = T,
-        u = u0,
-        v = v0,
-        eta = eta0
-    )
-    
-    anim = @animate for t in 1:T
-
-        advance(states_rhs, grid, params, interp, grad, advec)
-        heatmap(reshape(states_rhs.eta, 128, 128)')
-        copyto!(states_rhs.u, states_rhs.u0)
-        copyto!(states_rhs.v, states_rhs.v0)
-        copyto!(states_rhs.eta, states_rhs.eta0)
-        
-    end every 100
-
-    gif(anim, "eta_integration.gif", fps = 30)
         
     return states_rhs
 

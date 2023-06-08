@@ -46,6 +46,9 @@ end
     # entry in data vector 
     j::Int = 1
 
+    # for animation 
+    k::Int = 0
+
     # since everything that matters to the derivative needs to live in a single structure, 
     # this will also contain all of the placeholders for terms on the RHS of the system
 
@@ -154,66 +157,66 @@ end
 struct Derivatives
 
     # Discrete gradients 
-    GTx::SparseMatrixCSC{Float64, Int64}        
-    GTy::SparseMatrixCSC{Float64, Int64}
-    Gux::SparseMatrixCSC{Float64, Int64}
-    Guy::SparseMatrixCSC{Float64, Int64}
-    Gvx::SparseMatrixCSC{Float64, Int64}
-    Gvy::SparseMatrixCSC{Float64, Int64}
-    Gqy::SparseMatrixCSC{Float64, Int64}
-    Gqx::SparseMatrixCSC{Float64, Int64}
+    GTx::SparseMatrixCSC{Float64, Int32}        
+    GTy::SparseMatrixCSC{Float64, Int32}
+    Gux::SparseMatrixCSC{Float64, Int32}
+    Guy::SparseMatrixCSC{Float64, Int32}
+    Gvx::SparseMatrixCSC{Float64, Int32}
+    Gvy::SparseMatrixCSC{Float64, Int32}
+    Gqy::SparseMatrixCSC{Float64, Int32}
+    Gqx::SparseMatrixCSC{Float64, Int32}
 
     # Discrete Laplacian operators 
-    Lu::SparseMatrixCSC{Float64, Int64}
-    Lv::SparseMatrixCSC{Float64, Int64}
-    LT::SparseMatrixCSC{Float64, Int64}
-    Lq::SparseMatrixCSC{Float64, Int64}
-    LLu::SparseMatrixCSC{Float64, Int64}
-    LLv::SparseMatrixCSC{Float64, Int64}
+    Lu::SparseMatrixCSC{Float64, Int32}
+    Lv::SparseMatrixCSC{Float64, Int32}
+    LT::SparseMatrixCSC{Float64, Int32}
+    Lq::SparseMatrixCSC{Float64, Int32}
+    LLu::SparseMatrixCSC{Float64, Int32}
+    LLv::SparseMatrixCSC{Float64, Int32}
 
 end
 
 # Interpolation operators, move from one grid to another. For example Ivu moves from the v-grid (horizontal faces)
 # to elements on the u-grid
 struct Interps 
-    Ivu::SparseMatrixCSC{Float64, Int64}
-    Iuv::SparseMatrixCSC{Float64, Int64}
-    IqT::SparseMatrixCSC{Float64, Int64}
-    IuT::SparseMatrixCSC{Float64, Int64}
-    IvT::SparseMatrixCSC{Float64, Int64}
-    ITu::SparseMatrixCSC{Float64, Int64}
-    ITv::SparseMatrixCSC{Float64, Int64}
-    Iqu::SparseMatrixCSC{Float64, Int64}
-    Iqv::SparseMatrixCSC{Float64, Int64}
-    Iuq::SparseMatrixCSC{Float64, Int64}
-    Ivq::SparseMatrixCSC{Float64, Int64}
-    ITq::SparseMatrixCSC{Float64, Int64}
+    Ivu::SparseMatrixCSC{Float64, Int32}
+    Iuv::SparseMatrixCSC{Float64, Int32}
+    IqT::SparseMatrixCSC{Float64, Int32}
+    IuT::SparseMatrixCSC{Float64, Int32}
+    IvT::SparseMatrixCSC{Float64, Int32}
+    ITu::SparseMatrixCSC{Float64, Int32}
+    ITv::SparseMatrixCSC{Float64, Int32}
+    Iqu::SparseMatrixCSC{Float64, Int32}
+    Iqv::SparseMatrixCSC{Float64, Int32}
+    Iuq::SparseMatrixCSC{Float64, Int32}
+    Ivq::SparseMatrixCSC{Float64, Int32}
+    ITq::SparseMatrixCSC{Float64, Int32}
 end
 
 # These are very specific operators that appear only in the computation of the advection terms, when 
 # using the Arakawa and Lamb advection scheme. The best place to read about them is in Milan's lovely 
 # documentation for his Python code 
 struct Advection
-    AL1::SparseMatrixCSC{Float64, Int64}
-    AL2::SparseMatrixCSC{Float64, Int64}
-    index_av::Vector{Int64}
-    index_bv::Vector{Int64}
-    index_cv::Vector{Int64}
-    index_dv::Vector{Int64}
-    ALeur::SparseMatrixCSC{Float64, Int64}
-    ALeul::SparseMatrixCSC{Float64, Int64}
-    Seul::SparseMatrixCSC{Float64, Int64}
-    Seur::SparseMatrixCSC{Float64, Int64}
-    Sau::SparseMatrixCSC{Float64, Int64}
-    Sbu::SparseMatrixCSC{Float64, Int64}
-    Scu::SparseMatrixCSC{Float64, Int64}
-    Sdu::SparseMatrixCSC{Float64, Int64}
-    ALpvu::SparseMatrixCSC{Float64, Int64}
-    ALpvd::SparseMatrixCSC{Float64, Int64}
-    Spvu::SparseMatrixCSC{Float64, Int64}
-    Spvd::SparseMatrixCSC{Float64, Int64}
-    Sav::SparseMatrixCSC{Float64, Int64}
-    Sbv::SparseMatrixCSC{Float64, Int64}
-    Scv::SparseMatrixCSC{Float64, Int64}
-    Sdv::SparseMatrixCSC{Float64, Int64}
+    AL1::SparseMatrixCSC{Float64, Int32}
+    AL2::SparseMatrixCSC{Float64, Int32}
+    index_av::Vector{Int}
+    index_bv::Vector{Int}
+    index_cv::Vector{Int}
+    index_dv::Vector{Int}
+    ALeur::SparseMatrixCSC{Float64, Int32}
+    ALeul::SparseMatrixCSC{Float64, Int32}
+    Seul::SparseMatrixCSC{Float64, Int32}
+    Seur::SparseMatrixCSC{Float64, Int32}
+    Sau::SparseMatrixCSC{Float64, Int32}
+    Sbu::SparseMatrixCSC{Float64, Int32}
+    Scu::SparseMatrixCSC{Float64, Int32}
+    Sdu::SparseMatrixCSC{Float64, Int32}
+    ALpvu::SparseMatrixCSC{Float64, Int32}
+    ALpvd::SparseMatrixCSC{Float64, Int32}
+    Spvu::SparseMatrixCSC{Float64, Int32}
+    Spvd::SparseMatrixCSC{Float64, Int32}
+    Sav::SparseMatrixCSC{Float64, Int32}
+    Sbv::SparseMatrixCSC{Float64, Int32}
+    Scv::SparseMatrixCSC{Float64, Int32}
+    Sdv::SparseMatrixCSC{Float64, Int32}
 end

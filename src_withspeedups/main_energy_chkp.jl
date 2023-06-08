@@ -29,10 +29,10 @@ Enzyme.API.runtimeActivity!(true)
 # Example usage:
 # (1) if there are no initial conditions to specify (starting the model from rest)
 # include("ExplicitSolver.jl")
-# days_to_integrate = 30 
-# nx = 50
-# ny = 50 
-# snaps = 5
+# days_to_integrate = 1 
+# nx = 128
+# ny = 128
+# snaps = 2
 # denergy = run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
 # 
 # (2) if there are non-zero initial condtions (starting from a spun-up state)
@@ -41,8 +41,8 @@ Enzyme.API.runtimeActivity!(true)
 # u0 = states_nx128_ny128_10yr_060523.u 
 # v0 = states_nx128_ny128_10yr_060523.v
 # eta0 = states_nx128_ny128_10yr_060523.eta
-# snaps = 5
-# days_to_integrate = 30
+# snaps = 2
+# days_to_integrate = 1
 # nx = 128 
 # ny = 128
 # denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps)
@@ -161,7 +161,7 @@ function run_checkpointing_energyex(days, nx, ny, snaps)
 
     denergy = Zygote.gradient(chkpt_integration, 
         chkpt_struct_outer, 
-        revolve, 
+        revolve,
         grid, 
         gyre_params, 
         interp_ops, 
@@ -201,12 +201,28 @@ function run_checkpointing_energyex(u0, v0, eta0, days, nx, ny, snaps)
 
 end
 
+# this is the exact run I ran on sverdrup, uncomment to use 
+
+# nx = 128
+# ny = 128
+# days_to_integrate = 5
+# snaps = 30
+# @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
+# u0 = states_nx128_ny128_10year_060523.u
+# v0 = states_nx128_ny128_10year_060523.v
+# eta0 = states_nx128_ny128_10year_060523.eta
+
+# denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps);
+
+
 # gradient check with the results from checkpointing - passed
 
 # nx = 128
 # ny = 128
-# days_to_integrate = 1
-# snaps = 6
+# days_to_integrate = 90
+# snaps = 1
+# @time denergy = run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
+
 # @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
 # u0 = states_nx128_ny128_10year_060523.u
 # v0 = states_nx128_ny128_10year_060523.v
