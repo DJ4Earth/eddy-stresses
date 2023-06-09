@@ -1,6 +1,6 @@
 # Estimation and UQ of eddy momentum stresses
 
-![Surface displacement after ten years of integration](./10yr_eta.png)
+![Surface displacement after ten years of integration](./figures/eta_integration_6month.gif)
 
 The goal of this project is to leverage a differentiable Oceananigans.jl to estimate eddy momentum stresses in an idealized domain. We are also interested in quantifying the uncertainties in these eddy momentum stresses.
 
