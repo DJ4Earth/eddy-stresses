@@ -7,6 +7,7 @@
 using Plots, SparseArrays, Parameters, UnPack
 using JLD2, LinearAlgebra
 using Enzyme, Checkpointing, Zygote 
+# using Profile, PProf
 
 include("init_structs.jl")
 include("init_params.jl")
@@ -17,7 +18,7 @@ include("cost_func.jl")
 include("compute_time_deriv.jl")
 include("temp.jl")
 
-Enzyme.API.runtimeActivity!(true)
+Enzyme.API.runtimeActivity!(false)
 
 # This script will run an example of Enzyme + Checkpointing being used to compute a sensitivity 
 # of the final energy to initial conditions. Five functions are defined. The first two set up the entire experiment by 
@@ -184,9 +185,10 @@ function run_checkpointing_energyex(u0, v0, eta0, days, nx, ny, snaps)
     )
 
     snaps = snaps
-    verbose = 0
-    revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=verbose)
-
+    revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=1, gc=true, write_checkpoints=false)
+    # Profile.clear()
+    # Profile.Allocs.clear()
+    # Profile.Allocs.@profile denergy = Zygote.gradient(chkpt_integration, 
     denergy = Zygote.gradient(chkpt_integration, 
         chkpt_struct_outer, 
         revolve, 
@@ -196,6 +198,7 @@ function run_checkpointing_energyex(u0, v0, eta0, days, nx, ny, snaps)
         grad_ops, 
         advec_ops
     )
+    # PProf.Allocs.pprof()
 
     return denergy
 
