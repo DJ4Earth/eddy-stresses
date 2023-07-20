@@ -3,7 +3,7 @@ module ExplicitSolver
     using Plots, SparseArrays, Parameters, UnPack
     using JLD2, LinearAlgebra
     using Enzyme, Checkpointing, Zygote
-    using BenchmarkTools
+    using HDF5, Serialization
 
     export run_checkpointing_energyex
 

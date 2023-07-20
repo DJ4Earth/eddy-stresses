@@ -49,6 +49,9 @@ end
     # for animation 
     k::Int = 0
 
+    # first parameterization effort, just the value nu
+    nu::Vector{Float64}             # matrix of nu values (not yet sure if this is the right idea, but its a start)
+
     # since everything that matters to the derivative needs to live in a single structure, 
     # this will also contain all of the placeholders for terms on the RHS of the system
 

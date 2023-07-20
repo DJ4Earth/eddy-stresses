@@ -13,7 +13,7 @@ include("init_params.jl")
 include("build_grid.jl")
 include("build_discrete_operators.jl")
 include("advance.jl")
-include("cost_func.jl")
+# include("cost_func.jl")
 include("compute_time_deriv.jl")
 
 
@@ -109,8 +109,8 @@ function run_checkpointing_dataex(
     )
 
     snaps = snaps
-    verbose = 0
-    revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose)
+    verbose = 1
+    revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=verbose, save_checkpoints=false)
 
     dnu = Zygote.gradient(chkpt_func, 
     chkpt_struct, 
@@ -129,7 +129,7 @@ function run_checkpointing_dataex(
 
 end
 
-dnu = run_checkpointing_dataex()
+# dnu = run_checkpointing_dataex()
 
 # Gradient check with finite differences 
 

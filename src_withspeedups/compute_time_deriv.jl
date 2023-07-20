@@ -17,11 +17,11 @@ v = rhs.v0                          # t + dt of the non-dissipative RHS
 (;ITu, ITv) = interp                # interpolation operators   
 (;LLu, LLv) = grad                  # gradient operators
 (;h_u, h_v) = rhs                   # diagnostic variables
-(;kinetic, kinetic_sq, Mu, Mv, nu_u, nu_v) = rhs
+(;kinetic, kinetic_sq, Mu, Mv, nu, nu_u, nu_v) = rhs
 (;bfric_u, bfric_v) = rhs
 (;ITu_ksq,ITv_ksq) = rhs
 (;u_t, v_t) = rhs                   # tendencies
-(;nu, bottom_drag) = params
+(;bottom_drag) = params
 
 # bottom friction
 kinetic_sq .= sqrt.(kinetic)
@@ -34,10 +34,10 @@ bfric_v .= bottom_drag .* ITv_ksq .* v ./ h_v
 # diffusion term ν∇⁴(u,v)
 @inplacemul nu_u = ITu * nu
 @inplacemul nu_v = ITv * nu
-@inplacemul Mu = LLu * u
-@inplacemul Mv = LLv * v
-Mu .*= nu_u
-Mv .*= nu_v
+@inplacemul Mu = LLu * (nu_u .* u)
+@inplacemul Mv = LLv * (nu_v .* v)
+# Mu .*= nu_u
+# Mv .*= nu_v
 
 # tendencies for bottom friction and diffusion
 u_t .= .- Mu .- bfric_u
@@ -87,7 +87,7 @@ v2 .= v.^2
 @inplacemul v2_T = IvT * v2
 kinetic .= u2_T .+ v2_T
 
-# Kloewer defined new terms q and p corresponding to potential vorticity and 
+# Klower defined new terms q and p corresponding to potential vorticity and 
 # Bernoulli potential respectively. To avoid errors in my mimic I'm following 
 # along and doing the same 
 @inplacemul Guy_u1 = Guy * u

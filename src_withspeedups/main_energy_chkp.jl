@@ -185,10 +185,8 @@ function run_checkpointing_energyex(u0, v0, eta0, days, nx, ny, snaps)
     )
 
     snaps = snaps
-    revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=1, gc=true, write_checkpoints=false)
-    # Profile.clear()
-    # Profile.Allocs.clear()
-    # Profile.Allocs.@profile denergy = Zygote.gradient(chkpt_integration, 
+    revolve = Revolve{SWM_pde}(chkpt_struct_outer.T, snaps; verbose=1, gc=true, write_checkpoints=true)
+
     denergy = Zygote.gradient(chkpt_integration, 
         chkpt_struct_outer, 
         revolve, 
@@ -198,40 +196,27 @@ function run_checkpointing_energyex(u0, v0, eta0, days, nx, ny, snaps)
         grad_ops, 
         advec_ops
     )
-    # PProf.Allocs.pprof()
+
 
     return denergy
 
 end
 
-# this is the exact run I ran on sverdrup, uncomment to use 
-
-# nx = 128
-# ny = 128
-# days_to_integrate = 5
-# snaps = 30
-# @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
-# u0 = states_nx128_ny128_10year_060523.u
-# v0 = states_nx128_ny128_10year_060523.v
-# eta0 = states_nx128_ny128_10year_060523.eta
-
-# denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps);
-
 
 # gradient check with the results from checkpointing - passed
 
-# nx = 128
-# ny = 128
-# days_to_integrate = 90
-# snaps = 1
-# @time denergy = run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
+nx = 128
+ny = 128
+days_to_integrate = 1
+snaps = 1
+@time denergy = run_checkpointing_energyex(days_to_integrate, nx, ny, snaps)
 
-# @load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
-# u0 = states_nx128_ny128_10year_060523.u
-# v0 = states_nx128_ny128_10year_060523.v
-# eta0 = states_nx128_ny128_10year_060523.eta
+@load "./initcond_plus_data/states_nx128_ny128_10year_060523.jld2" states_nx128_ny128_10year_060523
+u0 = states_nx128_ny128_10year_060523.u
+v0 = states_nx128_ny128_10year_060523.v
+eta0 = states_nx128_ny128_10year_060523.eta
 
-# @time denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps)
+@time denergy = run_checkpointing_energyex(u0, v0, eta0, days_to_integrate, nx, ny, snaps)
 
 # du = denergy[1].u
 # dv = denergy[1].v

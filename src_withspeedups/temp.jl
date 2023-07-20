@@ -1,5 +1,20 @@
 using Printf, JLD2
 
+function compute_energy(states, days)
+
+    energy = []
+    grid = build_grid(3840e3, 3840e3, 128, 128)
+    params = def_params(grid)
+    Nt = days_to_seconds(days, params.dt)
+
+    for t = 1:Nt
+        push!(energy, sum(states[t].u.^2 + states[t].v.^2) / (grid.nx * grid.ny)) 
+    end
+
+    return energy
+
+end
+
 function find_non_zeros(A)
 
     for j = 1:size(A)[1]

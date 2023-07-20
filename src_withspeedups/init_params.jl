@@ -42,7 +42,6 @@ function def_params(grid)
     ws_sin = 2 .* sin.(pi .* ((Yu .- Ly/2)./Ly)  ) 
     wind_stress = 0.12 .* (ws_cos + ws_sin) ./rho_c
 
-    # removing the requirement that dt be an integer, not sure why that's there 
     dt = (0.9 * min(dx, dy)) / (sqrt(g * H))   # CFL condition for dt [seconds]
 
     # we use RK4 as the timestepper, here I'm storing the coefficients needed for this 
