@@ -42,9 +42,9 @@ function setup_data_misfit(
 
     T = days_to_seconds(days, params.dt)
 
-    data_steps = 1:params.dt:T  
+    data_steps = [k for k in 1:T] 
 
-    data = load_object("../data_files/energy_afterspinup_nxny512_2years_everystep_062823.jld2")
+    data = load_object("../../data_files/energy_afterspinup_nxny512_2years_everystep_062823.jld2")
 
     # data, M = create_data(days, nx, ny, data_steps, scaling)
 
@@ -53,7 +53,7 @@ function setup_data_misfit(
         NT = NT, 
         Nq = Nq, 
         T = T,
-        nu = params.nu
+        nu = copy(params.nu)
     )
 
     return grid, params, grad, interp, advec, states_rhs, data_steps, data 
@@ -87,9 +87,9 @@ function setup_data_misfit(u0,
 
     T = days_to_seconds(days, params.dt)
 
-    data_steps = 1:params.dt:T  
+    data_steps = [k for k in 1:T]
 
-    data = load_object("../data_files/energy_afterspinup_nxny512_2years_everystep_062823.jld2")
+    data = load_object("../../data_files/energy_afterspinup_nxny512_2years_everystep_062823.jld2")
 
     # data, M = create_data(days, nx, ny, data_steps, scaling)
 
@@ -101,7 +101,7 @@ function setup_data_misfit(u0,
         v = v0,
         eta = eta0, 
         T = T,
-        nu = params.nu
+        nu = copy(params.nu)
     )
 
     return grid, params, grad, interp, advec, states_rhs, data_steps, data 
@@ -147,7 +147,7 @@ function run_checkpointing_dataex_energyonly(
     )
 
     # non-zero initial condition 
-    init_states = load_object("../data_files/states_nx128_ny128_10year_060523.jld2")
+    init_states = load_object("../../data_files/states_nx128_ny128_10year_060523.jld2")
     grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data_steps, data  = setup_data_misfit(init_states.u,
     init_states.v,
     init_states.eta,
@@ -159,7 +159,7 @@ function run_checkpointing_dataex_energyonly(
     # days_to_integrate
     # )
 
-    snaps = snaps
+    snaps = Int(floor(sqrt(chkpt_struct.T)))
     revolve = Revolve{SWM_pde}(chkpt_struct.T, snaps; verbose=1, gc=true, write_checkpoints=false)
 
     dnu = Zygote.gradient(chkpt_func, 
@@ -174,7 +174,7 @@ function run_checkpointing_dataex_energyonly(
     advec_ops
     )
 
-    return dnu, chkpt_struct
+    return dnu
 
 end
 
@@ -198,101 +198,118 @@ function for_optim!(F, G, x)
 
 end 
 
-init_states = load_object("../data_files/states_nx128_ny128_10year_060523.jld2")
+# init_states = load_object("../../data_files/states_nx128_ny128_10year_060523.jld2")
 
-grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data_steps, data  = setup_data_misfit(init_states.u,
-init_states.v,
-init_states.eta,
-30
-)
+# grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data_steps, data  = setup_data_misfit(init_states.u,
+# init_states.v,
+# init_states.eta,
+# 30
+# )
 
-A_h = compute_viscosity(grid.nx, grid.ny, grid.dx, grid.dy)
-nu = A_h .* ones(grid.NT)                                            # placing the viscosity coefficient on the tracer grid (cell centers)
+# A_h = compute_viscosity(grid.nx, grid.ny, grid.dx, grid.dy)
+# nu = A_h .* ones(grid.NT)                                            # placing the viscosity coefficient on the tracer grid (cell centers)
 
-res = Optim.optimize(Optim.only_fg!(for_optim!), nu, Optim.LBFGS(), Optim.Options(iterations = 30))
+# # res = Optim.optimize(Optim.only_fg!(for_optim!), nu, Optim.LBFGS(), Optim.Options(iterations = 30))
 
-# dnu = run_checkpointing_dataex_energyonly()
+# dnu = run_checkpointing_dataex_energyonly(days_to_integrate = 30)
 
 # Gradient check with finite differences 
 
-# function gradient_check()
+function gradient_check()
 
 
-#     days_to_integrate = 1
-#     snaps = 1
-#     @time dnu = run_checkpointing_dataex_energyonly(days_to_integrate = days_to_integrate, snaps = snaps)
+    days_to_integrate = 45
+    @time dnu = run_checkpointing_dataex_energyonly(days_to_integrate = days_to_integrate)
 
-#     du = dnu[1].u
-#     dv = dnu[1].v
-#     deta = dnu[1].eta
+    # du = dnu[1].u
+    # dv = dnu[1].v
+    # deta = dnu[1].eta
 
-#     steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]
+    d_param = copy(dnu[1].nu)
 
-#     use_to_check = du[88]
+    steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10]
 
-#     grid_, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer, data_steps, data  = setup_data_misfit(
-#         days_to_integrate
-#     )
+    want_to_converge_to = d_param[8]
 
-#     T = days_to_seconds(days_to_integrate, gyre_params.dt)
+    grid_, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct_outer, data_steps, data  = setup_data_misfit(
+        days_to_integrate
+    )
 
-#     chkpt_struct_new = SWM_pde(Nu = grid_.Nu, 
-#         Nv = grid_.Nv,
-#         NT = grid_.NT,
-#         Nq = grid_.Nq,
-#         T = T,
-#         nu = gyre_params.nu
-#     )
+    T = days_to_seconds(days_to_integrate, gyre_params.dt)
 
-#     for t = 1:T
-#         advance(chkpt_struct_new, grid_, gyre_params, interp_ops, grad_ops, advec_ops)
+    chkpt_struct_new = SWM_pde(Nu = grid_.Nu, 
+        Nv = grid_.Nv,
+        NT = grid_.NT,
+        Nq = grid_.Nq,
+        T = T,
+        nu = gyre_params.nu
+    )
 
-#         if chkpt_struct_new.t in data_steps 
-#             chkpt_struct_new.J += sum(chkpt_struct_new.u.^2 .+ chkpt_struct_new.v.^2) / (grid.nx * grid.ny) - data[4 * chkpt_struct_new.j]
-#             chkpt_struct_new.j += 1
-#         end
+    for t = 1:T
 
-#         copyto!(chkpt_struct_new.u, chkpt_struct_new.u0)
-#         copyto!(chkpt_struct_new.v, chkpt_struct_new.v0)
-#         copyto!(chkpt_struct_new.eta, chkpt_struct_new.eta0)
-#     end
-#     cost_tocheck = copy(chkpt_struct_new.J)
+        advance(chkpt_struct_new, grid_, gyre_params, interp_ops, grad_ops, advec_ops)
 
-#     diffs = []
-#     for s in steps 
+        if t in data_steps 
+            chkpt_struct_new.J += sum(chkpt_struct_new.u.^2 .+ chkpt_struct_new.v.^2) / (grid_.nx * grid_.ny) - data[4 * chkpt_struct_new.j]
+            chkpt_struct_new.j += 1
+        end
 
-#         T = days_to_seconds(days_to_integrate, gyre_params.dt)
+        copyto!(chkpt_struct_new.u, chkpt_struct_new.u0)
+        copyto!(chkpt_struct_new.v, chkpt_struct_new.v0)
+        copyto!(chkpt_struct_new.eta, chkpt_struct_new.eta0)
 
-#         chkpt_struct_new2 = SWM_pde(Nu = grid_.Nu, 
-#             Nv = grid_.Nv,
-#             NT = grid_.NT,
-#             Nq = grid_.Nq,
-#             T = T,
-#             nu = gyre_params.nu
-#         )
+    end
 
-#         chkpt_struct_new2.u[88] = s
+    cost_tocheck = copy(chkpt_struct_new.J)
 
-#         for t = 1:T
-#             advance(chkpt_struct_new2, grid_, gyre_params, interp_ops, grad_ops, advec_ops)
+    @show cost_tocheck
 
-#             if chkpt_struct_new2.t in data_steps 
-#                 chkpt_struct_new2.J += sum(chkpt_struct_new2.u.^2 .+ chkpt_struct_new2.v.^2) / (grid.nx * grid.ny) - data[4 * chkpt_struct_new2.j]
-#                 chkpt_struct_new2.j += 1
-#             end
+    diffs = []
+    for s in steps 
 
-#             copyto!(chkpt_struct_new2.u, chkpt_struct_new2.u0)
-#             copyto!(chkpt_struct_new2.v, chkpt_struct_new2.v0)
-#             copyto!(chkpt_struct_new2.eta, chkpt_struct_new2.eta0)
-#         end
+        T = days_to_seconds(days_to_integrate, gyre_params.dt)
 
-#         push!(diffs, (chkpt_struct_new2.J - cost_tocheck) / s)
+        chkpt_struct_new2 = SWM_pde(Nu = grid_.Nu, 
+            Nv = grid_.Nv,
+            NT = grid_.NT,
+            Nq = grid_.Nq,
+            T = T,
+            nu = gyre_params.nu
+        )
 
-#     end
+        chkpt_struct_new2.nu .= copy(gyre_params.nu)
 
-#     return diffs, use_to_check
+        @show s 
+        @show chkpt_struct_new2.nu[8]
 
-# end
+        chkpt_struct_new2.nu[8] += s
+
+        @show chkpt_struct_new2.nu[8]
+
+        for t = 1:T
+            advance(chkpt_struct_new2, grid_, gyre_params, interp_ops, grad_ops, advec_ops)
+
+            if t in data_steps 
+                chkpt_struct_new2.J += sum(chkpt_struct_new2.u.^2 .+ chkpt_struct_new2.v.^2) / (grid_.nx * grid_.ny) - data[4 * chkpt_struct_new2.j]
+                chkpt_struct_new2.j += 1
+            end
+
+            copyto!(chkpt_struct_new2.u, chkpt_struct_new2.u0)
+            copyto!(chkpt_struct_new2.v, chkpt_struct_new2.v0)
+            copyto!(chkpt_struct_new2.eta, chkpt_struct_new2.eta0)
+        end
+
+        @show chkpt_struct_new2.J
+
+        push!(diffs, (chkpt_struct_new2.J - cost_tocheck) / s)
+
+    end
+
+    return diffs, want_to_converge_to
+
+end
+
+diffs, want_to_converge_to = gradient_check()
 
 # # for checking that the forward integration still works 
 

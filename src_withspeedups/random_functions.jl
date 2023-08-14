@@ -1,6 +1,59 @@
 # random functions written with the sole purpose being to save states/energy/data etc. 
 
 
+function save_energyspectra(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)
+
+    grid = build_grid(Lx, Ly, nx, ny)
+    params = def_params(grid)
+
+    # building discrete operators
+    grad = build_derivs(grid)            # discrete gradient operators
+    interp = build_interp(grid, grad)    # discrete interpolation operators (travels between grids)
+    advec = build_advec(grid)
+
+    Nu = grid.Nu
+    Nv = grid.Nv
+    NT = grid.NT
+    Nq = grid.Nq 
+
+    T = days_to_seconds(days, params.dt)
+
+    states_rhs = SWM_pde(Nu = Nu, 
+        Nv = Nv,
+        NT = NT, 
+        Nq = Nq, 
+        T = T,
+        u = u0,
+        v = v0,
+        eta = eta0,
+        nu = params.nu
+    )
+
+    # energy_spectra_u = []
+    # energy_spectra_v = []
+    energy_spectra = []
+    
+    for t in 1:T
+
+        advance(states_rhs, grid, params, interp, grad, advec)
+
+        temp1 = fft(reshape(states_rhs.u.^2, grid.nx-1, grid.ny)')
+        temp2 = fft(reshape(states_rhs.v.^2, grid.nx, grid.ny-1)')
+
+        # push!(energy_spectra_u, temp1)
+        # push!(energy_spectra_v, temp2)
+        push!(energy_spectra, temp1[1:end-1, :] + temp2[:, 1:end-1])
+
+        copyto!(states_rhs.u, states_rhs.u0)
+        copyto!(states_rhs.v, states_rhs.v0)
+        copyto!(states_rhs.eta, states_rhs.eta0)
+
+    end 
+        
+    return energy_spectra
+
+end
+
 function save_energy_plusend(days, nx, ny; Lx = 3840e3, Ly = 3840e3)                 
 
     grid = build_grid(Lx, Ly, nx, ny)
@@ -31,7 +84,7 @@ function save_energy_plusend(days, nx, ny; Lx = 3840e3, Ly = 3840e3)
 
     energy = zeros(T)
     
-    for t in 1:T
+    @time for t in 1:T
 
         advance(states_rhs, grid, params, interp, grad, advec)
 
