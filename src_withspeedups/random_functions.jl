@@ -1,7 +1,7 @@
 # random functions written with the sole purpose being to save states/energy/data etc. 
 
 
-function save_energyspectra(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)
+function save_energy_spectrum(u0, v0, eta0, days, nx, ny; Lx = 3840e3, Ly = 3840e3)
 
     grid = build_grid(Lx, Ly, nx, ny)
     params = def_params(grid)

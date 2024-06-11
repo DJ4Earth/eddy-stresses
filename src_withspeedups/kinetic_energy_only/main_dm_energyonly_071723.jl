@@ -64,7 +64,8 @@ end
 function setup_data_misfit(u0, 
     v0, 
     eta0,   
-    days 
+    days,
+    nu 
     ;
     nx = 128, 
     ny = 128,
@@ -101,7 +102,7 @@ function setup_data_misfit(u0,
         v = v0,
         eta = eta0, 
         T = T,
-        nu = copy(params.nu)
+        nu = nu
     )
 
     return grid, params, grad, interp, advec, states_rhs, data_steps, data 
@@ -119,7 +120,7 @@ function chkpt_func(
     interp::Interps,
     grad::Derivatives,
     advec::Advection
-)
+    )
 
     @checkpoint_struct chkpt_scheme chkpt_struct for chkpt_struct.t in 1:chkpt_struct.T
 
@@ -140,23 +141,54 @@ function chkpt_func(
 
 end
 
-function run_checkpointing_dataex_energyonly(
-    ;days_to_integrate = 1, 
-    snaps = 1, 
-    scaling = 4
+function run_checkpointing_dataex_energyonly(nu 
+    ;Ndays = 1
     )
 
     # non-zero initial condition 
     init_states = load_object("../../data_files/states_nx128_ny128_10year_060523.jld2")
-    grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data_steps, data  = setup_data_misfit(init_states.u,
-    init_states.v,
-    init_states.eta,
-    days_to_integrate
+    # grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data_steps, data  = setup_data_misfit(init_states.u,
+    # init_states.v,
+    # init_states.eta,
+    # Ndays, 
+    # nu
+    # )
+
+    grid = build_grid(Lx, Ly, nx, ny)
+    params = def_params(grid)
+
+    # building discrete operators
+    grad = build_derivs(grid)            # discrete gradient operators
+    interp = build_interp(grid, grad)    # discrete interpolation operators (travels between grids)
+    advec = build_advec(grid)
+
+    Nu = grid.Nu
+    Nv = grid.Nv
+    NT = grid.NT
+    Nq = grid.Nq 
+
+    T = days_to_seconds(days, params.dt)
+
+    data_steps = [k for k in 1:T]
+
+    data = load_object("../../data_files/energy_afterspinup_nxny512_2years_everystep_062823.jld2")
+
+    # data, M = create_data(days, nx, ny, data_steps, scaling)
+
+    states_rhs = SWM_pde(Nu = Nu, 
+        Nv = Nv,
+        NT = NT, 
+        Nq = Nq,
+        u = init_states.u,
+        v = init_states.v,
+        eta = init_states.eta, 
+        T = T,
+        nu = nu
     )
 
     # from rest initial condition 
     # grid, gyre_params, grad_ops, interp_ops, advec_ops, chkpt_struct, data_steps, data  = setup_data_misfit(
-    # days_to_integrate
+    # Ndays
     # )
 
     snaps = Int(floor(sqrt(chkpt_struct.T)))
