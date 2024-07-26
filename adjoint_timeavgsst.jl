@@ -13,7 +13,7 @@ using Checkpointing
 using Plots, NetCDF
 
 Enzyme.API.looseTypeAnalysis!(true)
-# Enzyme.API.runtimeActivity!(true)
+Enzyme.API.runtimeActivity!(true)
 
 using Parameters
 using Optim
@@ -239,20 +239,28 @@ function loop(S,scheme)
 
 end
 
-function cost_eval(param_guess, data)
+function cost_eval(param_guess, data, data_steps, Ndays)
 
     # 225 steps = 1 day of integration in the 128 model
-    data_steps = 225*(Ndays-1):225*(Ndays-1):225*(Ndays-1)
 
-    S = ShallowWaters.model_setup(Ndays = 90,
-    nx = 128,
-    zb_forcing_dissipation=true,
-    zb_filtered=true,
-    data_steps=data_steps,
-    data=data,
-    γ₀ = param_guess[1],
-    initial_cond="ncfile",
-    initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/"
+    S = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        α=2,
+        nx=128,
+        Ndays = Ndays,
+        zb_forcing_dissipation=true,
+        γ₀ = param_guess[1],
+        data=data,
+        data_steps=data_steps,
+        initial_cond="ncfile",
+        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -269,23 +277,30 @@ function cost_eval(param_guess, data)
 
 end
 
-function gradient_eval(G, param_guess, data)
+function gradient_eval(G, param_guess, data, data_steps, Ndays)
 
     # 225 steps = 1 day of integration of the low res model
     # 1800 steps = 1 day of integration of the high res model
 
-    data_steps = 225:225:225*(Ndays-1)
-
-    S = ShallowWaters.model_setup(Ndays = 90,
-        nx = 128,
+    S = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        α=2,
+        nx=128,
+        Ndays = Ndays,
         zb_forcing_dissipation=true,
-        zb_filtered=true,
-        data_steps=data_steps,
-        data=data,
         γ₀ = param_guess[1],
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/"
-    )
+        data=data,
+        data_steps=data_steps)
+    #     initial_cond="ncfile",
+    #     initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+    # )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -304,10 +319,10 @@ function gradient_eval(G, param_guess, data)
 
 end
 
-function FG(F, G, param_guess, data)
+function FG(F, G, param_guess, data, data_steps, Ndays)
 
-    G === nothing || gradient_eval(G, param_guess, data)
-    F === nothing || return cost_eval(param_guess, data)
+    G === nothing || gradient_eval(G, param_guess, data, data_steps, Ndays)
+    F === nothing || return cost_eval(param_guess, data, data_steps, Ndays)
 
 end
 
@@ -336,24 +351,32 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
     end
 
     G = [0.0]
-    fg!_closure(F, G, param_guess) = FG(F, G, param_guess, data)
+    fg!_closure(F, G, param_guess) = FG(F,
+        G,
+        param_guess,
+        data,
+        data_steps,
+        Ndays
+    )
+
     obj_fg = Optim.only_fg!(fg!_closure)
 
     result = Optim.optimize(obj_fg,
     [initial_gamma],
     Optim.LBFGS(),
-    Optim.Options(iterations=2)
+    Optim.Options(iterations=1)
     )
 
     return result
 
 end
 
-function check_derivative(dS)
+function check_derivative(dS, Ndays, data, data_steps)
 
-    enzyme_deriv = dS.parameters.γ₀
+    # enzyme_deriv = dS.parameters.γ₀
+    enzyme_deriv = dS.Prog.u[62, 61]
 
-    steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
+    steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
 
     S_outer = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -366,12 +389,14 @@ function check_derivative(dS)
         bc="nonperiodic",
         α=2,
         nx=128,
-        Ndays = 30,
+        Ndays = Ndays,
         zb_forcing_dissipation=true,
-        γ₀ = 0.3
-        # initial_cond="ncfile",
-        # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
-    )
+        γ₀ = 0.2,
+        data=data,
+        data_steps=data_steps)
+    #     initial_cond="ncfile",
+    #     initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+    # )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
@@ -397,12 +422,16 @@ function check_derivative(dS)
             bc="nonperiodic",
             α=2,
             nx=128,
-            Ndays = 30,
+            Ndays=Ndays,
             zb_forcing_dissipation=true,
-            γ₀ = 0.3 + s
-            # initial_cond="ncfile",
-            # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
-        )
+            γ₀ = 0.2,
+            data=data,
+            data_steps=data_steps)
+        #     initial_cond="ncfile",
+        #     initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        # )
+
+        S_inner.Prog.u[62, 61] += s
 
         J_inner = checkpointed_integration(S_inner, revolve)
 

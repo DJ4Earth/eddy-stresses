@@ -7,10 +7,9 @@ using Checkpointing
 using Optim
 
 Enzyme.API.runtimeActivity!(true)
+Enzyme.API.looseTypeAnalysis!(true)
 
-# Enzyme.API.looseTypeAnalysis!(true)
-
-function checkpoint_function(S, scheme)
+function checkpointed_integration(S, scheme)
 
     # setup
     Diag = S.Diag
@@ -330,15 +329,6 @@ function loop(S,scheme)
         v0rhs = convert(Diag.PrognosticVarsRHS.v,v0)
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
 
-        # # feedback and output
-        # feedback.i = i
-        # feedback!(Prog,feedback,S)
-        # ShallowWaters.output_nc!(S.parameters.i,netCDFfiles,Prog,Diag,S)       # uses u0,v0,η0
-
-        # if feedback.nans_detected
-        #     break
-        # end
-
         #### cost function evaluation
 
         if S.parameters.i in S.parameters.data_steps
@@ -376,25 +366,25 @@ function cost_eval(param_guess)
     data = energy_high_resolution[1*grid_scale:225*grid_scale:20190*grid_scale]
 
     S = ShallowWaters.model_setup(Ndays = 90,
-        nx = 128,
-        zb_forcing_dissipation=true,
-        zb_filtered=true,
-        data_steps=data_steps,
-        data=data,
-        γ₀ = param_guess[1],
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass/"
+    nx = 128,
+    zb_forcing_dissipation=true,
+    zb_filtered=true,
+    data_steps=data_steps,
+    data=data,
+    γ₀ = param_guess[1],
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/"
     )
 
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false
+    snaps;
+    verbose=1,
+    gc=true,
+    write_checkpoints=false
     )
 
-    J = checkpoint_function(S, revolve)
+    J = checkpointed_integration(S, revolve)
 
     return J
 
@@ -403,7 +393,7 @@ end
 function gradient_eval(G, param_guess)
 
     energy_high_resolution = load_object("./data_files_gamma0.3/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2")
-    grid_scale = 4
+    grid_scale = 8
 
     # aiming to have data about every 30 days
     # 225 steps = 1 day of integration of the low res model
@@ -412,26 +402,30 @@ function gradient_eval(G, param_guess)
     data = energy_high_resolution[1*grid_scale:225*grid_scale:20190*grid_scale]
 
     S = ShallowWaters.model_setup(Ndays = 90,
-        nx = 128,
-        zb_forcing_dissipation=true,
-        zb_filtered=true,
-        data_steps=data_steps,
-        data=data,
-        γ₀ = param_guess[1],
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass/"
+    nx = 128,
+    zb_forcing_dissipation=true,
+    zb_filtered=true,
+    data_steps=data_steps,
+    data=data,
+    γ₀ = param_guess[1],
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/"
     )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false
+    snaps;
+    verbose=1,
+    gc=true,
+    write_checkpoints=false
     )
 
-    autodiff(Enzyme.ReverseWithPrimal, checkpoint_function, Duplicated(S, dS), Const(revolve))
+    autodiff(Enzyme.ReverseWithPrimal,
+    checkpointed_integration,
+    Duplicated(S, dS),
+    Const(revolve)
+    )
 
     G[1] = dS.parameters.γ₀
 
@@ -470,13 +464,67 @@ function run_optim_experiments()
     obj_fg = Optim.only_fg!(FG)
 
     result = Optim.optimize(obj_fg,
-        [0.3],
-        Optim.LBFGS(),
-        Optim.Options(
-        iterations = 5)
+    [0.3],
+    Optim.LBFGS(),
+    Optim.Options(
+    iterations = 1)
     )
 
     return result
+
+end
+
+function derivative_check(dS, data, data_steps)
+
+    # enzyme_deriv = dS.parameters.γ₀
+    enzyme_deriv = dS.Prog.u[35, 35]
+
+    steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
+
+    S_outer = ShallowWaters.model_setup(Ndays = 90,
+    nx = 128,
+    zb_forcing_dissipation=true,
+    zb_filtered=true,
+    data_steps=data_steps,
+    data=data,
+    γ₀ = param_guess[1],
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/"
+    )
+
+    snaps = Int(floor(sqrt(S_outer.grid.nt)))
+    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
+        verbose=1,
+        gc=true,
+        write_checkpoints=false
+    )
+
+    J_outer = checkpointed_integration(S_outer, revolve)
+
+    diffs = []
+
+    for s in steps
+
+        S_inner = ShallowWaters.model_setup(Ndays = 90,
+        nx = 128,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        data_steps=data_steps,
+        data=data,
+        γ₀ = param_guess[1],
+        initial_cond="ncfile",
+        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/"
+        )
+
+        S_inner.Prog.u[62, 61] += s
+
+        J_inner = checkpointed_integration(S_inner, revolve)
+
+        push!(diffs, (J_inner - J_outer) / s)
+
+    end
+
+    return diffs, enzyme_deriv
 
 end
 
