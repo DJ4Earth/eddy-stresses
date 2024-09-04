@@ -197,7 +197,7 @@ function loop(S,scheme)
 
             energy_diff = (energy_lr - energy_hr)^2
 
-            S.parameters.J += energy_diff
+            S.parameters.J += energy_diff + S.parameters.γ₀^2
 
             S.parameters.j += 1
 
@@ -311,26 +311,6 @@ function run_energy_checkpointing(Ndays, initial_gamma)
     # aiming to have data about every 30 days
     data_steps = 1:225:225*(Ndays-1)
     data = energy_high_resolution[1*grid_scale:225*grid_scale:225*(Ndays-1)*grid_scale]
-
-    # S = ShallowWaters.model_setup(output=false,
-    # L_ratio=1,
-    # g=9.81,
-    # H=500,
-    # wind_forcing_x="double_gyre",
-    # Lx=3840e3,
-    # seasonal_wind_x=false,
-    # topography="flat",
-    # bc="nonperiodic",
-    # α=2,
-    # nx=128,
-    # Ndays = Ndays,
-    # zb_forcing_dissipation=true,
-    # γ₀ = param_guess[1],
-    # data=data,
-    # data_steps=data_steps,
-    # initial_cond="ncfile",
-    # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
-    # )
 
     G = [0.0]
     fg!_closure(F, G, param_guess) = FG(F,
