@@ -67,8 +67,8 @@ end
 
 function loop(S,scheme)
 
-    # @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
-    for S.parameters.i = 1:S.grid.nt
+    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+    # for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
         Prog = S.Prog
@@ -197,7 +197,7 @@ function loop(S,scheme)
 
             energy_diff = (energy_lr - energy_hr)^2
 
-            S.parameters.J += energy_diff + S.parameters.γ₀^2
+            S.parameters.J += energy_diff
 
             S.parameters.j += 1
 
@@ -232,8 +232,8 @@ function cost_eval(param_guess, data, data_steps, Ndays)
         Ndays = Ndays,
         zb_forcing_dissipation=true,
         γ₀ = param_guess[1],
-        data=data,
-        data_steps=data_steps,
+        # data=data,
+        # data_steps=data_steps,
         initial_cond="ncfile",
         initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
