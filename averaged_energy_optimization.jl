@@ -68,7 +68,6 @@ end
 function loop(S,scheme)
 
     @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
-    # for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
         Prog = S.Prog
@@ -301,7 +300,7 @@ function FG(F, G, param_guess, data, data_steps, Ndays)
 
 end
 
-function run_energy_checkpointing(Ndays, initial_gamma)
+function run_energy_checkpointing_experiment(Ndays, initial_gamma)
 
     energy_high_resolution = load_object(
         "data_files_gamma0.3/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2"
@@ -375,7 +374,6 @@ function check_derivative(Ndays)
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    # enzyme_deriv = dS.parameters.γ₀
     enzyme_deriv = dS.Prog.u[62, 61]
 
     steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
