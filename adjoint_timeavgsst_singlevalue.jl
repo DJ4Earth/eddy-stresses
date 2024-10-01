@@ -10,7 +10,7 @@ using .ShallowWaters
 
 using Enzyme#main
 using Checkpointing
-using Plots, NetCDF
+using Plots, NetCDF, JLD2
 
 Enzyme.API.looseTypeAnalysis!(true)
 Enzyme.API.runtimeActivity!(true)
