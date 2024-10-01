@@ -68,7 +68,6 @@ end
 function loop(S,scheme)
 
     @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
-    # for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
         Prog = S.Prog
@@ -232,8 +231,8 @@ function cost_eval(param_guess, data, data_steps, Ndays)
         Ndays = Ndays,
         zb_forcing_dissipation=true,
         γ₀ = param_guess[1],
-        # data=data,
-        # data_steps=data_steps,
+        data=data,
+        data_steps=data_steps,
         initial_cond="ncfile",
         initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
@@ -301,7 +300,7 @@ function FG(F, G, param_guess, data, data_steps, Ndays)
 
 end
 
-function run_energy_checkpointing(Ndays, initial_gamma)
+function run_energy_checkpointing_experiment(Ndays, initial_gamma)
 
     energy_high_resolution = load_object(
         "data_files_gamma0.3/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2"
@@ -309,8 +308,8 @@ function run_energy_checkpointing(Ndays, initial_gamma)
     grid_scale = 8
 
     # aiming to have data about every 30 days
-    data_steps = 1:225:225*(Ndays-1)
-    data = energy_high_resolution[1*grid_scale:225*grid_scale:225*(Ndays-1)*grid_scale]
+    data_steps = 40395:30*225:53860
+    data = energy_high_resolution[40395*grid_scale:30*225*grid_scale:53860*grid_scale]
 
     G = [0.0]
     fg!_closure(F, G, param_guess) = FG(F,
@@ -323,10 +322,16 @@ function run_energy_checkpointing(Ndays, initial_gamma)
 
     obj_fg = Optim.only_fg!(fg!_closure)
 
+    lower = [0.0]
+    upper = [0.8]
+    inner_optimizer = Gradient_Descent
+
     result = Optim.optimize(obj_fg,
+    lower,
+    upper,
     [initial_gamma],
-    Optim.LBFGS(),
-    Optim.Options(iterations=1)
+    Optim.Options(outer_iterations=1,
+    iterations=100)
     )
 
     return result
@@ -340,9 +345,10 @@ function check_derivative(Ndays)
     )
     grid_scale = 8
 
-    # aiming to have data about every 30 days
-    data_steps = 1:225:225*(Ndays-1)
-    data = energy_high_resolution[1*grid_scale:225*grid_scale:225*(Ndays-1)*grid_scale]
+    # aiming to have data starting 6 months after integrating, to allow the spinup,
+    # and then a monthly value will be added to create the average
+    data_steps = 40395:30*225:53860
+    data = energy_high_resolution[40395*grid_scale:30*225*grid_scale:53860*grid_scale]
 
     S = ShallowWaters.model_setup(output=false,
     L_ratio=1,
@@ -357,7 +363,7 @@ function check_derivative(Ndays)
     nx=128,
     Ndays = Ndays,
     zb_forcing_dissipation=true,
-    γ₀ = param_guess[1],
+    γ₀ = 0.3,
     data=data,
     data_steps=data_steps,
     initial_cond="ncfile",
@@ -375,12 +381,44 @@ function check_derivative(Ndays)
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    # enzyme_deriv = dS.parameters.γ₀
     enzyme_deriv = dS.Prog.u[62, 61]
 
     steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
 
     S_outer = ShallowWaters.model_setup(output=false,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    α=2,
+    nx=128,
+    Ndays = Ndays,
+    zb_forcing_dissipation=true,
+    γ₀ = 0.3,
+    data=data,
+    data_steps=data_steps,
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+    )
+
+    snaps = Int(floor(sqrt(S_outer.grid.nt)))
+    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
+        verbose=1, 
+        gc=true, 
+        write_checkpoints=false
+    )
+
+    J_outer = checkpointed_integration(S_outer, revolve)
+
+    diffs = []
+
+    for s in steps
+
+        S_inner = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -398,39 +436,6 @@ function check_derivative(Ndays)
         data_steps=data_steps,
         initial_cond="ncfile",
         initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
-    )
-
-    snaps = Int(floor(sqrt(S_outer.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
-        verbose=1, 
-        gc=true, 
-        write_checkpoints=false
-    )
-
-    J_outer = checkpointed_integration(S_outer, revolve)
-
-    diffs = []
-
-    for s in steps
-
-        S_inner = ShallowWaters.model_setup(output=false,
-            L_ratio=1,
-            g=9.81,
-            H=500,
-            wind_forcing_x="double_gyre",
-            Lx=3840e3,
-            seasonal_wind_x=false,
-            topography="flat",
-            bc="nonperiodic",
-            α=2,
-            nx=128,
-            Ndays=Ndays,
-            zb_forcing_dissipation=true,
-            γ₀ = 0.3,
-            data=data,
-            data_steps=data_steps,
-            initial_cond="ncfile",
-            initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
         )
 
         S_inner.Prog.u[62, 61] += s
@@ -444,3 +449,6 @@ function check_derivative(Ndays)
     return diffs, enzyme_deriv
 
 end
+
+res = run_energy_checkpointing_experiment(8*30, 0.3)
+jldsave("result_8month_check.jld2", res)

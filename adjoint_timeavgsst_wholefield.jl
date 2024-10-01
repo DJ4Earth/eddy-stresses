@@ -72,10 +72,9 @@ end
 
 function loop(S,scheme)
 
-    eta_avg = zeros(128,128)
+    eta_avg = S.parameters.average
 
-    # @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
-    for S.parameters.i = 1:S.grid.nt
+    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
         Prog = S.Prog
