@@ -193,32 +193,32 @@ function loop(S,scheme)
 
         if S.parameters.i in S.parameters.data_steps
 
-            temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
-            S.Prog.v,
-            S.Prog.η,
-            S.Prog.sst,S)...)
+        #     temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
+        #     S.Prog.v,
+        #     S.Prog.η,
+        #     S.Prog.sst,S)...)
 
-            eta_avg = eta_avg + temp.η[50,50]
+        #     eta_avg = eta_avg + temp.η[50,50]
 
-            temp1 = eta_avg / S.parameters.i
-            temp2 = S.parameters.data[:, :, S.parameters.j]
-            temp3 = temp1 - temp2[50,50]
-            S.parameters.J += temp3^2
+        #     temp1 = eta_avg / S.parameters.i
+        #     temp2 = S.parameters.data[:, :, S.parameters.j]
+        #     temp3 = temp1 - temp2[50,50]
+        #     S.parameters.J += temp3^2
 
-            # move this to other script computing the average of the entire field, don't delete yet
-            # temp3 = zeros(128,128)
-            # for j = 1:128
-            #     for k = 1:128
+        #     # move this to other script computing the average of the entire field, don't delete yet
+        #     # temp3 = zeros(128,128)
+        #     # for j = 1:128
+        #     #     for k = 1:128
                     
-            #         temp3[j,k] = temp1[j,k] - temp2[j,k]
+        #     #         temp3[j,k] = temp1[j,k] - temp2[j,k]
 
-            #     end
-            # end
-            # S.parameters.J += sum(((eta_avg / S.parameters.i) - S.parameters.data[50, 50, S.parameters.j]).^2)
+        #     #     end
+        #     # end
+        #     # S.parameters.J += sum(((eta_avg / S.parameters.i) - S.parameters.data[50, 50, S.parameters.j]).^2)
 
-            S.parameters.j += 1
+        #     S.parameters.j += 1
 
-        else
+        # else
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
             S.Prog.v,
@@ -236,7 +236,8 @@ function loop(S,scheme)
 
     end
 
-    # S.parameters.J = S.Prog.η[30,30]
+    S.parameters.J = (eta_avg - S.parameters.data[50, 50, 2])^2
+
 
     return nothing
 
@@ -331,11 +332,11 @@ end
 
 function run_timeavg_sst_experiment(initial_gamma,Ndays)
 
-    eta_hr = ncread("./data_files_gamma0.3/1024_postspinup_noslip_4days_073124/eta.nc", "eta")
+    eta_hr = ncread("./data_files_gamma0.3/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
 
     # 225 steps = 1 day of integration in the 128 model
     Ndays=Ndays
-    data_steps = 1:110:225*(Ndays-1)
+    data_steps = 40395:30*225:53860
 
     eta_hr_avg = zeros(1024, 1024, Ndays)
     for j = 1:Ndays
@@ -350,7 +351,7 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
 
     data = zeros(128,128,l)
     for j = 1:l
-        data[:, :, j] = ShallowWaters.coarse_grain_eta(eta_hr_avg[:, :, Int(data_steps[j]/225)], S_lr)
+        data[:, :, j] = ShallowWaters.coarse_grain_eta(eta_hr_avg[:, :, Int(floor(data_steps[j]/225))], S_lr)
     end
 
     G = [0.0]
@@ -364,10 +365,17 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
 
     obj_fg = Optim.only_fg!(fg!_closure)
 
+    lower = [0.0]
+    upper = [0.8]
+    inner_optimizer = GradientDescent()
+
     result = Optim.optimize(obj_fg,
-    [initial_gamma],
-    Optim.LBFGS(),
-    Optim.Options(iterations=1)
+        lower,
+        upper,
+        [initial_gamma],
+        Fminbox(inner_optimizer),
+        Optim.Options(outer_iterations=1,
+        iterations=100)
     )
 
     return result
@@ -445,6 +453,9 @@ function check_derivative(dS, Ndays, data, data_steps)
     return diffs, enzyme_deriv
 
 end
+
+result = run_timeavg_sst_experiment(0.3,8 * 30)
+jldsave("avgsst_singlevalue_result_8month_check.jld2", res)
 
 # G = [0.0]
 # Ndays=3
