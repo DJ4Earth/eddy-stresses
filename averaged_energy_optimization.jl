@@ -324,12 +324,13 @@ function run_energy_checkpointing_experiment(Ndays, initial_gamma)
 
     lower = [0.0]
     upper = [0.8]
-    inner_optimizer = GradientDescent
+    inner_optimizer = GradientDescent()
 
     result = Optim.optimize(obj_fg,
     lower,
     upper,
     [initial_gamma],
+    Fminbox(inner_optimizer),
     Optim.Options(outer_iterations=1,
     iterations=100)
     )
