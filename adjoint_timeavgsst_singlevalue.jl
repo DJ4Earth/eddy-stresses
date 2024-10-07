@@ -72,8 +72,6 @@ end
 
 function loop(S,scheme)
 
-    eta_avg = 0.0
-
     @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
@@ -225,7 +223,7 @@ function loop(S,scheme)
             S.Prog.η,
             S.Prog.sst,S)...)
 
-            eta_avg = eta_avg + temp.η[50, 50]
+            S.parameters.average = S.parameters.average + temp.η[50, 50]
 
         end
 
@@ -236,7 +234,7 @@ function loop(S,scheme)
 
     end
 
-    S.parameters.J = (eta_avg - S.parameters.data[50, 50, 2])^2
+    S.parameters.J = (S.parameters.average - S.parameters.data[50, 50, 2])^2
 
 
     return nothing
@@ -341,7 +339,7 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
     eta_hr_avg = zeros(1024, 1024, Ndays)
     for j = 1:Ndays
         for k = 1:j
-            eta_hr_avg[:, :, j] += eta_hr[:, :, k] / (k * 1800)
+            eta_hr_avg[:, :, j] += eta_hr[:, :, k] / (j)
         end
     end
 
@@ -375,7 +373,7 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
         [initial_gamma],
         Fminbox(inner_optimizer),
         Optim.Options(outer_iterations=1,
-        iterations=20)
+        iterations=5)
     )
 
     return result
