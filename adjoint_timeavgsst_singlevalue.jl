@@ -375,7 +375,7 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
         [initial_gamma],
         Fminbox(inner_optimizer),
         Optim.Options(outer_iterations=1,
-        iterations=100)
+        iterations=20)
     )
 
     return result

@@ -323,7 +323,7 @@ function run_energy_checkpointing_experiment(Ndays, initial_gamma)
     obj_fg = Optim.only_fg!(fg!_closure)
 
     lower = [0.0]
-    upper = [0.8]
+    upper = [0.7]
     inner_optimizer = GradientDescent()
 
     result = Optim.optimize(obj_fg,
@@ -332,7 +332,7 @@ function run_energy_checkpointing_experiment(Ndays, initial_gamma)
     [initial_gamma],
     Fminbox(inner_optimizer),
     Optim.Options(outer_iterations=1,
-    iterations=100)
+    iterations=50)
     )
 
     return result
@@ -452,4 +452,4 @@ function check_derivative(Ndays)
 end
 
 res = run_energy_checkpointing_experiment(8*30, 0.3)
-jldsave("result_8month_check.jld2", res)
+jldsave("result_8month_check_energy_100224.jld2", res)
