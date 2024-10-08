@@ -330,11 +330,11 @@ end
 
 function run_timeavg_sst_experiment(initial_gamma,Ndays)
 
-    eta_hr = ncread("./data_files_gamma0.3/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+    eta_hr = ncread("./data_files_gamma0.3/1024_postspinup_noslip_4days_073124/eta.nc", "eta")
 
     # 225 steps = 1 day of integration in the 128 model
     Ndays=Ndays
-    data_steps = 40395:30*225:53860
+    data_steps = 225:225:898
 
     eta_hr_avg = zeros(1024, 1024, Ndays)
     for j = 1:Ndays
@@ -364,7 +364,7 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
     obj_fg = Optim.only_fg!(fg!_closure)
 
     lower = [0.0]
-    upper = [0.8]
+    upper = [0.7]
     inner_optimizer = GradientDescent()
 
     result = Optim.optimize(obj_fg,
@@ -452,32 +452,5 @@ function check_derivative(dS, Ndays, data, data_steps)
 
 end
 
-result = run_timeavg_sst_experiment(0.3,8 * 30)
-jldsave("avgsst_singlevalue_result_8month_check.jld2", res)
+result = run_timeavg_sst_experiment(0.3,4)
 
-# G = [0.0]
-# Ndays=3
-
-# eta_hr = ncread("./data_files_gamma0.3/1024_postspinup_noslip_4days_073124/eta.nc", "eta")
-
-# # 225 steps = 1 day of integration in the 128 model
-# Ndays=Ndays
-# data_steps = 225:225:225*(Ndays-1)
-
-# eta_hr_avg = zeros(1024, 1024, Ndays)
-# for j = 1:Ndays
-#     for k = 1:j
-#         eta_hr_avg[:, :, j] += eta_hr[:, :, k] / (k * 1800)
-#     end
-# end
-
-# l = length(data_steps)
-
-# S_lr = ShallowWaters.model_setup(nx=128)
-
-# data = zeros(128,128,l)
-# for j = 1:l
-#     data[:, :, j] = ShallowWaters.coarse_grain_eta(eta_hr_avg[:, :, Int(data_steps[j]/225)], S_lr)
-# end
-
-# gradient_eval(G, [0.3], data, data_steps, Ndays)
