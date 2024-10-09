@@ -220,3 +220,40 @@ plot!(xhr, energy_hr, label=("3.75km resolution"),dpi=300)
 xlabel!("Years")
 ylabel!("Spatially averaged energy")
 title!("Energy during spinup")
+
+eta_hr = ncread("./data_files_gamma0.3/1024_spinup_noslip/eta.nc", "eta");
+eta_lr = ncread("./data_files_gamma0.3/128_spinup_noforcing_noslipbc/eta.nc", "eta");
+
+one = heatmap(eta_hr[:, :, end]',
+    clim=(-2,2),
+    c=:balance,
+    xlabel=L"x",
+    xguidefontsize=13,
+    ylabel=L"y",
+    yguidefontsize=13,
+    title="3.75km resolution ssh",
+    plot_titlefontsize=13,
+    colorbar_title=L"m",
+    colorbar_titlefontsize=13,
+    dpi=300
+)
+
+two = heatmap(eta_lr[:, :, end]',
+clim=(-2,2),
+c=:balance,
+xlabel=L"x",
+xguidefontsize=13,
+ylabel=L"y",
+yguidefontsize=13,
+title="30km resolution ssh",
+plot_titlefontsize=13,
+colorbar_title=L"m",
+colorbar_titlefontsize=13,
+dpi=300
+)
+
+plot(one, two, layout=grid(1,2,
+    widths=(4/8,4/8)),
+    size=(950,400),
+    margin=5mm
+)
