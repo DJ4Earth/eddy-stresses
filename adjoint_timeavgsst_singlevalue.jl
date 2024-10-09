@@ -453,7 +453,7 @@ function check_derivative(dS, Ndays, data, data_steps)
 end
 
 result = run_timeavg_sst_experiment(0.3,8 * 30)
-jldsave("avgsst_singlevalue_result_8month_check.jld2", res)
+jldsave("avgsst_singlevalue_result_8month_check.jld2"; res)
 
 # G = [0.0]
 # Ndays=3

@@ -332,7 +332,7 @@ function run_energy_checkpointing_experiment(Ndays, initial_gamma)
     [initial_gamma],
     Fminbox(inner_optimizer),
     Optim.Options(outer_iterations=1,
-    iterations=50)
+    iterations=5)
     )
 
     return result
@@ -451,5 +451,5 @@ function check_derivative(Ndays)
 
 end
 
-res = run_energy_checkpointing_experiment(8*30, 0.3)
-jldsave("result_8month_check_energy_100224.jld2", res)
+res = run_energy_checkpointing_experiment(7*30, 0.3)
+@save "result_7month_check_energy2_100924.jld2" res
