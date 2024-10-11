@@ -191,6 +191,26 @@ vhr = ncread("./data_files_gamma0.3/1024_spinup_noslip/v.nc", "v")
 ulr = ncread("./data_files_gamma0.3/128_spinup_noforcing_noslipbc/u.nc", "u")
 vlr = ncread("./data_files_gamma0.3/128_spinup_noforcing_noslipbc/v.nc", "v")
 
+energy = ulr[:, 1:127, end].^2 + vlr[1:127, :, end].^2
+energy_plot = heatmap(LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    energy',
+    c=:amp,
+    clim = (0,3),
+    xlabel="x (km)",
+    xguidefontsize=13,
+    xtickfontsize=11,
+    ylabel="y (km)",
+    yguidefontsize=13,
+    ytickfontsize=11,
+    title="Kinetic energy",
+    plot_titlefontsize=13,
+    colorbar_title=L"J",
+    colorbar_titlefontsize=13,
+    dpi=300,
+    size=(700, 600)
+)
+
 ulr_param = ncread("./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/u.nc", "u")
 vlr_param = ncread("./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc/v.nc", "v")
 
@@ -232,6 +252,20 @@ one = heatmap(eta_hr[:, :, end]',
     ylabel=L"y",
     yguidefontsize=13,
     title="3.75km resolution ssh",
+    plot_titlefontsize=13,
+    colorbar_title=L"m",
+    colorbar_titlefontsize=13,
+    dpi=300
+)
+
+heatmap(ulr[:, :, end]',
+    clim=(-2,2),
+    c=:balance,
+    xlabel=L"x",
+    xguidefontsize=13,
+    ylabel=L"y",
+    yguidefontsize=13,
+    title="3.75km resolution x-velocity",
     plot_titlefontsize=13,
     colorbar_title=L"m",
     colorbar_titlefontsize=13,
