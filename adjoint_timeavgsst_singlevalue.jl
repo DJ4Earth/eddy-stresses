@@ -13,7 +13,7 @@ using Checkpointing
 using Plots, NetCDF, JLD2
 
 Enzyme.API.looseTypeAnalysis!(true)
-Enzyme.API.runtimeActivity!(true)
+# Enzyme.API.runtimeActivity!(true)
 
 using Parameters
 using Optim
@@ -234,7 +234,9 @@ function loop(S,scheme)
 
     end
 
-    S.parameters.J = (S.parameters.average/S.grid.nt - S.parameters.data[50, 50, 2])^2
+    temp = (S.parameters.average/S.grid.nt - S.parameters.data[50, 50, 2])^2
+
+    S.parameters.J = temp
 
 
     return nothing
@@ -453,7 +455,7 @@ function check_derivative(dS, Ndays, data, data_steps)
 end
 
 result = run_timeavg_sst_experiment(0.3,8 * 30)
-jldsave("avgsst_singlevalue_result_8month_check.jld2"; res)
+@save "avgsst_singlevalue_result_8month_check_101024.jld2" result
 
 # G = [0.0]
 # Ndays=3
