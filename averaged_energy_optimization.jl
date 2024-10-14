@@ -8,7 +8,7 @@ using Checkpointing
 using Plots, NetCDF, JLD2
 
 Enzyme.API.looseTypeAnalysis!(true)
-Enzyme.API.runtimeActivity!(true)
+# Enzyme.API.runtimeActivity!(true)
 
 using Parameters
 using Optim
@@ -451,5 +451,5 @@ function check_derivative(Ndays)
 
 end
 
-res = run_energy_checkpointing_experiment(7*30, 0.3)
-@save "result_7month_check_energy2_100924.jld2" res
+# res = run_energy_checkpointing_experiment(7*30, 0.3)
+# @save "result_7month_check_energy2_100924.jld2" res
