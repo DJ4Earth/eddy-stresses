@@ -291,3 +291,21 @@ plot(one, two, layout=grid(1,2,
     size=(950,400),
     margin=5mm
 )
+
+du = heatmap(LinRange(0, 3840, 127),
+    LinRange(0, 3840, 128),
+    dP.u',
+    c=:balance,
+    clim=(-2e15,2e15),
+    xlabel="x (km)",
+    xguidefontsize=13,
+    xtickfontsize=11,
+    ylabel="y (km)",
+    yguidefontsize=13,
+    ytickfontsize=11,
+    title=L"\partial J / \partial u(t_0)",
+    plot_titlefontsize=13,
+    colorbar=:false,
+    dpi=300,
+    size=(700, 600)
+)
