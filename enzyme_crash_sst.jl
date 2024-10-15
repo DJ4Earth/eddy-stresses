@@ -13,8 +13,7 @@ using Checkpointing
 using Plots, NetCDF, JLD2
 
 Enzyme.API.looseTypeAnalysis!(true)
-Enzyme.API.runtimeActivity!(true)
-
+ 
 using Parameters
 using Optim
 
