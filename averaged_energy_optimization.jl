@@ -209,6 +209,9 @@ function loop(S,scheme)
 
     end
 
+    # Regularization term?
+    S.parameters.J += 0.2 * (S.parameters.γ₀)^2
+
     return nothing
 
 end
@@ -451,5 +454,5 @@ function check_derivative(Ndays)
 
 end
 
-# res = run_energy_checkpointing_experiment(7*30, 0.3)
-# @save "result_7month_check_energy2_100924.jld2" res
+res = run_energy_checkpointing_experiment(8*30, 0.4)
+@save "result_8month_check_strongerregularized_energy_101524.jld2" res.minimizer
