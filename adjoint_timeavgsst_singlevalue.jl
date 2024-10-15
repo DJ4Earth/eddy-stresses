@@ -234,7 +234,8 @@ function loop(S,scheme)
 
     end
 
-    temp = (S.parameters.average/S.grid.nt - S.parameters.data[50, 50, 2])^2
+    array = S.parameters.data::Array{Float64, 3}
+    S.parameters.J = (S.parameters.average/S.grid.nt - array[50, 50, 2])^2
 
     S.parameters.J = temp
 
