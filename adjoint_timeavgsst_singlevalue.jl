@@ -235,10 +235,7 @@ function loop(S,scheme)
     end
 
     array = S.parameters.data::Array{Float64, 3}
-    S.parameters.J = (S.parameters.average/S.grid.nt - array[50, 50, 2])^2
-
-    S.parameters.J = temp
-
+    S.parameters.J = (S.parameters.average/S.grid.nt - array[50, 50, 2])^2 + 0.2 * S.parameters.γ₀^2
 
     return nothing
 
@@ -456,7 +453,7 @@ function check_derivative(dS, Ndays, data, data_steps)
 end
 
 result = run_timeavg_sst_experiment(0.3,8 * 30)
-@save "avgsst_singlevalue_result_8month_check_101024.jld2" result
+@save "avgsst_singlevalue_regularized_initgamma03_result_8month_check_102324.jld2" result.minimizer
 
 # G = [0.0]
 # Ndays=3
