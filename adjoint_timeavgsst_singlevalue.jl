@@ -235,7 +235,7 @@ function loop(S,scheme)
     end
 
     array = S.parameters.data::Array{Float64, 3}
-    S.parameters.J = (S.parameters.average/S.grid.nt - array[50, 50, 2])^2 + 0.2 * S.parameters.γ₀^2
+    S.parameters.J = (S.parameters.average/S.grid.nt - array[50, 50, end])^2 + 0.2 * S.parameters.γ₀^2
 
     return nothing
 
@@ -335,7 +335,7 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
     # 225 steps = 1 day of integration in the 128 model
     Ndays=Ndays
     # data_steps = 40395:30*225:53860
-    data_steps = 225:225:30*225
+    data_steps = 225:225:225
 
     eta_hr_avg = zeros(1024, 1024, Ndays)
     for j = 1:Ndays
@@ -374,7 +374,8 @@ function run_timeavg_sst_experiment(initial_gamma,Ndays)
         [initial_gamma],
         Fminbox(inner_optimizer),
         Optim.Options(outer_iterations=1,
-        iterations=5)
+        iterations=5,
+        show_trace=true)
     )
 
     return result
@@ -453,8 +454,8 @@ function check_derivative(dS, Ndays, data, data_steps)
 
 end
 
-res = run_timeavg_sst_experiment(0.3,30)
-@save "avgsst_singlevalue_regularized_initgamma03_result_30day_check_102324.jld2" res.minimizer
+res = run_timeavg_sst_experiment(0.4,8*30)
+@save "avgsst_singlevalue_regularized_initgamma04_result_8month_check_102424.jld2" res
 
 # G = [0.0]
 # Ndays=3
