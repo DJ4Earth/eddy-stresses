@@ -11,6 +11,7 @@ Enzyme.API.looseTypeAnalysis!(true)
 
 using Parameters
 using Optim
+using LaTeXStrings
 
 function checkpointed_integration(S, scheme)
 
@@ -227,17 +228,18 @@ function check_derivative(Ndays)
     S = ShallowWaters.model_setup(output=false,
     L_ratio=1,
     g=9.81,
-    H=500,
+    H=5000,
     wind_forcing_x="double_gyre",
     Lx=3840e3,
     seasonal_wind_x=false,
     topography="flat",
     bc="nonperiodic",
+    bottom_drag="quadratic",
     α=2,
     nx=128,
     Ndays = Ndays,
     initial_cond="ncfile",
-    initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+    initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
     )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
@@ -266,6 +268,7 @@ function check_derivative(Ndays)
     seasonal_wind_x=false,
     topography="flat",
     bc="nonperiodic",
+    bottom_drag="quadratic",
     α=2,
     nx=128,
     Ndays = Ndays,
@@ -292,10 +295,11 @@ function check_derivative(Ndays)
         g=9.81,
         H=500,
         wind_forcing_x="double_gyre",
-        Lx=3840e3,
+        Lx=1200e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
+        bottom_drag="quadratic",
         α=2,
         nx=128,
         Ndays = Ndays,
@@ -317,6 +321,8 @@ end
 
 # loss function is final spatially averaged energy
 # initial condition sensitivity
+
+function stuff()
 
 state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
 dS.Prog.v,
@@ -363,6 +369,8 @@ plot(one, two, layout=grid(1,2,
     margin=5mm
 )
 
+# wind stress sensitivity
+
 wind_stress_derivative = heatmap(LinRange(0, 3840, 127),
 LinRange(0, 3840, 128),
 dS.forcing.Fx',
@@ -380,3 +388,43 @@ clim=(-50000,50000),
 dpi=300,
 size=(500,500)
 )
+
+# bottom drag coefficient sensitivity 
+heatmap(LinRange(0, 3840, 127),
+    LinRange(0, 3840, 128),
+    dS.constants.cDu[2:end-1,2:end-1]',
+    c=:balance,
+    xlabel="x (km)",
+    xguidefontsize=13,
+    ylabel="y (km)",
+    yguidefontsize=13,
+    title=L"\partial J / c_D^u(x,y)",
+    plot_titlefontsize=13,
+    colorbar_title=L"m",
+    colorbar_titlefontsize=13,
+    dpi=300,
+    size=(500,500)
+)
+
+heatmap(LinRange(0, 3840, 128),
+    LinRange(0, 3840, 127),
+    dS.constants.cDv[2:end-1,2:end-1]',
+    c=:balance,
+    xlabel="x (km)",
+    xguidefontsize=13,
+    ylabel="y (km)",
+    yguidefontsize=13,
+    title=L"\partial J / c_D^v(x,y)",
+    plot_titlefontsize=13,
+    colorbar_title=L"m",
+    colorbar_titlefontsize=13,
+    dpi=300,
+    size=(500,500),
+    clim=(-1e6,1e6),
+    colorbar=:false
+)
+
+
+
+
+end
