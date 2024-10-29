@@ -258,11 +258,11 @@ function check_derivative(Ndays)
 
     steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
 
-    S_outer = ShallowWaters.model_setup(T=Float64,
+    S_outer = ShallowWaters.model_setup(
     output=false,
     L_ratio=1,
     g=9.81,
-    H=500,
+    H=5000,
     wind_forcing_x="double_gyre",
     Lx=3840e3,
     seasonal_wind_x=false,
@@ -289,11 +289,11 @@ function check_derivative(Ndays)
 
     for s in steps
 
-        S_inner = ShallowWaters.model_setup(T=Float64,
+        S_inner = ShallowWaters.model_setup(
         output=false,
         L_ratio=1,
         g=9.81,
-        H=500,
+        H=5000,
         wind_forcing_x="double_gyre",
         Lx=1200e3,
         seasonal_wind_x=false,
@@ -333,7 +333,7 @@ one = heatmap(LinRange(0, 3840, 127),
     LinRange(0, 3840, 128),
     state_derivs.u[:, :]',
     c=:balance,
-    clim=(-2e12, 2e12),
+    # clim=(-2e12, 2e12),
     xlabel="x (km)",
     xguidefontsize=13,
     ylabel="y (km)",
@@ -351,7 +351,7 @@ two = heatmap(LinRange(0, 3840, 128),
     state_derivs.v[:, :]',
     c=:balance,
     xlabel="x (km)",
-    clim=(-2e12, 2e12),
+    # clim=(-2e12, 2e12),
     xguidefontsize=13,
     ylabel="y (km)",
     yguidefontsize=13,
@@ -359,7 +359,7 @@ two = heatmap(LinRange(0, 3840, 128),
     plot_titlefontsize=13,
     colorbar_title=L"m",
     colorbar_titlefontsize=13,
-    colorbar=:false,
+    # colorbar=:false,
     dpi=300
 )
 
