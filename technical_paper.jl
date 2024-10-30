@@ -259,22 +259,22 @@ function check_derivative(Ndays)
     steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
 
     S_outer = ShallowWaters.model_setup(
-    output=false,
-    L_ratio=1,
-    g=9.81,
-    H=5000,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    α=2,
-    nx=128,
-    Ndays = Ndays,
-    initial_cond="ncfile",
-    initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    )
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=5000,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        α=2,
+        nx=128,
+        Ndays = Ndays,
+        initial_cond="ncfile",
+        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
+        )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
@@ -290,21 +290,21 @@ function check_derivative(Ndays)
     for s in steps
 
         S_inner = ShallowWaters.model_setup(
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=5000,
-        wind_forcing_x="double_gyre",
-        Lx=1200e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        α=2,
-        nx=128,
-        Ndays = Ndays,
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+            output=false,
+            L_ratio=1,
+            g=9.81,
+            H=5000,
+            wind_forcing_x="double_gyre",
+            Lx=3840e3,
+            seasonal_wind_x=false,
+            topography="flat",
+            bc="nonperiodic",
+            bottom_drag="quadratic",
+            α=2,
+            nx=128,
+            Ndays = Ndays,
+            initial_cond="ncfile",
+            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
         )
 
         S_inner.forcing.Fy[4,60] += s
@@ -315,14 +315,24 @@ function check_derivative(Ndays)
 
     end
 
-    return diffs, enzyme_deriv
+    return diffs, enzyme_deriv, S, dS
 
 end
 
+diffs, enzyme_deriv, S, dS = check_derivative(365)
+
+@save "technicalpaper_primal_struct_deeperdomain_1year_103024.jld2" S
+@save "technicalpaper_adjoint_struct_deeperdomain_1year_103024.jld2" dS
+@save "technicalpaper_fdcheck_vector_deeperdomain_1year_103024.jld2" diffs
+
+"""
+Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
+without all of this also running
+"""
+function stuff()
+
 # loss function is final spatially averaged energy
 # initial condition sensitivity
-
-function stuff()
 
 state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
 dS.Prog.v,
@@ -423,8 +433,6 @@ heatmap(LinRange(0, 3840, 128),
     clim=(-1e6,1e6),
     colorbar=:false
 )
-
-
 
 
 end
