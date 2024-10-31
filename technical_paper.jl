@@ -225,44 +225,10 @@ end
 
 function check_derivative(Ndays)
 
-    S = ShallowWaters.model_setup(output=false,
-    L_ratio=1,
-    g=9.81,
-    H=5000,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    α=2,
-    nx=128,
-    Ndays = Ndays,
-    initial_cond="ncfile",
-    initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
-    )
-
-    dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        snaps;
-        verbose=1,
-        gc=true
-        # write_checkpoints=true,
-        # write_checkpoints_period::Int = 1,
-    )
-
-    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-
-    enzyme_deriv = dS.forcing.Fy[4, 60]
-
-    steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
-
-    S_outer = ShallowWaters.model_setup(
-        output=false,
+    S = ShallowWaters.model_setup(output=true,
         L_ratio=1,
         g=9.81,
-        H=5000,
+        H=500,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -273,8 +239,41 @@ function check_derivative(Ndays)
         nx=128,
         Ndays = Ndays,
         initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
-        )
+        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+    )
+
+    dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
+    snaps = Int(floor(sqrt(S.grid.nt)))
+    revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
+        snaps;
+        verbose=1,
+        gc=true,
+        write_checkpoints=true,
+        write_checkpoints_period = 6733,
+    )
+
+    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+
+    enzyme_deriv = dS.forcing.Fy[4, 60]
+
+    steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
+
+    S_outer = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        α=2,
+        nx=128,
+        Ndays = Ndays,
+        initial_cond="ncfile",
+        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+    )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
@@ -289,11 +288,10 @@ function check_derivative(Ndays)
 
     for s in steps
 
-        S_inner = ShallowWaters.model_setup(
-            output=false,
+        S_inner = ShallowWaters.model_setup(output=false,
             L_ratio=1,
             g=9.81,
-            H=5000,
+            H=500,
             wind_forcing_x="double_gyre",
             Lx=3840e3,
             seasonal_wind_x=false,
@@ -304,7 +302,7 @@ function check_derivative(Ndays)
             nx=128,
             Ndays = Ndays,
             initial_cond="ncfile",
-            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
+            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
         )
 
         S_inner.forcing.Fy[4,60] += s
@@ -321,9 +319,9 @@ end
 
 diffs, enzyme_deriv, S, dS = check_derivative(365)
 
-@save "technicalpaper_primal_struct_deeperdomain_1year_103024.jld2" S
-@save "technicalpaper_adjoint_struct_deeperdomain_1year_103024.jld2" dS
-@save "technicalpaper_fdcheck_vector_deeperdomain_1year_103024.jld2" diffs
+@save "technicalpaper_primal_struct_5kmdomain_1year_103124.jld2" S
+@save "technicalpaper_adjoint_struct_5kmdomain_1year_103124.jld2" dS
+@save "technicalpaper_fdcheck_vector_5kmdomain_1year_103124.jld2" diffs
 
 """
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
