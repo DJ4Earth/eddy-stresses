@@ -249,7 +249,7 @@ function check_derivative(Ndays)
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_period = 6733,
+        write_checkpoints_period = 286,
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
