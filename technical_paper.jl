@@ -249,7 +249,7 @@ function check_derivative(Ndays)
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_period = 286,
+        write_checkpoints_period = 286
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
@@ -319,9 +319,9 @@ end
 
 diffs, enzyme_deriv, S, dS = check_derivative(365)
 
-@save "technicalpaper_primal_struct_5kmdomain_1year_103124.jld2" S
-@save "technicalpaper_adjoint_struct_5kmdomain_1year_103124.jld2" dS
-@save "technicalpaper_fdcheck_vector_5kmdomain_1year_103124.jld2" diffs
+@save "technicalpaper_primal_struct_halfkmdepth_1year_103124.jld2" S
+@save "technicalpaper_adjoint_struct_halfkmdepth_1year_103124.jld2" dS
+@save "technicalpaper_fdcheck_vector_halfkmdepth_1year_103124.jld2" diffs
 
 """
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
