@@ -334,10 +334,10 @@ function stuff()
 # loss function is final spatially averaged energy
 # initial condition sensitivity
 
-state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
-dS.Prog.v,
-dS.Prog.η,
-dS.Prog.sst,dS)...)
+state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS2.Prog.u,
+dS2.Prog.v,
+dS2.Prog.η,
+dS2.Prog.sst,dS2)...)
 
 one = heatmap(LinRange(0, 3840, 127),
     LinRange(0, 3840, 128),
