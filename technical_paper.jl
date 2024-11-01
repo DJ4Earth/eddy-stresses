@@ -215,7 +215,7 @@ function loop(S,scheme)
     S.Prog.η,
     S.Prog.sst,S)...)
 
-    energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
+    energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) #/ (S.grid.nx * S.grid.ny)
     S.parameters.J = energy_lr
     ###########################################
 
