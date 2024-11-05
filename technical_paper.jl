@@ -3,6 +3,8 @@
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 
+using ShallowWaters
+
 using Enzyme#main
 using Checkpointing, HDF5, Serialization
 using Plots, NetCDF, JLD2, Measures
@@ -203,7 +205,7 @@ function loop(S,scheme)
 
 end
 
-function check_derivative(Ndays, H)
+function run_adjoint_plusfd(Ndays, H)
 
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -228,9 +230,9 @@ function check_derivative(Ndays, H)
         snaps;
         verbose=1,
         gc=true,
-        write_checkpoints=false
-        # write_checkpoints_filename = "technicalpaper_5000m_period286_1yearintegration_110124.h5",
-        # write_checkpoints_period = 286
+        write_checkpoints=true,
+        write_checkpoints_filename = "technicalpaper_check_110524.h5",
+        write_checkpoints_period = 82
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
@@ -238,11 +240,12 @@ function check_derivative(Ndays, H)
     @save "technicalpaper_finalprimal_struct_500mdepth_1year_nocDfield_110524.jld2" S
     @save "technicalpaper_finaladjoint_struct_500mdepth_1year_nocDfield_110524.jld2" dS
 
-    enzyme_deriv = dS.constants.cD
+    enzyme_deriv = dS.constants.cDfield[50,50]
 
     @show enzyme_deriv
 
-    steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
+    # steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
     S_outer = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -291,7 +294,7 @@ function check_derivative(Ndays, H)
             initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
             )
 
-        S_inner.constants.cD += s
+        S_inner.constants.cDfield[50,50] += s
 
         J_inner = checkpointed_integration(S_inner, revolve)
 
@@ -317,19 +320,20 @@ function stuff()
     # loss function is final spatially averaged energy
     # initial condition sensitivity
 
-    adjoint500 = h5open("adjoint_technicalpaper_500m_period286_1yearintegration_110124.h5", "r")
-    blob = read(adjoint500["1"])
-    adj_500_1 = deserialize(blob)
+    primal500 = h5open("primal_technicalpaper_check_110524.h5.h5", "r")
+    blob = read(primal500["1"])
+    prim = deserialize(blob)
 
     adj_500_1_chkp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj_500_1.Prog.u,
     adj_500_1.Prog.v,
     adj_500_1.Prog.η,
     adj_500_1.Prog.sst,adj_500_1)...)
 
-    state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS2.Prog.u,
-    dS2.Prog.v,
-    dS2.Prog.η,
-    dS2.Prog.sst,dS2)...)
+    dS = load_object("technicalpaper_finaladjoint_struct_500mdepth_1year_correctedcDfield_110524.jld2")
+    state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
+    dS.Prog.v,
+    dS.Prog.η, 
+    dS.Prog.sst,dS)...)
 
     one = heatmap(LinRange(0, 3840, 127),
         LinRange(0, 3840, 128),
@@ -343,7 +347,7 @@ function stuff()
         plot_titlefontsize=13,
         colorbar_title=L"m",
         colorbar_titlefontsize=13,
-        clim=(-3e17,3e17),
+        clim=(-3e19,3e19),
         colorbar=:false,
         dpi=300
     )
@@ -360,7 +364,7 @@ function stuff()
         plot_titlefontsize=13,
         colorbar_title=L"      ",
         colorbar_titlefontsize=13,
-        clim=(-3e17,3e17),
+        clim=(-3e19,3e19),
         dpi=300
     )
 
@@ -384,22 +388,23 @@ function stuff()
     plot_titlefontsize=13,
     colorbar_title=L"m",
     colorbar_titlefontsize=13,
-    colorbar=:false,
-    clim=(-50000,50000),
+    # colorbar=:false,
+    clim=(-2e8,2e8),
     dpi=300,
     size=(500,500)
     )
 
     # bottom drag coefficient sensitivity 
-    heatmap(LinRange(0, 3840, 127),
+    heatmap(LinRange(0, 3840, 128),
         LinRange(0, 3840, 128),
-        dS.constants.cDu[2:end-1,2:end-1]',
+        dS.constants.cDfield[2:end-1,2:end-1]',
         c=:balance,
+        clim=(),
         xlabel="x (km)",
         xguidefontsize=13,
         ylabel="y (km)",
         yguidefontsize=13,
-        title=L"\partial J / c_D^u(x,y)",
+        title=L"\partial J / c_D(x,y)",
         plot_titlefontsize=13,
         colorbar_title=L"m",
         colorbar_titlefontsize=13,
@@ -515,10 +520,45 @@ end
 The last few lines are about running the above functions
 """
 
-diffs, enzyme_deriv, S, dS = check_derivative(1*365, 500)
+# diffs, enzyme_deriv, S, dS = check_derivative(1*365, 500)
 
 # @save "technicalpaper_finalprimal_struct_500mdepth_1year_nocDfield_110424.jld2" S
 # @save "technicalpaper_finaladjoint_struct_500mdepth_1year_nocDfield_110424.jld2" dS
-@save "technicalpaper_fdcheck_vector_500mdepth_1year_nocDfield_110424.jld2" diffs
+# @save "technicalpaper_fdcheck_vector_500mdepth_1year_nocDfield_110424.jld2" diffs
 
 # create_adjoint_gif()
+
+function for_michel()
+
+    S = ShallowWaters.model_setup(output=false,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    α=2,
+    nx=128,
+    Ndays = 30,
+    initial_cond="rest"
+    )
+
+    dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
+    snaps = Int(floor(sqrt(S.grid.nt)))
+    revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
+        snaps;
+        verbose=1,
+        gc=true,
+        write_checkpoints=true,
+        write_checkpoints_filename = "technicalpaper_check_110524.h5",
+        write_checkpoints_period = 82
+    )
+
+    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+
+    return dS
+
+end
