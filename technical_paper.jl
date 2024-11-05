@@ -235,7 +235,10 @@ function check_derivative(Ndays, H)
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    enzyme_deriv = dS.constants.cDfield[4, 60]
+    @save "technicalpaper_finalprimal_struct_500mdepth_1year_nocDfield_110524.jld2" S
+    @save "technicalpaper_finaladjoint_struct_500mdepth_1year_nocDfield_110524.jld2" dS
+
+    enzyme_deriv = dS.constants.cD
 
     @show enzyme_deriv
 
@@ -288,7 +291,7 @@ function check_derivative(Ndays, H)
             initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
             )
 
-        S_inner.constants.cDfield[4,60] += s
+        S_inner.constants.cD += s
 
         J_inner = checkpointed_integration(S_inner, revolve)
 
@@ -302,12 +305,21 @@ end
 
 """
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
-without all of this also running
+without all of this also running. The function deserialize opens any saved checkpoints
 """
+function deserialize(x)
+    s = IOBuffer(x)
+    Serialization.deserialize(s)
+end
+
 function stuff()
 
     # loss function is final spatially averaged energy
     # initial condition sensitivity
+
+    adjoint500 = h5open("adjoint_technicalpaper_5000m_period286_1yearintegration_110124.h5", "r")
+    blob = read(adjoint500["1"])
+    adj_500_1 = deserialize(blob)
 
     state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS2.Prog.u,
     dS2.Prog.v,
@@ -318,7 +330,6 @@ function stuff()
         LinRange(0, 3840, 128),
         state_derivs.u[:, :]',
         c=:balance,
-        # clim=(-2e12, 2e12),
         xlabel="x (km)",
         xguidefontsize=13,
         ylabel="y (km)",
@@ -327,6 +338,7 @@ function stuff()
         plot_titlefontsize=13,
         colorbar_title=L"m",
         colorbar_titlefontsize=13,
+        clim=(-3e17,3e17),
         colorbar=:false,
         dpi=300
     )
@@ -336,15 +348,14 @@ function stuff()
         state_derivs.v[:, :]',
         c=:balance,
         xlabel="x (km)",
-        # clim=(-2e12, 2e12),
         xguidefontsize=13,
         ylabel="y (km)",
         yguidefontsize=13,
         title=L"\partial J / \partial v(t_0)",
         plot_titlefontsize=13,
-        colorbar_title=L"m",
+        colorbar_title=L"      ",
         colorbar_titlefontsize=13,
-        # colorbar=:false,
+        clim=(-3e17,3e17),
         dpi=300
     )
 
@@ -409,15 +420,6 @@ function stuff()
         colorbar=:false
     )
 
-end
-
-"""
-The remainder here is also about figures, but now examining the checkpoints
-returned by Checkpointing.jl
-"""
-function deserialize(x)
-    s = IOBuffer(x)
-    Serialization.deserialize(s)
 end
 
 function create_adjoint_gif()
@@ -504,10 +506,14 @@ function create_adjoint_gif()
 
 end
 
+"""
+The last few lines are about running the above functions
+"""
+
 diffs, enzyme_deriv, S, dS = check_derivative(1*365, 500)
 
-@save "technicalpaper_finalprimal_struct_500mdepth_1year_110424.jld2" S
-@save "technicalpaper_finaladjoint_struct_500mdepth_1year_110424.jld2" dS
-@save "technicalpaper_fdcheck_vector_500mdepth_1year_110424.jld2" diffs
+# @save "technicalpaper_finalprimal_struct_500mdepth_1year_nocDfield_110424.jld2" S
+# @save "technicalpaper_finaladjoint_struct_500mdepth_1year_nocDfield_110424.jld2" dS
+@save "technicalpaper_fdcheck_vector_500mdepth_1year_nocDfield_110424.jld2" diffs
 
 # create_adjoint_gif()
