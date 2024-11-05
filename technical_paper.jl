@@ -4,7 +4,7 @@ include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 
 using Enzyme#main
-using Checkpointing
+using Checkpointing, HDF5, Serialization
 using Plots, NetCDF, JLD2
 
 Enzyme.API.looseTypeAnalysis!(true)
@@ -182,26 +182,6 @@ function loop(S,scheme)
         v0rhs = convert(Diag.PrognosticVarsRHS.v,v0)
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
 
-        # Cost function evaluation
-
-        # if S.parameters.i in S.parameters.data_steps
-
-        #     temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
-        #     S.Prog.v,
-        #     S.Prog.η,
-        #     S.Prog.sst,S)...)
-
-        #     energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
-        #     energy_hr = S.parameters.data[S.parameters.j]
-
-        #     energy_diff = (energy_lr - energy_hr)^2
-
-        #     S.parameters.J += energy_diff
-
-        #     S.parameters.j += 1
-
-        # end
-
         # Copy back from substeps
         copyto!(u,u0)
         copyto!(v,v0)
@@ -223,12 +203,12 @@ function loop(S,scheme)
 
 end
 
-function check_derivative(Ndays)
+function check_derivative(Ndays, H)
 
-    S = ShallowWaters.model_setup(output=true,
+    S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
-        H=5000,
+        H=H,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -239,8 +219,8 @@ function check_derivative(Ndays)
         nx=128,
         Ndays = Ndays,
         initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
-    )
+        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+        )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -248,21 +228,23 @@ function check_derivative(Ndays)
         snaps;
         verbose=1,
         gc=true,
-        write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_5000m_period286_2yearintegration_110124.h5",
-        write_checkpoints_period = 286
+        write_checkpoints=false
+        # write_checkpoints_filename = "technicalpaper_5000m_period286_1yearintegration_110124.h5",
+        # write_checkpoints_period = 286
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    enzyme_deriv = dS.forcing.cD[4, 60]
+    enzyme_deriv = dS.constants.cDfield[4, 60]
+
+    @show enzyme_deriv
 
     steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
 
-    S_outer = ShallowWaters.model_setup(output=true,
+    S_outer = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
-        H=5000,
+        H=H,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -273,8 +255,8 @@ function check_derivative(Ndays)
         nx=128,
         Ndays = Ndays,
         initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
-    )
+        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+        )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
@@ -289,10 +271,10 @@ function check_derivative(Ndays)
 
     for s in steps
 
-        S_inner = ShallowWaters.model_setup(output=true,
+        S_inner = ShallowWaters.model_setup(output=false,
             L_ratio=1,
             g=9.81,
-            H=5000,
+            H=H,
             wind_forcing_x="double_gyre",
             Lx=3840e3,
             seasonal_wind_x=false,
@@ -303,10 +285,10 @@ function check_derivative(Ndays)
             nx=128,
             Ndays = Ndays,
             initial_cond="ncfile",
-            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslip_H5km/"
-        )
+            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+            )
 
-        S_inner.forcing.cD[4,60] += s
+        S_inner.constants.cDfield[4,60] += s
 
         J_inner = checkpointed_integration(S_inner, revolve)
 
@@ -318,120 +300,214 @@ function check_derivative(Ndays)
 
 end
 
-diffs, enzyme_deriv, S, dS = check_derivative(2*365)
-
-@save "technicalpaper_finalprimal_struct_5kmdepth_2year_110124.jld2" S
-@save "technicalpaper_finaladjoint_struct_5kmdepth_2year_110124.jld2" dS
-@save "technicalpaper_fdcheck_vector_5kmdepth_2year_110124.jld2" diffs
-
 """
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
 without all of this also running
 """
 function stuff()
 
-# loss function is final spatially averaged energy
-# initial condition sensitivity
+    # loss function is final spatially averaged energy
+    # initial condition sensitivity
 
-state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS2.Prog.u,
-dS2.Prog.v,
-dS2.Prog.η,
-dS2.Prog.sst,dS2)...)
+    state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS2.Prog.u,
+    dS2.Prog.v,
+    dS2.Prog.η,
+    dS2.Prog.sst,dS2)...)
 
-one = heatmap(LinRange(0, 3840, 127),
+    one = heatmap(LinRange(0, 3840, 127),
+        LinRange(0, 3840, 128),
+        state_derivs.u[:, :]',
+        c=:balance,
+        # clim=(-2e12, 2e12),
+        xlabel="x (km)",
+        xguidefontsize=13,
+        ylabel="y (km)",
+        yguidefontsize=13,
+        title=L"\partial J / \partial u(t_0)",
+        plot_titlefontsize=13,
+        colorbar_title=L"m",
+        colorbar_titlefontsize=13,
+        colorbar=:false,
+        dpi=300
+    )
+
+    two = heatmap(LinRange(0, 3840, 128),
+        LinRange(0, 3840, 127),
+        state_derivs.v[:, :]',
+        c=:balance,
+        xlabel="x (km)",
+        # clim=(-2e12, 2e12),
+        xguidefontsize=13,
+        ylabel="y (km)",
+        yguidefontsize=13,
+        title=L"\partial J / \partial v(t_0)",
+        plot_titlefontsize=13,
+        colorbar_title=L"m",
+        colorbar_titlefontsize=13,
+        # colorbar=:false,
+        dpi=300
+    )
+
+    plot(one, two, layout=grid(1,2,
+        widths=(4/8,4/8)),
+        size=(950,400),
+        margin=5mm
+    )
+
+    # wind stress sensitivity
+
+    wind_stress_derivative = heatmap(LinRange(0, 3840, 127),
     LinRange(0, 3840, 128),
-    state_derivs.u[:, :]',
+    dS.forcing.Fx',
     c=:balance,
-    # clim=(-2e12, 2e12),
     xlabel="x (km)",
     xguidefontsize=13,
     ylabel="y (km)",
     yguidefontsize=13,
-    title=L"\partial J / \partial u(t_0)",
+    title=L"\partial J / F_x",
     plot_titlefontsize=13,
     colorbar_title=L"m",
     colorbar_titlefontsize=13,
     colorbar=:false,
-    dpi=300
-)
-
-two = heatmap(LinRange(0, 3840, 128),
-    LinRange(0, 3840, 127),
-    state_derivs.v[:, :]',
-    c=:balance,
-    xlabel="x (km)",
-    # clim=(-2e12, 2e12),
-    xguidefontsize=13,
-    ylabel="y (km)",
-    yguidefontsize=13,
-    title=L"\partial J / \partial v(t_0)",
-    plot_titlefontsize=13,
-    colorbar_title=L"m",
-    colorbar_titlefontsize=13,
-    # colorbar=:false,
-    dpi=300
-)
-
-plot(one, two, layout=grid(1,2,
-    widths=(4/8,4/8)),
-    size=(950,400),
-    margin=5mm
-)
-
-# wind stress sensitivity
-
-wind_stress_derivative = heatmap(LinRange(0, 3840, 127),
-LinRange(0, 3840, 128),
-dS.forcing.Fx',
-c=:balance,
-xlabel="x (km)",
-xguidefontsize=13,
-ylabel="y (km)",
-yguidefontsize=13,
-title=L"\partial J / F_x",
-plot_titlefontsize=13,
-colorbar_title=L"m",
-colorbar_titlefontsize=13,
-colorbar=:false,
-clim=(-50000,50000),
-dpi=300,
-size=(500,500)
-)
-
-# bottom drag coefficient sensitivity 
-heatmap(LinRange(0, 3840, 127),
-    LinRange(0, 3840, 128),
-    dS.constants.cDu[2:end-1,2:end-1]',
-    c=:balance,
-    xlabel="x (km)",
-    xguidefontsize=13,
-    ylabel="y (km)",
-    yguidefontsize=13,
-    title=L"\partial J / c_D^u(x,y)",
-    plot_titlefontsize=13,
-    colorbar_title=L"m",
-    colorbar_titlefontsize=13,
+    clim=(-50000,50000),
     dpi=300,
     size=(500,500)
-)
+    )
 
-heatmap(LinRange(0, 3840, 128),
-    LinRange(0, 3840, 127),
-    dS.constants.cDv[2:end-1,2:end-1]',
-    c=:balance,
-    xlabel="x (km)",
-    xguidefontsize=13,
-    ylabel="y (km)",
-    yguidefontsize=13,
-    title=L"\partial J / c_D^v(x,y)",
-    plot_titlefontsize=13,
-    colorbar_title=L"m",
-    colorbar_titlefontsize=13,
-    dpi=300,
-    size=(500,500),
-    clim=(-1e6,1e6),
-    colorbar=:false
-)
+    # bottom drag coefficient sensitivity 
+    heatmap(LinRange(0, 3840, 127),
+        LinRange(0, 3840, 128),
+        dS.constants.cDu[2:end-1,2:end-1]',
+        c=:balance,
+        xlabel="x (km)",
+        xguidefontsize=13,
+        ylabel="y (km)",
+        yguidefontsize=13,
+        title=L"\partial J / c_D^u(x,y)",
+        plot_titlefontsize=13,
+        colorbar_title=L"m",
+        colorbar_titlefontsize=13,
+        dpi=300,
+        size=(500,500)
+    )
+
+    heatmap(LinRange(0, 3840, 128),
+        LinRange(0, 3840, 127),
+        dS.constants.cDv[2:end-1,2:end-1]',
+        c=:balance,
+        xlabel="x (km)",
+        xguidefontsize=13,
+        ylabel="y (km)",
+        yguidefontsize=13,
+        title=L"\partial J / c_D^v(x,y)",
+        plot_titlefontsize=13,
+        colorbar_title=L"m",
+        colorbar_titlefontsize=13,
+        dpi=300,
+        size=(500,500),
+        clim=(-1e6,1e6),
+        colorbar=:false
+    )
+
+end
+
+"""
+The remainder here is also about figures, but now examining the checkpoints
+returned by Checkpointing.jl
+"""
+function deserialize(x)
+    s = IOBuffer(x)
+    Serialization.deserialize(s)
+end
+
+function create_adjoint_gif()
+
+    primal_fid = h5open("primal_technicalpaper_5000m_period286_1yearintegration_110124.h5")
+    adj_fid = h5open("adjoint_technicalpaper_5000m_period286_1yearintegration_110124.h5", "r")
+    # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
+
+    u_anim = Animation()
+    v_anim = Animation()
+    eta_anim = Animation()
+
+    for j = 81797:-286:1
+    # for j = 1:3651
+
+
+        blob = read(adj_fid[string(j)])
+        adj_chkp = deserialize(blob)
+
+        temp = ShallowWaters.PrognosticVars{Float32}(
+            ShallowWaters.remove_halo(adj_chkp.Prog.u,
+            adj_chkp.Prog.v,
+            adj_chkp.Prog.η,
+            adj_chkp.Prog.sst,adj_chkp)...
+        )
+
+        frame(eta_anim, heatmap(temp.η',
+            # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
+            title=L"\partial \mathcal{E} / \partial \eta(%$j)",
+            xlabel=L"x",
+            ylabel=L"y",
+            c=:balance,
+            dpi=300,
+            colorbar_title="         ",
+            xlabelfontsize=14,
+            ylabelfontsize=14,
+            clim=(-15000,15000),
+            colorbar_titlefontsize=14,
+            colorbar_tickfontsize=8,
+            xtickfontsize=8,
+            ytickfontsize=8)
+        )
+
+        # frame(v_anim, heatmap(temp.v',
+        #     title=L"\partial \mathcal{E}(t_f)/\partial v(%$j)",
+        #     clim=(-1e9, 1e9),
+        #     legend=:none,
+        #     xlabel=L"x",
+        #     ylabel=L"y",
+        #     c=:balance,
+        #     dpi=300,
+        #     colorbar_title="         ",
+        #     xlabelfontsize=14,
+        #     ylabelfontsize=14,
+        #     colorbar_titlefontsize=14,
+        #     colorbar_tickfontsize=8,
+        #     xtickfontsize=8,
+        #     ytickfontsize=8)
+        # )
+
+        # frame(eta_anim, heatmap(temp.η',
+        #     title=L"\partial \mathcal{E}(t_f)/\partial \eta(%$j)",
+        #     clim=(-50, 50),
+        #     legend=:none,
+        #     xlabel=L"x",
+        #     ylabel=L"y",
+        #     c=:balance,
+        #     dpi=300,
+        #     colorbar_title="         ",
+        #     xlabelfontsize=14,
+        #     ylabelfontsize=14,
+        #     colorbar_titlefontsize=14,
+        #     colorbar_tickfontsize=8,
+        #     xtickfontsize=8,
+        #     ytickfontsize=8)
+        # )
+
+    end
+
+    gif(eta_anim, "eta_integration2_110424.gif", fps = 8)
+    # gif(u_anim, "du_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
+    # gif(v_anim, "dv_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
 
 
 end
+
+diffs, enzyme_deriv, S, dS = check_derivative(1*365, 500)
+
+@save "technicalpaper_finalprimal_struct_500mdepth_1year_110424.jld2" S
+@save "technicalpaper_finaladjoint_struct_500mdepth_1year_110424.jld2" dS
+@save "technicalpaper_fdcheck_vector_500mdepth_1year_110424.jld2" diffs
+
+# create_adjoint_gif()
