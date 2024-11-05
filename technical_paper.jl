@@ -5,7 +5,7 @@ using .ShallowWaters
 
 using Enzyme#main
 using Checkpointing, HDF5, Serialization
-using Plots, NetCDF, JLD2
+using Plots, NetCDF, JLD2, Measures
 
 Enzyme.API.looseTypeAnalysis!(true)
 
@@ -317,9 +317,14 @@ function stuff()
     # loss function is final spatially averaged energy
     # initial condition sensitivity
 
-    adjoint500 = h5open("adjoint_technicalpaper_5000m_period286_1yearintegration_110124.h5", "r")
+    adjoint500 = h5open("adjoint_technicalpaper_500m_period286_1yearintegration_110124.h5", "r")
     blob = read(adjoint500["1"])
     adj_500_1 = deserialize(blob)
+
+    adj_500_1_chkp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj_500_1.Prog.u,
+    adj_500_1.Prog.v,
+    adj_500_1.Prog.η,
+    adj_500_1.Prog.sst,adj_500_1)...)
 
     state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS2.Prog.u,
     dS2.Prog.v,
