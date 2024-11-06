@@ -2,6 +2,7 @@
 *.err
 *.out
 *.bash
+*.h5
 /data_files_tunedgammavalues
 /data_files_gamma0.3
 /for_video

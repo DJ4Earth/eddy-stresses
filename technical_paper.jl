@@ -3,8 +3,6 @@
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 
-using ShallowWaters
-
 using Enzyme#main
 using Checkpointing, HDF5, Serialization
 using Plots, NetCDF, JLD2, Measures
@@ -324,10 +322,14 @@ function stuff()
     blob = read(primal500["1"])
     prim = deserialize(blob)
 
-    adj_500_1_chkp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj_500_1.Prog.u,
-    adj_500_1.Prog.v,
-    adj_500_1.Prog.η,
-    adj_500_1.Prog.sst,adj_500_1)...)
+    adj500 = h5open("adjoint_technicalpaper_500m_period286_1yearintegration_110124.h5", "r")
+    blob = read(adj500["1"])
+    adj = deserialize(blob)
+
+    dS = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj.Prog.u,
+    adj.Prog.v,
+    adj.Prog.η,
+    adj.Prog.sst,adj)...)
 
     dS = load_object("technicalpaper_finaladjoint_struct_500mdepth_1year_correctedcDfield_110524.jld2")
     state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
@@ -337,7 +339,7 @@ function stuff()
 
     one = heatmap(LinRange(0, 3840, 127),
         LinRange(0, 3840, 128),
-        state_derivs.u[:, :]',
+        dS.u[:, :]',
         c=:balance,
         xlabel="x (km)",
         xguidefontsize=13,
@@ -354,7 +356,7 @@ function stuff()
 
     two = heatmap(LinRange(0, 3840, 128),
         LinRange(0, 3840, 127),
-        state_derivs.v[:, :]',
+        dS.v[:, :]',
         c=:balance,
         xlabel="x (km)",
         xguidefontsize=13,
