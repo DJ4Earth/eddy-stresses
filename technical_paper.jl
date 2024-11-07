@@ -220,7 +220,7 @@ function run_adjoint_plusfd(Ndays, H)
         Ndays = Ndays,
         initial_cond="ncfile",
         initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-        )
+    )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -229,14 +229,14 @@ function run_adjoint_plusfd(Ndays, H)
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_check_110524.h5",
-        write_checkpoints_period = 82
+        write_checkpoints_filename = "technicalpaper_check_5000m_2year_110624.h5",
+        write_checkpoints_period = 286
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    @save "technicalpaper_finalprimal_struct_500mdepth_1year_nocDfield_110524.jld2" S
-    @save "technicalpaper_finaladjoint_struct_500mdepth_1year_nocDfield_110524.jld2" dS
+    @save "technicalpaper_finalprimal_struct_5000mdepth_2year_correctedcDfield_110624.jld2" S
+    @save "technicalpaper_finaladjoint_struct_5000mdepth_2year_correctedcDfield_110624.jld2" dS
 
     enzyme_deriv = dS.constants.cDfield[50,50]
 
@@ -260,12 +260,12 @@ function run_adjoint_plusfd(Ndays, H)
         Ndays = Ndays,
         initial_cond="ncfile",
         initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-        )
+    )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps; 
-        verbose=1, 
-        gc=true, 
+    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
+        verbose=1,
+        gc=true,
         write_checkpoints=false
     )
 
@@ -290,7 +290,7 @@ function run_adjoint_plusfd(Ndays, H)
             Ndays = Ndays,
             initial_cond="ncfile",
             initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-            )
+        )
 
         S_inner.constants.cDfield[50,50] += s
 
@@ -299,6 +299,8 @@ function run_adjoint_plusfd(Ndays, H)
         push!(diffs, (J_inner - J_outer) / s)
 
     end
+
+    @save "technicalpaper_fdcheck_vector_5000mdepth_2year_correctedcDfield_110624.jld2" diffs
 
     return diffs, enzyme_deriv, S, dS
 
@@ -322,7 +324,7 @@ function stuff()
     blob = read(primal500["1"])
     prim = deserialize(blob)
 
-    adj500 = h5open("adjoint_technicalpaper_500m_period286_1yearintegration_110124.h5", "r")
+    adj500 = h5open("adjoint_technicalpaper_check_500m_1year_110624.h5.h5", "r")
     blob = read(adj500["1"])
     adj = deserialize(blob)
 
@@ -331,11 +333,11 @@ function stuff()
     adj.Prog.η,
     adj.Prog.sst,adj)...)
 
-    dS = load_object("technicalpaper_finaladjoint_struct_500mdepth_1year_correctedcDfield_110524.jld2")
-    state_derivs = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
-    dS.Prog.v,
-    dS.Prog.η, 
-    dS.Prog.sst,dS)...)
+    adj5002 = load_object("technicalpaper_finaladjoint_struct_500mdepth_1year_correctedcDfield_110624.jld2")
+    dS2 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj5002.Prog.u,
+    adj5002.Prog.v,
+    adj5002.Prog.η, 
+    adj5002.Prog.sst,adj5002)...)
 
     one = heatmap(LinRange(0, 3840, 127),
         LinRange(0, 3840, 128),
@@ -378,9 +380,9 @@ function stuff()
 
     # wind stress sensitivity
 
-    wind_stress_derivative = heatmap(LinRange(0, 3840, 127),
+    wind_stress_derivative1 = heatmap(LinRange(0, 3840, 127),
     LinRange(0, 3840, 128),
-    dS.forcing.Fx',
+    dS5km1.forcing.Fx',
     c=:balance,
     xlabel="x (km)",
     xguidefontsize=13,
@@ -390,8 +392,8 @@ function stuff()
     plot_titlefontsize=13,
     colorbar_title=L"m",
     colorbar_titlefontsize=13,
-    # colorbar=:false,
-    clim=(-2e8,2e8),
+    colorbar=:true,
+    # clim=(-2e8,2e8),
     dpi=300,
     size=(500,500)
     )
@@ -522,11 +524,8 @@ end
 The last few lines are about running the above functions
 """
 
-# diffs, enzyme_deriv, S, dS = check_derivative(1*365, 500)
+diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(2*365, 5000)
 
-# @save "technicalpaper_finalprimal_struct_500mdepth_1year_nocDfield_110424.jld2" S
-# @save "technicalpaper_finaladjoint_struct_500mdepth_1year_nocDfield_110424.jld2" dS
-# @save "technicalpaper_fdcheck_vector_500mdepth_1year_nocDfield_110424.jld2" diffs
 
 # create_adjoint_gif()
 
