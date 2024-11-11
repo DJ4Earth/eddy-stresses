@@ -5,7 +5,7 @@ using .ShallowWaters
 
 using Enzyme#main
 using Checkpointing, HDF5, Serialization
-using Plots, NetCDF, JLD2, Measures
+using NetCDF, JLD2, CairoMakie
 
 Enzyme.API.looseTypeAnalysis!(true)
 
