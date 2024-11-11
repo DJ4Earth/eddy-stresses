@@ -339,100 +339,88 @@ function stuff()
     adj5002.Prog.η, 
     adj5002.Prog.sst,adj5002)...)
 
-    one = heatmap(LinRange(0, 3840, 127),
-        LinRange(0, 3840, 128),
-        dS.u[:, :]',
-        c=:balance,
-        xlabel="x (km)",
-        xguidefontsize=13,
-        ylabel="y (km)",
-        yguidefontsize=13,
-        title=L"\partial J / \partial u(t_0)",
-        plot_titlefontsize=13,
-        colorbar_title=L"m",
-        colorbar_titlefontsize=13,
-        clim=(-3e19,3e19),
-        colorbar=:false,
-        dpi=300
+    # Initial condition
+
+    derivs500 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS500m1.Prog.u,
+    dS500m1.Prog.v,
+    dS500m1.Prog.η, 
+    dS500m1.Prog.sst,dS500m1)...)
+
+    derivs5km = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS5km1.Prog.u,
+    dS5km1.Prog.v,
+    dS5km1.Prog.η, 
+    dS5km1.Prog.sst,dS5km1)...)
+
+    fig = Figure(500, 1000)
+
+    ax1 = Axis(fig[1,1], 
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Initial x-velocity sensitivity, H = 500m",
+        width=400,
+        height=400
+    );
+    hm1 = CairoMakie.heatmap!(ax1, 0:127:3840,
+        0:128:3840,
+        derivs500.u,
+        colorrange = (-5e19, 5e19),
+        colormap=:balance
+    );
+    Colorbar(fig[2, 1], 
+        hm1,
+        vertical=false
     )
 
-    two = heatmap(LinRange(0, 3840, 128),
-        LinRange(0, 3840, 127),
-        dS.v[:, :]',
-        c=:balance,
-        xlabel="x (km)",
-        xguidefontsize=13,
-        ylabel="y (km)",
-        yguidefontsize=13,
-        title=L"\partial J / \partial v(t_0)",
-        plot_titlefontsize=13,
-        colorbar_title=L"      ",
-        colorbar_titlefontsize=13,
-        clim=(-3e19,3e19),
-        dpi=300
-    )
+    ax2 = Axis(fig[1,2],
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Initial x-velocity sensitivity, H = 5000m",
+        width=400,
+        height=400
+    );
+    hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
+        0:128:3840,
+        derivs5km.u,
+        colorrange = (-2e5, 2e5),
+        colormap=:balance,
+    );
+    Colorbar(fig[2, 2], hm2, vertical=false)
 
-    plot(one, two, layout=grid(1,2,
-        widths=(4/8,4/8)),
-        size=(950,400),
-        margin=5mm
-    )
+    fig
 
     # wind stress sensitivity
-
-    wind_stress_derivative1 = heatmap(LinRange(0, 3840, 127),
-    LinRange(0, 3840, 128),
-    dS5km1.forcing.Fx',
-    c=:balance,
-    xlabel="x (km)",
-    xguidefontsize=13,
-    ylabel="y (km)",
-    yguidefontsize=13,
-    title=L"\partial J / F_x",
-    plot_titlefontsize=13,
-    colorbar_title=L"m",
-    colorbar_titlefontsize=13,
-    colorbar=:true,
-    # clim=(-2e8,2e8),
-    dpi=300,
-    size=(500,500)
+    # Makie plot
+    fig = Figure()
+    ax = Axis(fig[1,1], 
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Wind-stress sensitivity, H = 5000m"
     )
+    hm = CairoMakie.heatmap!(ax, 0:128:3840,
+        0:128:3840,
+        dS5km1.forcing.Fx,
+        colorrange = (-40, 40),
+        colormap=:balance,
+    );
+    Colorbar(fig[:, end+1], hm)
+    fig
 
-    # bottom drag coefficient sensitivity 
-    heatmap(LinRange(0, 3840, 128),
-        LinRange(0, 3840, 128),
-        dS.constants.cDfield[2:end-1,2:end-1]',
-        c=:balance,
-        clim=(),
-        xlabel="x (km)",
-        xguidefontsize=13,
-        ylabel="y (km)",
-        yguidefontsize=13,
-        title=L"\partial J / c_D(x,y)",
-        plot_titlefontsize=13,
-        colorbar_title=L"m",
-        colorbar_titlefontsize=13,
-        dpi=300,
-        size=(500,500)
+    # bottom drag coefficient sensitivity
+    fig = Figure()
+    ax = Axis(fig[1,1], 
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Bottom drag sensitivity, H = 500m"
     )
+    hm = CairoMakie.heatmap!(ax, 0:128:3840,
+        0:128:3840,
+        dS500m1.constants.cDfield[2:end-1,2:end-1],
+        colorrange = (-4e9, 4e9),
+        colormap=:balance,
+    );
+    Colorbar(fig[:, end+1], hm)
+    fig
 
-    heatmap(LinRange(0, 3840, 128),
-        LinRange(0, 3840, 127),
-        dS.constants.cDv[2:end-1,2:end-1]',
-        c=:balance,
-        xlabel="x (km)",
-        xguidefontsize=13,
-        ylabel="y (km)",
-        yguidefontsize=13,
-        title=L"\partial J / c_D^v(x,y)",
-        plot_titlefontsize=13,
-        colorbar_title=L"m",
-        colorbar_titlefontsize=13,
-        dpi=300,
-        size=(500,500),
-        clim=(-1e6,1e6),
-        colorbar=:false
-    )
 
 end
 
