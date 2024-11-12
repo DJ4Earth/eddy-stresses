@@ -203,24 +203,10 @@ function loop(S,scheme)
 
 end
 
-function run_adjoint_plusfd(Ndays, H)
+function run_adjoint_plusfd(::Type{T}=Float32; kwargs...) where {T<:AbstractFloat}
 
-    S = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=H,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        α=2,
-        nx=128,
-        Ndays = Ndays,
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    )
+    P = ShallowWaters.Parameter(T=T;kwargs...)
+    S = ShallowWaters.model_setup(P)
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -229,14 +215,14 @@ function run_adjoint_plusfd(Ndays, H)
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_check_5000m_2year_110624.h5",
+        write_checkpoints_filename = "technicalpaper_500mdepth_1year_halvedwindstress_111224.h5",
         write_checkpoints_period = 286
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    @save "technicalpaper_finalprimal_struct_5000mdepth_2year_correctedcDfield_110624.jld2" S
-    @save "technicalpaper_finaladjoint_struct_5000mdepth_2year_correctedcDfield_110624.jld2" dS
+    @save "technicalpaper_finalprimal_struct_500mdepth_1year_halvedwindstress_111224.jld2" S
+    @save "technicalpaper_finaladjoint_struct_500mdepth_1year_halvedwindstress_111224.jld2" dS
 
     enzyme_deriv = dS.constants.cDfield[50,50]
 
@@ -245,22 +231,7 @@ function run_adjoint_plusfd(Ndays, H)
     # steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
     steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
-    S_outer = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=H,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        α=2,
-        nx=128,
-        Ndays = Ndays,
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    )
+    S_outer = ShallowWaters.model_setup(P)
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
@@ -275,22 +246,7 @@ function run_adjoint_plusfd(Ndays, H)
 
     for s in steps
 
-        S_inner = ShallowWaters.model_setup(output=false,
-            L_ratio=1,
-            g=9.81,
-            H=H,
-            wind_forcing_x="double_gyre",
-            Lx=3840e3,
-            seasonal_wind_x=false,
-            topography="flat",
-            bc="nonperiodic",
-            bottom_drag="quadratic",
-            α=2,
-            nx=128,
-            Ndays = Ndays,
-            initial_cond="ncfile",
-            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-        )
+        S_inner = ShallowWaters.model_setup(P)
 
         S_inner.constants.cDfield[50,50] += s
 
@@ -300,7 +256,7 @@ function run_adjoint_plusfd(Ndays, H)
 
     end
 
-    @save "technicalpaper_fdcheck_vector_5000mdepth_2year_correctedcDfield_110624.jld2" diffs
+    @save "technicalpaper_fdcheck_vector_500mdepth_1year_halvedwindstress_111224.jld2" diffs
 
     return diffs, enzyme_deriv, S, dS
 
@@ -316,6 +272,58 @@ function deserialize(x)
 end
 
 function stuff()
+
+    # investigating derivatives 
+
+    # norm of the prognostic variables derivatives
+    detanorm = load_object("./technicalpaper_datafiles/technicalpaper_detanorm_dividedbynxny_5000m_1year_111224.jld2");
+    dunorm = load_object("./technicalpaper_datafiles/technicalpaper_dunorm_dividedbynxny_5000m_1year_111224.jld2");
+    dvnorm = load_object("./technicalpaper_datafiles/technicalpaper_dvnorm_dividedbynxny_5000m_1year_111224.jld2");
+
+    timestep = 365:-1.271777:1
+    f = Figure()
+    ax1 = Axis(f[1, 1],
+        title = "Norm of adjoint derivative w.r.t. u, v, H = 5000m",
+        xlabel = "t (days)",
+        ylabel = L"||\partial J / \partial x||",
+    )
+    ax2 = Axis(f[2, 1],
+    title = "Norm of adjoint derivative w.r.t. eta, H = 5000m",
+    xlabel = "t (days)",
+    ylabel = L"||\partial J / \partial x||",
+
+    )
+    lines!(ax2, timestep, detanorm, label = L"\partial J / \partial \eta(t)")
+    axislegend(ax2, position = :rt)
+    lines!(ax1, timestep, dunorm, label = L"\partial J / \partial u(t)")
+    lines!(ax1, timestep, dvnorm, label = L"\partial J / \partial v(t)")
+    axislegend(ax1, position = :rt)
+
+    save("technicalpaper_normprog_divnxny_5000m_111224.png", f)
+
+    # norm of the forcing and parameter derivatives
+
+    dcDnorm = load_object("./technicalpaper_datafiles/technicalpaper_dcDnorm_dividedbynxny_5000m_1year_111224.jld2");
+    dFxnorm = load_object("./technicalpaper_datafiles/technicalpaper_dFxnorm_dividedbynxny_5000m_1year_111224.jld2");
+
+    timestep = 365:-1.271777:1
+    f = Figure()
+    ax1 = Axis(f[1, 1],
+        title = "Norm of adjoint derivative w.r.t. wind-stress, v, H = 5000m",
+        xlabel = "t (days)",
+        ylabel = L"||\partial J / \partial F_x||"
+    )
+    ax2 = Axis(f[2, 1],
+    title = "Norm of adjoint derivative w.r.t. bottom drag, H = 5000m",
+    xlabel = "t (days)",
+    ylabel = L"||\partial J / \partial c_D||")
+    
+    lines!(ax2, timestep, dcDnorm, label = L"\partial J / \partial c_D")
+    axislegend(ax2, position = :rt)
+    lines!(ax1, timestep, dFxnorm, label = L"\partial J / \partial F_x")
+    axislegend(ax1, position = :rt)
+
+    save("technicalpaper_parametersensitivities_normcDFx_divnxny_5000mdepth_111224.png", f)
 
     # loss function is final spatially averaged energy
     # initial condition sensitivity
@@ -426,13 +434,21 @@ end
 
 function create_adjoint_gif()
 
-    primal_fid = h5open("primal_technicalpaper_5000m_period286_1yearintegration_110124.h5")
-    adj_fid = h5open("adjoint_technicalpaper_5000m_period286_1yearintegration_110124.h5", "r")
+    # primal_fid = h5open("technicalpaper.h5")
+    adj_fid = h5open("./technicalpaper_datafiles/adjoint_technicalpaper_check_5000m_1year_110624.h5", "r")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
-    u_anim = Animation()
-    v_anim = Animation()
-    eta_anim = Animation()
+    # unorm_anim = Animation()
+    # vnorm_anim = Animation()
+    # etanorm_anim = Animation()
+
+    dunorm = []
+    dvnorm = []
+    detanorm = []
+
+    dcDnorm = []
+    dFxnorm = []
+
 
     for j = 81797:-286:1
     # for j = 1:3651
@@ -448,22 +464,28 @@ function create_adjoint_gif()
             adj_chkp.Prog.sst,adj_chkp)...
         )
 
-        frame(eta_anim, heatmap(temp.η',
-            # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
-            title=L"\partial \mathcal{E} / \partial \eta(%$j)",
-            xlabel=L"x",
-            ylabel=L"y",
-            c=:balance,
-            dpi=300,
-            colorbar_title="         ",
-            xlabelfontsize=14,
-            ylabelfontsize=14,
-            clim=(-15000,15000),
-            colorbar_titlefontsize=14,
-            colorbar_tickfontsize=8,
-            xtickfontsize=8,
-            ytickfontsize=8)
-        )
+        push!(dcDnorm, sum(adj_chkp.constants.cDfield.^2) / 128^2)
+        push!(dFxnorm, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
+        push!(dunorm, sum(temp.u.^2) / (127*128))
+        push!(dvnorm, sum(temp.v.^2) / (127*128))
+        push!(detanorm, sum(temp.η.^2) / (128 * 128))
+
+        # frame(eta_anim, heatmap(temp.η',
+        #     # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
+        #     title=L"\partial \mathcal{E} / \partial \eta(%$j)",
+        #     xlabel=L"x",
+        #     ylabel=L"y",
+        #     c=:balance,
+        #     dpi=300,
+        #     colorbar_title="         ",
+        #     xlabelfontsize=14,
+        #     ylabelfontsize=14,
+        #     clim=(-15000,15000),
+        #     colorbar_titlefontsize=14,
+        #     colorbar_tickfontsize=8,
+        #     xtickfontsize=8,
+        #     ytickfontsize=8)
+        # )
 
         # frame(v_anim, heatmap(temp.v',
         #     title=L"\partial \mathcal{E}(t_f)/\partial v(%$j)",
@@ -501,10 +523,15 @@ function create_adjoint_gif()
 
     end
 
-    gif(eta_anim, "eta_integration2_110424.gif", fps = 8)
+    # gif(eta_anim, "eta_integration2_110424.gif", fps = 8)
     # gif(u_anim, "du_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
     # gif(v_anim, "dv_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
 
+    @save "technicalpaper_dcDnorm_dividedbynxny_5000m_1year_111224.jld2" dcDnorm
+    @save "technicalpaper_dFxnorm_dividedbynxny_5000m_1year_111224.jld2" dFxnorm
+    @save "technicalpaper_dunorm_dividedbynxny_5000m_1year_111224.jld2" dunorm
+    @save "technicalpaper_dvnorm_dividedbynxny_5000m_1year_111224.jld2" dvnorm
+    @save "technicalpaper_detanorm_dividedbynxny_5000m_1year_111224.jld2" detanorm
 
 end
 
@@ -512,17 +539,11 @@ end
 The last few lines are about running the above functions
 """
 
-diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(2*365, 5000)
-
-
-# create_adjoint_gif()
-
-function for_michel()
-
-    S = ShallowWaters.model_setup(output=false,
+_, _, _, _ = run_adjoint_plusfd(;output=false,
     L_ratio=1,
     g=9.81,
     H=500,
+    Fx0=.06,
     wind_forcing_x="double_gyre",
     Lx=3840e3,
     seasonal_wind_x=false,
@@ -531,23 +552,9 @@ function for_michel()
     bottom_drag="quadratic",
     α=2,
     nx=128,
-    Ndays = 30,
-    initial_cond="rest"
-    )
+    Ndays = 365,
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+)
 
-    dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_check_110524.h5",
-        write_checkpoints_period = 82
-    )
-
-    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-
-    return dS
-
-end
+# create_adjoint_gif()
