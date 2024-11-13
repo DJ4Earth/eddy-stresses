@@ -3,7 +3,7 @@
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 
-using Enzyme#main
+using Enzyme
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 
@@ -203,25 +203,30 @@ function loop(S,scheme)
 
 end
 
-function run_adjoint_plusfd(Ndays, H)
+function run_adjoint_plusfd(::Type{T}=Float32;     # number format
+    kwargs...                               # all additional parameters
+    ) where {T<:AbstractFloat}
 
-    S = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=H,
-        wind_forcing_x="double_gyre",
-        Fx0=.06,
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        α=2,
-        nx=128,
-        Ndays = Ndays,
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    )
+    P = ShallowWaters.Parameter(T=T;kwargs...)
+    S = ShallowWaters.model_setup(P)
+
+    # S = ShallowWaters.model_setup(output=false,
+    #     L_ratio=1,
+    #     g=9.81,
+    #     H=H,
+    #     wind_forcing_x="double_gyre",
+    #     Fx0=.06,
+    #     Lx=3840e3,
+    #     seasonal_wind_x=false,
+    #     topography="flat",
+    #     bc="nonperiodic",
+    #     bottom_drag="quadratic",
+    #     α=2,
+    #     nx=128,
+    #     Ndays = Ndays,
+    #     initial_cond="ncfile",
+    #     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+    # )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -229,15 +234,13 @@ function run_adjoint_plusfd(Ndays, H)
         snaps;
         verbose=1,
         gc=true,
-        write_checkpoints=true,
+        write_checkpoints=false,
         write_checkpoints_filename = "technicalpaper_check_500m_1year_halvedwindforcing_111324.h5",
         write_checkpoints_period = 286
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    @save "technicalpaper_finalprimal_struct_500mdepth_1year_halvedwindforcing_111324.jld2" S
-    @save "technicalpaper_finaladjoint_struct_500mdepth_1year_halvedwindforcing_111324.jld2" dS
 
     enzyme_deriv = dS.constants.cDfield[50,50]
 
@@ -246,23 +249,24 @@ function run_adjoint_plusfd(Ndays, H)
     # steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
     steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
-    S_outer = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=H,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        Fx0=.06,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        α=2,
-        nx=128,
-        Ndays = Ndays,
-        initial_cond="ncfile",
-        initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    )
+    S_outer = ShallowWaters.model_setup(P)
+    # S_outer = ShallowWaters.model_setup(output=false,
+    #     L_ratio=1,
+    #     g=9.81,
+    #     H=H,
+    #     wind_forcing_x="double_gyre",
+    #     Lx=3840e3,
+    #     Fx0=.06,
+    #     seasonal_wind_x=false,
+    #     topography="flat",
+    #     bc="nonperiodic",
+    #     bottom_drag="quadratic",
+    #     α=2,
+    #     nx=128,
+    #     Ndays = Ndays,
+    #     initial_cond="ncfile",
+    #     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+    # )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
@@ -277,23 +281,24 @@ function run_adjoint_plusfd(Ndays, H)
 
     for s in steps
 
-        S_inner = ShallowWaters.model_setup(output=false,
-            L_ratio=1,
-            g=9.81,
-            H=H,
-            wind_forcing_x="double_gyre",
-            Fx0=.06,
-            Lx=3840e3,
-            seasonal_wind_x=false,
-            topography="flat",
-            bc="nonperiodic",
-            bottom_drag="quadratic",
-            α=2,
-            nx=128,
-            Ndays = Ndays,
-            initial_cond="ncfile",
-            initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-        )
+        S_inner = ShallowWaters.model_setup(P)
+        # S_inner = ShallowWaters.model_setup(output=false,
+        #     L_ratio=1,
+        #     g=9.81,
+        #     H=H,
+        #     wind_forcing_x="double_gyre",
+        #     Fx0=.06,
+        #     Lx=3840e3,
+        #     seasonal_wind_x=false,
+        #     topography="flat",
+        #     bc="nonperiodic",
+        #     bottom_drag="quadratic",
+        #     α=2,
+        #     nx=128,
+        #     Ndays = Ndays,
+        #     initial_cond="ncfile",
+        #     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+        # )
 
         S_inner.constants.cDfield[50,50] += s
 
@@ -302,8 +307,6 @@ function run_adjoint_plusfd(Ndays, H)
         push!(diffs, (J_inner - J_outer) / s)
 
     end
-
-    @save "technicalpaper_fdcheck_vector_5000mdepth_2year_correctedcDfield_110624.jld2" diffs
 
     return diffs, enzyme_deriv, S, dS
 
@@ -586,7 +589,10 @@ end
 The last few lines are about running the above functions
 """
 
-_, _, _, _ = run_adjoint_plusfd(1*365, 500)
+diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(Ndays=1,nx=100)
+@save "technicalpaper_finalprimal_struct_500mdepth_1year_halvedwindforcing_111324.jld2" S
+@save "technicalpaper_finaladjoint_struct_500mdepth_1year_halvedwindforcing_111324.jld2" dS
+@save "technicalpaper_fdcheck_vector_5000mdepth_2year_correctedcDfield_110624.jld2" diffs
 
 
 # create_adjoint_gif()
