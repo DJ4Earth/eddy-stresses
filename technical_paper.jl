@@ -184,7 +184,7 @@ function loop(S,scheme)
 
         #### Energy objective function, time averaged
 
-        if t in 1:224:S.grid.nt
+        if S.parameters.i in 1:224:S.grid.nt
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
             S.Prog.v,
@@ -238,7 +238,7 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_timeavgobj_1000m_1year_111324.h5",
+        write_checkpoints_filename = "technicalpaper_timeavgobj_1000m_1year_111424.h5",
         write_checkpoints_period = 224
     )
 
@@ -294,19 +294,19 @@ function stuff()
     # investigating derivatives 
 
     # norm of the prognostic variables derivatives
-    detanorm = load_object("./technicalpaper_datafiles/technicalpaper_detanorm_dividedbynxny_5000m_1year_111224.jld2");
-    dunorm = load_object("./technicalpaper_datafiles/technicalpaper_dunorm_dividedbynxny_5000m_1year_111224.jld2");
-    dvnorm = load_object("./technicalpaper_datafiles/technicalpaper_dvnorm_dividedbynxny_5000m_1year_111224.jld2");
+    detanorm = load_object("./technicalpaper_timeaveragedobjective_detanorm_dividedbynxny_500m_1year_111424.jld2");
+    dunorm = load_object("./technicalpaper_timeaveragedobjective_dunorm_dividedbynxny_500m_1year_111424.jld2");
+    dvnorm = load_object("./technicalpaper_timeaveragedobjective_dvnorm_dividedbynxny_500m_1year_111424.jld2");
 
-    timestep = 365:-1.271777:1
-    f = Figure()
+    timestep = 365:-0.99726:1
+    f = Figure();
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative w.r.t. u, v, H = 5000m",
+        title = "Norm of adjoint derivative w.r.t. u, v, H = 500m, time-averaged objective",
         xlabel = "t (days)",
         ylabel = L"||\partial J / \partial x||",
     )
     ax2 = Axis(f[2, 1],
-    title = "Norm of adjoint derivative w.r.t. eta, H = 5000m",
+    title = "Norm of adjoint derivative w.r.t. eta, H = 500m, time-averaged objective",
     xlabel = "t (days)",
     ylabel = L"||\partial J / \partial x||",
 
@@ -321,25 +321,26 @@ function stuff()
 
     # norm of the forcing and parameter derivatives
 
-    dcDnorm = load_object("./technicalpaper_datafiles/technicalpaper_dcDnorm_dividedbynxny_5000m_1year_111224.jld2");
-    dFxnorm = load_object("./technicalpaper_datafiles/technicalpaper_dFxnorm_dividedbynxny_5000m_1year_111224.jld2");
+    dcDnorm = load_object("./technicalpaper_timeaveragedobjective_dcDnorm_dividedbynxny_500m_1year_111424.jld2");
+    dFxnorm = load_object("./technicalpaper_timeaveragedobjective_dFxnorm_dividedbynxny_500m_1year_1114224.jld2");
 
-    timestep = 365:-1.271777:1
-    f = Figure()
+    timestep = 365:-0.99726:1
+    f = Figure();
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative w.r.t. wind-stress, v, H = 5000m",
+        title = "Norm of adjoint derivative w.r.t. wind-stress, time-averaged objective, H = 500m",
         xlabel = "t (days)",
         ylabel = L"||\partial J / \partial F_x||"
-    )
-    ax2 = Axis(f[2, 1],
-    title = "Norm of adjoint derivative w.r.t. bottom drag, H = 5000m",
-    xlabel = "t (days)",
-    ylabel = L"||\partial J / \partial c_D||")
-    
-    lines!(ax2, timestep, dcDnorm, label = L"\partial J / \partial c_D")
-    axislegend(ax2, position = :rt)
+    );
     lines!(ax1, timestep, dFxnorm, label = L"\partial J / \partial F_x")
-    axislegend(ax1, position = :rt)
+    axislegend(ax1, position = :rt);
+
+    ax2 = Axis(f[2, 1],
+    title = "Norm of adjoint derivative w.r.t. bottom drag, time-averaged objective, H = 500m",
+    xlabel = "t (days)",
+    ylabel = L"||\partial J / \partial c_D||");
+    lines!(ax2, timestep, dcDnorm, label = L"\partial J / \partial c_D");
+    axislegend(ax2, position = :rt);
+
 
     save("technicalpaper_parametersensitivities_normcDFx_divnxny_5000mdepth_111224.png", f)
 
@@ -399,11 +400,18 @@ function stuff()
     adj.Prog.η,
     adj.Prog.sst,adj)...)
 
-    adj5002 = load_object("./technicalpaper_datafiles/technicalpaper_finaladjoint_struct_500mdepth_1year_halvedwindforcing_111324.jld2")
-    dS2 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj5002.Prog.u,
+    adj5002 = load_object("./technicalpaper_datafiles/timeaveragedobjective/technicalpaper_timeavgobj_finaladjoint_struct_500mdepth_1year_111324.jld2")
+    dS500m1 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj5002.Prog.u,
     adj5002.Prog.v,
     adj5002.Prog.η, 
     adj5002.Prog.sst,adj5002)...)
+
+    adj2 = load_object("./technicalpaper_datafiles/nontimeaveragedobjective/technicalpaper_finaladjoint_struct_500mdepth_1year_correctedcDfield_110624.jld2")
+    dS2 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj2.Prog.u,
+    adj2.Prog.v,
+    adj2.Prog.η, 
+    adj2.Prog.sst,adj2)...)
+
 
     # Initial condition
 
@@ -417,19 +425,18 @@ function stuff()
     dS5km1.Prog.η, 
     dS5km1.Prog.sst,dS5km1)...)
 
-    fig = Figure(size=(500, 1000))
+    fig = Figure(size=(2200, 1500));
 
     ax1 = Axis(fig[1,1], 
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial x-velocity sensitivity, H = 500m, halved wind-stress",
-        width=400,
-        height=400
+        title = "Initial x-velocity sensitivity, H = 500m, time-averaged objective function",
     );
     hm1 = CairoMakie.heatmap!(ax1, 0:127:3840,
         0:128:3840,
-        derivs500.u,
-        colormap=:balance
+        dS3.u,
+        colormap=:balance,
+        colorrange = (-5e5, 5e5)
     );
     Colorbar(fig[2, 1], 
         hm1,
@@ -439,50 +446,105 @@ function stuff()
     ax2 = Axis(fig[1,2],
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial y-velocity sensitivity, H = 500m, ",
-        width=400,
-        height=400
+        title = "Initial y-velocity sensitivity, H = 500m, time-averaged objective function",
     );
     hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
         0:128:3840,
-        derivs500.v,
+        dS3.v,
         colormap=:balance,
+        colorrange = (-5e5, 5e5)
     );
     Colorbar(fig[2, 2], hm2, vertical=false)
+
+    ax3 = Axis(fig[3,1], 
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Initial x-velocity sensitivity, H = 500m, non time-averaged objective function",
+    );
+    hm1 = CairoMakie.heatmap!(ax3, 0:127:3840,
+        0:128:3840,
+        dS2.u,
+        colormap=:balance,
+        colorrange = (-5e19, 5e19)
+    );
+    Colorbar(fig[4, 1], 
+        hm1,
+        vertical=false
+    )
+
+    ax4 = Axis(fig[3,2],
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Initial y-velocity sensitivity, H = 500m, non time-averaged objective function",
+    );
+    hm2 = CairoMakie.heatmap!(ax4, 0:128:3840,
+        0:128:3840,
+        dS2.v,
+        colormap=:balance,
+        colorrange = (-5e19, 5e19)
+    );
+    Colorbar(fig[4, 2], hm2, vertical=false)
 
     fig
 
     # wind stress sensitivity
     # Makie plot
-    fig = Figure()
-    ax = Axis(fig[1,1], 
+    fig = Figure(size = (1000,500));
+    ax1 = Axis(fig[1,1], 
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Wind-stress sensitivity, H = 5000m"
-    )
-    hm = CairoMakie.heatmap!(ax, 0:128:3840,
-        0:128:3840,
-        dS5km1.forcing.Fx,
-        colorrange = (-40, 40),
-        colormap=:balance,
+        title = "Wind-stress sensitivity, H = 500m, time-averaged objective"
     );
-    Colorbar(fig[:, end+1], hm)
+    hm1 = CairoMakie.heatmap!(ax1, 0:128:3840,
+        0:128:3840,
+        adj3.forcing.Fx,
+        colormap=:balance,
+        colorrange=(-20,20)
+    );
+    Colorbar(fig[:, end+1], hm1);
+
+    ax2 = Axis(fig[1,3], 
+    xlabel = "x (km)",
+    ylabel = "y (km)",
+    title = "Wind stress sensitivity, H = 500m, non time-averaged objective"
+    );
+    hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
+    0:128:3840,
+    adj2.forcing.Fx,
+    colorrange = (-3e8, 3e8),
+    colormap=:balance,
+    );
+    Colorbar(fig[1, 4], hm2);
     fig
 
+
     # bottom drag coefficient sensitivity
-    fig = Figure()
-    ax = Axis(fig[1,1], 
+    fig = Figure(size=(1000,500));
+    ax1 = Axis(fig[1,1], 
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Bottom drag sensitivity, H = 500m"
-    )
-    hm = CairoMakie.heatmap!(ax, 0:128:3840,
+        title = "Bottom drag sensitivity, H = 500m, time-averaged objective"
+    );
+    hm1 = CairoMakie.heatmap!(ax1, 0:128:3840,
         0:128:3840,
-        dS500m1.constants.cDfield[2:end-1,2:end-1],
-        colorrange = (-4e9, 4e9),
+        adj3.constants.cDfield[2:end-1,2:end-1],
+        colorrange = (-600, 600),
         colormap=:balance,
     );
-    Colorbar(fig[:, end+1], hm)
+    Colorbar(fig[1, 2], hm1);
+
+    ax2 = Axis(fig[1,3], 
+    xlabel = "x (km)",
+    ylabel = "y (km)",
+    title = "Bottom drag sensitivity, H = 500m, non time-averaged objective"
+    );
+    hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
+    0:128:3840,
+    adj2.constants.cDfield[2:end-1,2:end-1],
+    colorrange = (-4e9, 4e9),
+    colormap=:balance,
+    );
+    Colorbar(fig[1, 4], hm2);
     fig
 
 
@@ -491,7 +553,7 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./technicalpaper_datafiles/adjoint_technicalpaper_check_5000m_1year_110624.h5", "r")
+    adj_fid = h5open("./adjoint_technicalpaper_timeavgobj_500m_1year_111424.h5", "r")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
     # unorm_anim = Animation()
@@ -506,8 +568,9 @@ function create_adjoint_gif()
     dFxnorm = []
 
 
-    for j = 81797:-286:1
+    # for j = 81797:-286:1
     # for j = 1:3651
+    for j = 81761:-224:1
 
 
         blob = read(adj_fid[string(j)])
@@ -583,11 +646,11 @@ function create_adjoint_gif()
     # gif(u_anim, "du_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
     # gif(v_anim, "dv_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
 
-    @save "technicalpaper_dcDnorm_dividedbynxny_5000m_1year_111224.jld2" dcDnorm
-    @save "technicalpaper_dFxnorm_dividedbynxny_5000m_1year_111224.jld2" dFxnorm
-    @save "technicalpaper_dunorm_dividedbynxny_5000m_1year_111224.jld2" dunorm
-    @save "technicalpaper_dvnorm_dividedbynxny_5000m_1year_111224.jld2" dvnorm
-    @save "technicalpaper_detanorm_dividedbynxny_5000m_1year_111224.jld2" detanorm
+    @save "technicalpaper_timeaveragedobjective_dcDnorm_dividedbynxny_500m_1year_111424.jld2" dcDnorm
+    @save "technicalpaper_timeaveragedobjective_dFxnorm_dividedbynxny_500m_1year_1114224.jld2" dFxnorm
+    @save "technicalpaper_timeaveragedobjective_dunorm_dividedbynxny_500m_1year_111424.jld2" dunorm
+    @save "technicalpaper_timeaveragedobjective_dvnorm_dividedbynxny_500m_1year_111424.jld2" dvnorm
+    @save "technicalpaper_timeaveragedobjective_detanorm_dividedbynxny_500m_1year_111424.jld2" detanorm
 
 end
 
@@ -612,9 +675,9 @@ diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
     initial_cond="ncfile",
     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
 )
-@save "technicalpaper_timeavgobj_finalprimal_struct_1000mdepth_1year111324.jld2" S
-@save "technicalpaper_timeavgobj_finaladjoint_struct_1000mdepth_1year_111324.jld2" dS
-@save "technicalpaper_timeavgobj_fdcheck_vector_1000mdepth_1year_111324.jld2" diffs
+# @save "technicalpaper_timeavgobj_finalprimal_struct_1000mdepth_1year_111424.jld2" S
+# @save "technicalpaper_timeavgobj_finaladjoint_struct_1000mdepth_1year_111424.jld2" dS
+# @save "technicalpaper_timeavgobj_fdcheck_vector_1000mdepth_1year_11424.jld2" diffs
 
 
 # create_adjoint_gif()
