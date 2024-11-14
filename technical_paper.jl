@@ -182,6 +182,22 @@ function loop(S,scheme)
         v0rhs = convert(Diag.PrognosticVarsRHS.v,v0)
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
 
+        #### Energy objective function, time averaged
+
+        if t in 1:224:S.grid.nt
+
+            temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
+            S.Prog.v,
+            S.Prog.η,
+            S.Prog.sst,S)...)
+
+            energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
+
+            S.parameters.J += energy_lr
+
+        end
+        #############################################
+
         # Copy back from substeps
         copyto!(u,u0)
         copyto!(v,v0)
@@ -189,14 +205,18 @@ function loop(S,scheme)
 
     end
 
-    ##### Energy objective function ###########
-    temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
-    S.Prog.v,
-    S.Prog.η,
-    S.Prog.sst,S)...)
+    ##### use if time-averaging the objective function ########
+    S.parameters.J = S.parameters.J / length(1:224:S.grid.nt)
+    ##########################################################
 
-    energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) #/ (S.grid.nx * S.grid.ny)
-    S.parameters.J = energy_lr
+    ##### Energy objective function, not time averaged ###########
+    # temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
+    # S.Prog.v,
+    # S.Prog.η,
+    # S.Prog.sst,S)...)
+
+    # energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
+    # S.parameters.J = energy_lr
     ###########################################
 
     return nothing
@@ -210,23 +230,6 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     P = ShallowWaters.Parameter(T=T;kwargs...)
     S = ShallowWaters.model_setup(P)
 
-    # S = ShallowWaters.model_setup(output=false,
-    #     L_ratio=1,
-    #     g=9.81,
-    #     H=H,
-    #     wind_forcing_x="double_gyre",
-    #     Fx0=.06,
-    #     Lx=3840e3,
-    #     seasonal_wind_x=false,
-    #     topography="flat",
-    #     bc="nonperiodic",
-    #     bottom_drag="quadratic",
-    #     α=2,
-    #     nx=128,
-    #     Ndays = Ndays,
-    #     initial_cond="ncfile",
-    #     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    # )
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
@@ -234,13 +237,12 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
         snaps;
         verbose=1,
         gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "technicalpaper_check_500m_1year_halvedwindforcing_111324.h5",
-        write_checkpoints_period = 286
+        write_checkpoints=true,
+        write_checkpoints_filename = "technicalpaper_timeavgobj_1000m_1year_111324.h5",
+        write_checkpoints_period = 224
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-
 
     enzyme_deriv = dS.constants.cDfield[50,50]
 
@@ -250,23 +252,6 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
     S_outer = ShallowWaters.model_setup(P)
-    # S_outer = ShallowWaters.model_setup(output=false,
-    #     L_ratio=1,
-    #     g=9.81,
-    #     H=H,
-    #     wind_forcing_x="double_gyre",
-    #     Lx=3840e3,
-    #     Fx0=.06,
-    #     seasonal_wind_x=false,
-    #     topography="flat",
-    #     bc="nonperiodic",
-    #     bottom_drag="quadratic",
-    #     α=2,
-    #     nx=128,
-    #     Ndays = Ndays,
-    #     initial_cond="ncfile",
-    #     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-    # )
 
     snaps = Int(floor(sqrt(S_outer.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
@@ -282,23 +267,6 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     for s in steps
 
         S_inner = ShallowWaters.model_setup(P)
-        # S_inner = ShallowWaters.model_setup(output=false,
-        #     L_ratio=1,
-        #     g=9.81,
-        #     H=H,
-        #     wind_forcing_x="double_gyre",
-        #     Fx0=.06,
-        #     Lx=3840e3,
-        #     seasonal_wind_x=false,
-        #     topography="flat",
-        #     bc="nonperiodic",
-        #     bottom_drag="quadratic",
-        #     α=2,
-        #     nx=128,
-        #     Ndays = Ndays,
-        #     initial_cond="ncfile",
-        #     initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
-        # )
 
         S_inner.constants.cDfield[50,50] += s
 
@@ -375,6 +343,46 @@ function stuff()
 
     save("technicalpaper_parametersensitivities_normcDFx_divnxny_5000mdepth_111224.png", f)
 
+    # computing time averaged velocity/variance/mean flow
+
+    u = ncread("./30km_1year_output/u.nc", "u")
+    v = ncread("./30km_1year_output/v.nc", "v")
+
+    avg_u = zeros(127,128)
+    avg_v = zeros(128,127)
+    for t = 1:366
+        avg_u += u[:, :, t]
+        avg_v += v[:, :, t]
+    end
+
+    f = Figure()
+    ax1 = Axis(f[1, 1],
+    title = "Average x-velocity",
+    xlabel = "x",
+    ylabel = "y"
+    )
+    heatmap!(ax1, 0:127:3840,
+        0:128:3840,
+        avg_u,
+        colorrange = (-150, 150),
+        colormap=:balance
+    )
+
+    f = Figure()
+    ax2 = Axis(f[1, 1],
+    title = "Time averaged y-velocity",
+    xlabel = "x",
+    ylabel = "y"
+    )
+    h = heatmap!(ax2, 0:128:3840,
+    0:127:3840,
+    avg_v,
+    colorrange = (-600, 600),
+    colormap=:balance
+    )
+    Colorbar(f[1,2], h)
+    save("technicalpaper_avgv_111324.png")
+
     # loss function is final spatially averaged energy
     # initial condition sensitivity
 
@@ -391,7 +399,7 @@ function stuff()
     adj.Prog.η,
     adj.Prog.sst,adj)...)
 
-    adj5002 = load_object("technicalpaper_finaladjoint_struct_500mdepth_1year_correctedcDfield_110624.jld2")
+    adj5002 = load_object("./technicalpaper_datafiles/technicalpaper_finaladjoint_struct_500mdepth_1year_halvedwindforcing_111324.jld2")
     dS2 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj5002.Prog.u,
     adj5002.Prog.v,
     adj5002.Prog.η, 
@@ -409,19 +417,18 @@ function stuff()
     dS5km1.Prog.η, 
     dS5km1.Prog.sst,dS5km1)...)
 
-    fig = Figure(500, 1000)
+    fig = Figure(size=(500, 1000))
 
     ax1 = Axis(fig[1,1], 
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial x-velocity sensitivity, H = 500m",
+        title = "Initial x-velocity sensitivity, H = 500m, halved wind-stress",
         width=400,
         height=400
     );
     hm1 = CairoMakie.heatmap!(ax1, 0:127:3840,
         0:128:3840,
         derivs500.u,
-        colorrange = (-5e19, 5e19),
         colormap=:balance
     );
     Colorbar(fig[2, 1], 
@@ -432,14 +439,13 @@ function stuff()
     ax2 = Axis(fig[1,2],
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial x-velocity sensitivity, H = 5000m",
+        title = "Initial y-velocity sensitivity, H = 500m, ",
         width=400,
         height=400
     );
     hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
         0:128:3840,
-        derivs5km.u,
-        colorrange = (-2e5, 2e5),
+        derivs500.v,
         colormap=:balance,
     );
     Colorbar(fig[2, 2], hm2, vertical=false)
@@ -589,10 +595,26 @@ end
 The last few lines are about running the above functions
 """
 
-diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(Ndays=1,nx=100)
-@save "technicalpaper_finalprimal_struct_500mdepth_1year_halvedwindforcing_111324.jld2" S
-@save "technicalpaper_finaladjoint_struct_500mdepth_1year_halvedwindforcing_111324.jld2" dS
-@save "technicalpaper_fdcheck_vector_5000mdepth_2year_correctedcDfield_110624.jld2" diffs
+diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
+    output=true,
+    L_ratio=1,
+    g=9.81,
+    H=1000,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    α=2,
+    nx=128,
+    Ndays=365,
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/128_spinup_noforcing_noslipbc/"
+)
+@save "technicalpaper_timeavgobj_finalprimal_struct_1000mdepth_1year111324.jld2" S
+@save "technicalpaper_timeavgobj_finaladjoint_struct_1000mdepth_1year_111324.jld2" dS
+@save "technicalpaper_timeavgobj_fdcheck_vector_1000mdepth_1year_111324.jld2" diffs
 
 
 # create_adjoint_gif()
