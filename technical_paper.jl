@@ -294,19 +294,19 @@ function stuff()
     # investigating derivatives 
 
     # norm of the prognostic variables derivatives
-    detanorm = load_object("./technicalpaper_timeaveragedobjective_detanorm_dividedbynxny_500m_1year_111424.jld2");
-    dunorm = load_object("./technicalpaper_timeaveragedobjective_dunorm_dividedbynxny_500m_1year_111424.jld2");
-    dvnorm = load_object("./technicalpaper_timeaveragedobjective_dvnorm_dividedbynxny_500m_1year_111424.jld2");
+    detanorm = load_object("./technicalpaper_timeaveragedobjective_detanorm_dividedbynxny_1000m_1year_111424.jld2");
+    dunorm = load_object("./technicalpaper_timeaveragedobjective_dunorm_dividedbynxny_1000m_1year_111424.jld2");
+    dvnorm = load_object("./technicalpaper_timeaveragedobjective_dvnorm_dividedbynxny_1000m_1year_111424.jld2");
 
     timestep = 365:-0.99726:1
     f = Figure();
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative w.r.t. u, v, H = 500m, time-averaged objective",
+        title = "Norm of adjoint derivative w.r.t. u, v, H = 1000m, time-averaged objective",
         xlabel = "t (days)",
         ylabel = L"||\partial J / \partial x||",
     )
     ax2 = Axis(f[2, 1],
-    title = "Norm of adjoint derivative w.r.t. eta, H = 500m, time-averaged objective",
+    title = "Norm of adjoint derivative w.r.t. eta, H = 1000m, time-averaged objective",
     xlabel = "t (days)",
     ylabel = L"||\partial J / \partial x||",
 
@@ -317,17 +317,17 @@ function stuff()
     lines!(ax1, timestep, dvnorm, label = L"\partial J / \partial v(t)")
     axislegend(ax1, position = :rt)
 
-    save("technicalpaper_normprog_divnxny_5000m_111224.png", f)
+    save("technicalpaper_normprog_divnxny_1000m_114224.png", f)
 
     # norm of the forcing and parameter derivatives
 
-    dcDnorm = load_object("./technicalpaper_timeaveragedobjective_dcDnorm_dividedbynxny_500m_1year_111424.jld2");
-    dFxnorm = load_object("./technicalpaper_timeaveragedobjective_dFxnorm_dividedbynxny_500m_1year_1114224.jld2");
+    dcDnorm = load_object("./technicalpaper_timeaveragedobjective_dcDnorm_dividedbynxny_1000m_1year_111424.jld2");
+    dFxnorm = load_object("./technicalpaper_timeaveragedobjective_dFxnorm_dividedbynxny_1000m_1year_1114224.jld2");
 
     timestep = 365:-0.99726:1
     f = Figure();
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative w.r.t. wind-stress, time-averaged objective, H = 500m",
+        title = "Norm of adjoint derivative w.r.t. wind-stress, time-averaged objective, H = 1000m",
         xlabel = "t (days)",
         ylabel = L"||\partial J / \partial F_x||"
     );
@@ -335,14 +335,14 @@ function stuff()
     axislegend(ax1, position = :rt);
 
     ax2 = Axis(f[2, 1],
-    title = "Norm of adjoint derivative w.r.t. bottom drag, time-averaged objective, H = 500m",
+    title = "Norm of adjoint derivative w.r.t. bottom drag, time-averaged objective, H = 1000m",
     xlabel = "t (days)",
     ylabel = L"||\partial J / \partial c_D||");
     lines!(ax2, timestep, dcDnorm, label = L"\partial J / \partial c_D");
     axislegend(ax2, position = :rt);
 
 
-    save("technicalpaper_parametersensitivities_normcDFx_divnxny_5000mdepth_111224.png", f)
+    save("technicalpaper_parametersensitivities_normcDFx_divnxny_1000mdepth_111424.png", f)
 
     # computing time averaged velocity/variance/mean flow
 
@@ -553,7 +553,7 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./adjoint_technicalpaper_timeavgobj_500m_1year_111424.h5", "r")
+    adj_fid = h5open("./adjoint_technicalpaper_timeavgobj_1000m_1year_111424.h5", "r")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
     # unorm_anim = Animation()
@@ -646,11 +646,11 @@ function create_adjoint_gif()
     # gif(u_anim, "du_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
     # gif(v_anim, "dv_integration_365_energy_withclosure_fps7_031424.png", fps = 7)
 
-    @save "technicalpaper_timeaveragedobjective_dcDnorm_dividedbynxny_500m_1year_111424.jld2" dcDnorm
-    @save "technicalpaper_timeaveragedobjective_dFxnorm_dividedbynxny_500m_1year_1114224.jld2" dFxnorm
-    @save "technicalpaper_timeaveragedobjective_dunorm_dividedbynxny_500m_1year_111424.jld2" dunorm
-    @save "technicalpaper_timeaveragedobjective_dvnorm_dividedbynxny_500m_1year_111424.jld2" dvnorm
-    @save "technicalpaper_timeaveragedobjective_detanorm_dividedbynxny_500m_1year_111424.jld2" detanorm
+    @save "technicalpaper_timeaveragedobjective_dcDnorm_dividedbynxny_1000m_1year_111424.jld2" dcDnorm
+    @save "technicalpaper_timeaveragedobjective_dFxnorm_dividedbynxny_1000m_1year_1114224.jld2" dFxnorm
+    @save "technicalpaper_timeaveragedobjective_dunorm_dividedbynxny_1000m_1year_111424.jld2" dunorm
+    @save "technicalpaper_timeaveragedobjective_dvnorm_dividedbynxny_1000m_1year_111424.jld2" dvnorm
+    @save "technicalpaper_timeaveragedobjective_detanorm_dividedbynxny_1000m_1year_111424.jld2" detanorm
 
 end
 
