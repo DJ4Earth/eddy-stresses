@@ -612,24 +612,24 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./adjoint_technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_500m_4months_111824.h5")
-    primal_fid = h5open("./primal_technicalpaper_timeavgobj_500m_2months_111524.h5")
+    adj_fid = h5open("./technicalpaper_datafiles/finaldatafiles/primal_technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_everytimestep_500m_12months_float32_112024.h5")
+    # primal_fid = h5open("./primal_technicalpaper_timeavgobj_500m_2months_111524.h5")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
     # unorm_anim = Animation()
     # vnorm_anim = Animation()
     # etanorm_anim = Animation()
 
-    dunorm4rest = []
-    dvnorm4rest = []
-    detanorm4rest = []
+    dunorm12rest = []
+    dvnorm12rest = []
+    detanorm12rest = []
 
-    dcDnorm4rest = []
-    dFxnorm4rest = []
+    dcDnorm12rest = []
+    dFxnorm12rest = []
 
     J = []
 
-    final = 1:224:224*30*4
+    final = 1:224:224*30*12
     for j = final[end]:-224:1
     # for j = 1:3651
     # for j = 1:224:81761
@@ -648,11 +648,11 @@ function create_adjoint_gif()
             adj_chkp.Prog.sst,adj_chkp)...
         )
 
-        push!(dcDnorm4rest, sum(adj_chkp.constants.cDfield.^2) / 128^2)
-        push!(dFxnorm4rest, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
-        push!(dunorm4rest, sum(temp.u.^2) / (127*128))
-        push!(dvnorm4rest, sum(temp.v.^2) / (127*128))
-        push!(detanorm4rest, sum(temp.η.^2) / (128 * 128))
+        push!(dcDnorm12rest, sum(adj_chkp.constants.cDfield.^2) / 128^2)
+        push!(dFxnorm12rest, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
+        push!(dunorm12rest, sum(temp.u.^2) / (127*128))
+        push!(dvnorm12rest, sum(temp.v.^2) / (127*128))
+        push!(detanorm12rest, sum(temp.η.^2) / (128 * 128))
 
         # frame(eta_anim, heatmap(temp.η',
         #     # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
