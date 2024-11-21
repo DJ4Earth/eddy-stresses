@@ -251,7 +251,7 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_everytimestep_500m_2months_float32_112024",
+        write_checkpoints_filename = "technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_everytimestep_500m_12months_float32_112024",
         write_checkpoints_period = 224
     )
 
@@ -736,14 +736,14 @@ diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
     bottom_drag="quadratic",
     α=2,
     nx=128,
-    Ndays=2*30
+    Ndays=12*30
     # initial_cond="ncfile",
     # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
 )
 
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finalprimal_struct_500mdepth_2months_float32start_112024.jld2" S
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finaladjoint_struct_500mdepth_2months_float32start_112024.jld2" dS
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_fdcheck_vector_500mdepth_2months_float32start_112024.jld2" diffs
+@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finalprimal_struct_500mdepth_12months_float32start_112024.jld2" S
+@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finaladjoint_struct_500mdepth_12months_float32start_112024.jld2" dS
+@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_fdcheck_vector_500mdepth_12months_float32start_112024.jld2" diffs
 
 
 # create_adjoint_gif()
