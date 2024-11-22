@@ -72,7 +72,6 @@ function loop(S,scheme)
 
     @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
 
-        k = 1
         Diag = S.Diag
         Prog = S.Prog
     
@@ -208,8 +207,7 @@ function loop(S,scheme)
         S.Prog.η,
         S.Prog.sst,S)...)
 
-        S.parameters.data[k] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
-        k += 1
+        S.parameters.data[S.parameters.i] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
         # Copy back from substeps
         copyto!(u,u0)
@@ -251,7 +249,7 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
         verbose=1,
         gc=true,
         write_checkpoints=true,
-        write_checkpoints_filename = "technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_everytimestep_500m_12months_float32_112024",
+        write_checkpoints_filename = "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_500m_4months_float32_112124",
         write_checkpoints_period = 224
     )
 
@@ -317,40 +315,40 @@ function stuff()
     # investigating derivatives 
 
     # norm of the prognostic variables derivatives
-    detanorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_detanorm_dividedbynxny_500m_1year_111424.jld2")
+    detanorm = load_object("./technicalpaper_datafiles/finaldatafiles/tech")
     dunorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_dunorm_dividedbynxny_500m_1year_111424.jld2")
     dvnorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_dvnorm_dividedbynxny_500m_1year_111424.jld2")
 
-    timestep1 = 61:-0.99726:1
+    timestep1 = 60:-0.99726:1
     f = Figure(size = (1000, 500));
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative, only final month obj, two-month integration from rest",
+        title = "Norm of adjoint derivative, two-month integration from spinup",
         xlabel = "t (days)",
         ylabel = L"||\partial J / \partial x||",
     )
-    timestep2 = 121:-0.99726:1
+    timestep2 = 120:-0.99726:1
     ax2 = Axis(f[2,1],
-    title = "Norm of adjoint derivative, only final month obj, four-month integration from rest",
+    title = "Norm of adjoint derivative, four-month integration from spinup",
     xlabel = "t (days)",
     # yscale=log10,
     ylabel = L"||\partial J / \partial x||",
     )
-    timestep3 = 361:-0.99726:1
+    timestep3 = 360:-0.99726:1
     ax3 = Axis(f[3, 1],
-    title = "Norm of adjoint derivative, only final month obj, twelve-month integration from rest",
+    title = "Norm of adjoint derivative, twelve-month integration from spinup",
     xlabel = "t (days)",
     # yscale = log,
     ylabel = L"||\partial J / \partial x||")
 
 
-    lines!(ax1, timestep1, dFxnorm2, label = L"\partial J / \partial u(t)")
-    # lines!(ax1, timestep1, dvnorm2, label = L"\partial J / \partial v(t)")
+    lines!(ax1, timestep1, dunorm2, label = L"\partial J / \partial u(t)")
+    lines!(ax1, timestep1, dvnorm2, label = L"\partial J / \partial v(t)")
     axislegend(ax1, position = :rt)
-    lines!(ax2, timestep2, dFxnorm4, label = L"\partial J / \partial u(t)")
-    # lines!(ax2, timestep2, dvnorm4, label = L"\partial J / \partial v(t)")
+    lines!(ax2, timestep2, dunorm4, label = L"\partial J / \partial u(t)")
+    lines!(ax2, timestep2, dvnorm4, label = L"\partial J / \partial v(t)")
     axislegend(ax2, position = :rt)
-    lines!(ax3, timestep3, dFxnorm12, label = L"\partial J / \partial u(t)")
-    # lines!(ax3, timestep3, dvnorm12, label = L"\partial J / \partial v(t)")
+    lines!(ax3, timestep3, dunorm12, label = L"\partial J / \partial u(t)")
+    lines!(ax3, timestep3, dvnorm12, label = L"\partial J / \partial v(t)")
     axislegend(ax3, position = :rt)
 
     save("technicalpaper_normprog_divnxny_1000m_114224.png", f)
@@ -427,52 +425,115 @@ function stuff()
     blob = read(primal500["1"])
     prim = deserialize(blob)
 
-    adj500 = h5open("adjoint_technicalpaper_check_500m_1year_110624.h5.h5", "r")
-    blob = read(adj500["1"])
-    adj = deserialize(blob)
+    adj50012 = h5open("./technicalpaper_datafiles/finaldatafiles/adjoint_technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_500m_12months_float32_112024.h5", "r")
+    day = read(adj50012["225"])
+    month = read(adj50012["6721"])
+    sixmonth = read(adj50012["40321"])
+    twelvemonth = read(adj50012["80641"])
 
-    dS = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj.Prog.u,
-    adj.Prog.v,
-    adj.Prog.η,
-    adj.Prog.sst,adj)...)
+    adj1 = deserialize(day)
+    adj30 = deserialize(month)
+    adj180 = deserialize(sixmonth)
+    adj360 = deserialize(twelvemonth)
 
-    adj5002 = load_object("./technicalpaper_datafiles/timeaveragedobjective/technicalpaper_timeavgobj_finaladjoint_struct_500mdepth_1year_111324.jld2")
-    dS500m1 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj5002.Prog.u,
-    adj5002.Prog.v,
-    adj5002.Prog.η, 
-    adj5002.Prog.sst,adj5002)...)
+    fig = Figure(size=(900, 900));
 
-    adj3 = load_object("./technicalpaper_timeavgobj_startingobjective3monthsin_finaladjoint_struct_1000mdepth_1year_111424.jld2")
-    dS1000 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj3.Prog.u,
-    adj3.Prog.v,
-    adj3.Prog.η, 
-    adj3.Prog.sst,adj2)...)
+    dS360 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj360.Prog.u,
+    adj360.Prog.v,
+    adj360.Prog.η, 
+    adj360.Prog.sst,adj360)...)
+    ax1 = Axis(fig[1,1], 
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Objective function sensitivity to u -0 month",
+    );
+    hm1 = CairoMakie.heatmap!(ax1, 0:127:3840,
+        0:128:3840,
+        dS360.u,
+        colormap=:balance,
+        colorrange = (-maximum(dS360.u), maximum(dS360.u))
+    );
+    Colorbar(fig[2, 1], 
+        hm1,
+        vertical=false
+    )
 
+    dS180 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj180.Prog.u,
+    adj180.Prog.v,
+    adj180.Prog.η, 
+    adj180.Prog.sst,adj180)...)
+    ax2 = Axis(fig[1,2],
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Objective function sensitivity to u -6 month",
+    );
+    hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
+        0:128:3840,
+        dS180.u,
+        colormap=:balance,
+        colorrange = (-maximum(dS180.u),maximum(dS180.u))
+    );
+    Colorbar(fig[2, 2], hm2, vertical=false)
+
+    dS30 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj30.Prog.u,
+    adj30.Prog.v,
+    adj30.Prog.η, 
+    adj30.Prog.sst,adj30)...)
+    ax3 = Axis(fig[3,1], 
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Objective function sensitivity to u -11 month",
+    );
+    hm1 = CairoMakie.heatmap!(ax3, 0:127:3840,
+        0:128:3840,
+        dS30.u,
+        colormap=:balance,
+        colorrange = (-maximum(dS30.u),maximum(dS30.u))
+    );
+    Colorbar(fig[4, 1], 
+        hm1,
+        vertical=false
+    )
+
+    dS1 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj1.Prog.u,
+    adj1.Prog.v,
+    adj1.Prog.η, 
+    adj1.Prog.sst,adj1)...)
+    ax4 = Axis(fig[3,2],
+        xlabel = "x (km)",
+        ylabel = "y (km)",
+        title = "Objective function sensitivity to u -12 month",
+    );
+    hm2 = CairoMakie.heatmap!(ax4, 0:128:3840,
+        0:128:3840,
+        dS1.u,
+        colormap=:balance,
+        colorrange = (-maximum(dS1.u), maximum(dS1.u))
+    );
+    Colorbar(fig[4, 2], hm2, vertical=false)
+
+    fig
+
+    adj50012 = load_object("./technicalpaper_datafiles/finaldatafiles/technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_500mdepth_12months_float32start_112024.jld2")
+    dS50012 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(adj50012.Prog.u,
+    adj50012.Prog.v,
+    adj50012.Prog.η, 
+    adj50012.Prog.sst,adj50012)...)
 
     # Initial condition
 
-    dS500 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS.Prog.u,
-    dS.Prog.v,
-    dS.Prog.η, 
-    dS.Prog.sst,dS)...)
-
-    derivs5km = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(dS5km1.Prog.u,
-    dS5km1.Prog.v,
-    dS5km1.Prog.η, 
-    dS5km1.Prog.sst,dS5km1)...)
-
-    fig = Figure(size=(2200, 1500));
+    fig = Figure(size=(900, 450));
 
     ax1 = Axis(fig[1,1], 
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial x-velocity sensitivity, H = 500m, time-averaged objective function",
+        title = L"\partial J / \partial u(t_0, x, y)",
     );
     hm1 = CairoMakie.heatmap!(ax1, 0:127:3840,
         0:128:3840,
-        dS500.u,
+        dS50012.u,
         colormap=:balance,
-        colorrange = (-maximum(dS500.u), maximum(dS500.u))
+        colorrange = (-maximum(dS50012.u), maximum(dS50012.u))
     );
     Colorbar(fig[2, 1], 
         hm1,
@@ -482,44 +543,44 @@ function stuff()
     ax2 = Axis(fig[1,2],
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial y-velocity sensitivity, H = 500m, time-averaged objective function",
+        title = L"\partial J / \partial v(t_0, x, y)",
     );
     hm2 = CairoMakie.heatmap!(ax2, 0:128:3840,
         0:128:3840,
-        dS500.v,
+        dS50012.v,
         colormap=:balance,
-        colorrange = (-maximum(dS500.v),maximum(dS500.v))
+        colorrange = (-maximum(dS50012.v),maximum(dS50012.v))
     );
     Colorbar(fig[2, 2], hm2, vertical=false)
-
-    ax3 = Axis(fig[3,1], 
+    
+    ax3 = Axis(fig[1,1], 
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial x-velocity sensitivity, H = 500m, non time-averaged objective function",
+        title = L"\partial J / \partial F_x",
     );
     hm1 = CairoMakie.heatmap!(ax3, 0:127:3840,
         0:128:3840,
-        dS2.u,
+        adj50012.forcing.Fx,
         colormap=:balance,
-        colorrange = (-5e19, 5e19)
+        colorrange = (-maximum(adj50012.forcing.Fx), maximum(adj50012.forcing.Fx))
     );
-    Colorbar(fig[4, 1], 
+    Colorbar(fig[1, 2], 
         hm1,
-        vertical=false
+        vertical=true
     )
 
-    ax4 = Axis(fig[3,2],
+    ax4 = Axis(fig[1,1],
         xlabel = "x (km)",
         ylabel = "y (km)",
-        title = "Initial y-velocity sensitivity, H = 500m, non time-averaged objective function",
+        title = L"\partial J / \partial c_D",
     );
     hm2 = CairoMakie.heatmap!(ax4, 0:128:3840,
         0:128:3840,
-        dS2.v,
+        adj50012.constants.cDfield[2:end-1,2:end-1],
         colormap=:balance,
-        colorrange = (-5e19, 5e19)
+        colorrange = (-maximum(adj50012.constants.cDfield), maximum(adj50012.constants.cDfield))
     );
-    Colorbar(fig[4, 2], hm2, vertical=false)
+    Colorbar(fig[1, 2], hm2, vertical=true)
 
     fig
 
@@ -612,7 +673,7 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./technicalpaper_datafiles/finaldatafiles/primal_technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_everytimestep_500m_12months_float32_112024.h5")
+    adj_fid = h5open("./technicalpaper_datafiles/finaldatafiles/adjoint_technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_500m_12months_float32_112024.h5")
     # primal_fid = h5open("./primal_technicalpaper_timeavgobj_500m_2months_111524.h5")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
@@ -620,12 +681,12 @@ function create_adjoint_gif()
     # vnorm_anim = Animation()
     # etanorm_anim = Animation()
 
-    dunorm12rest = []
-    dvnorm12rest = []
-    detanorm12rest = []
+    dunorm4 = []
+    dvnorm4 = []
+    detanorm4 = []
 
-    dcDnorm12rest = []
-    dFxnorm12rest = []
+    dcDnorm4 = []
+    dFxnorm4 = []
 
     J = []
 
@@ -648,11 +709,11 @@ function create_adjoint_gif()
             adj_chkp.Prog.sst,adj_chkp)...
         )
 
-        push!(dcDnorm12rest, sum(adj_chkp.constants.cDfield.^2) / 128^2)
-        push!(dFxnorm12rest, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
-        push!(dunorm12rest, sum(temp.u.^2) / (127*128))
-        push!(dvnorm12rest, sum(temp.v.^2) / (127*128))
-        push!(detanorm12rest, sum(temp.η.^2) / (128 * 128))
+        push!(dcDnorm4, sum(adj_chkp.constants.cDfield.^2) / 128^2)
+        push!(dFxnorm4, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
+        push!(dunorm4, sum(temp.u.^2) / (127*128))
+        push!(dvnorm4, sum(temp.v.^2) / (127*128))
+        push!(detanorm4, sum(temp.η.^2) / (128 * 128))
 
         # frame(eta_anim, heatmap(temp.η',
         #     # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
@@ -719,6 +780,49 @@ function create_adjoint_gif()
 
 end
 
+function energy_plot()
+
+    f = Figure();
+    ax = Axis(f[1,1], xlabel="Timestep", ylabel="Energy")
+    for j = 1:5
+
+        S = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        α=2,
+        nx=128,
+        Ndays=12*30,
+        initial_cond="ncfile",
+        initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
+        )
+
+        snaps = Int(floor(sqrt(S.grid.nt)))
+        revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt, snaps;
+            verbose=1,
+            gc=true,
+            write_checkpoints=false
+        )
+
+        S.Prog.u = S.Prog.u + 0.001 .* randn(Float32, 131, 132)
+        S.Prog.v = S.Prog.v + 0.001 .* randn(Float32, 132, 131)
+        S.Prog.η = S.Prog.η + 0.001 .* randn(Float32, 130, 130)
+
+        _ = checkpointed_integration(S, revolve)
+
+        lines!(ax, S.parameters.data[1:end-1])
+        hlines!(ax, sum(S.parameters.data) / S.grid.nt)
+
+    end
+
+end
+
 """
 The last few lines are about running the above functions
 """
@@ -735,15 +839,16 @@ diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
     bc="nonperiodic",
     bottom_drag="quadratic",
     α=2,
+    # νB 
     nx=128,
-    Ndays=12*30
-    # initial_cond="ncfile",
-    # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
+    Ndays=4*30,
+    initial_cond="ncfile",
+    initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
 )
 
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finalprimal_struct_500mdepth_12months_float32start_112024.jld2" S
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finaladjoint_struct_500mdepth_12months_float32start_112024.jld2" dS
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_fdcheck_vector_500mdepth_12months_float32start_112024.jld2" diffs
+@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_500mdepth_4months_float32start_112124.jld2" S
+@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_500mdepth_4months_float32start_112124.jld2" dS
+@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_fdcheck_vector_500mdepth_4months_float32start_112124.jld2" diffs
 
 
 # create_adjoint_gif()
