@@ -189,7 +189,7 @@ function loop(S,scheme)
 
         if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
-            temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
+            temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
             S.Prog.v,
             S.Prog.η,
             S.Prog.sst,S)...)
@@ -202,7 +202,7 @@ function loop(S,scheme)
         #############################################
 
         # Storing the energy over time
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
+        temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
         S.Prog.v,
         S.Prog.η,
         S.Prog.sst,S)...)
@@ -234,7 +234,7 @@ function loop(S,scheme)
 
 end
 
-function run_adjoint_plusfd(::Type{T}=Float32;     # number format
+function run_adjoint_plusfd(::Type{T}=Float64;     # number format
     kwargs...                               # all additional parameters
     ) where {T<:AbstractFloat}
 
@@ -827,8 +827,34 @@ end
 The last few lines are about running the above functions
 """
 
-diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
-    output=false,
+# diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
+#     output=false,
+#     L_ratio=1,
+#     g=9.81,
+#     H=500,
+#     wind_forcing_x="double_gyre",
+#     Lx=3840e3,
+#     seasonal_wind_x=false,
+#     topography="flat",
+#     bc="nonperiodic",
+#     bottom_drag="quadratic",
+#     α=2,
+#     # νB 
+#     nx=128,
+#     Ndays=4*30,
+#     initial_cond="ncfile",
+#     initpath="eddy-stresses/data_files_gamma0.3/128_10yearspinup_noforcing_noslipbc_float64params"
+# )
+
+# @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_500mdepth_4months_float64start_112224.jld2" S
+# @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_500mdepth_4months_float64start_112224.jld2" dS
+# @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_fdcheck_vector_500mdepth_4months_float64start_112224.jld2" diffs
+
+
+# create_adjoint_gif()
+
+_, energy = ShallowWaters.run_model(T = Float64,
+    output=true,
     L_ratio=1,
     g=9.81,
     H=500,
@@ -841,14 +867,7 @@ diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
     α=2,
     # νB 
     nx=128,
-    Ndays=4*30,
-    initial_cond="ncfile",
-    initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
+    Ndays=10*12*30
+    # initial_cond="ncfile",
+    # initpath="eddy-stresses/data_files_gamma0.3/128_10yearspinup_noforcing_noslipbc_float64params"
 )
-
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_500mdepth_4months_float32start_112124.jld2" S
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_500mdepth_4months_float32start_112124.jld2" dS
-@save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_fdcheck_vector_500mdepth_4months_float32start_112124.jld2" diffs
-
-
-# create_adjoint_gif()
