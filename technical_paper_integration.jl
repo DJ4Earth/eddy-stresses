@@ -205,16 +205,10 @@ function loop(S,scheme)
             S.parameters.J += energy_lr
 
         end
-        
-        # Copy back from substeps
-        copyto!(u,u0)
-        copyto!(v,v0)
-        copyto!(η,η0)
 
     end
 
     ##### use if time-averaging the objective function #######
-    S.parameters.J = S.parameters.J / length((S.grid.nt - 30*224):1:S.grid.nt)
     ##########################################################
 
     ##### Energy objective function, not time averaged ###########
