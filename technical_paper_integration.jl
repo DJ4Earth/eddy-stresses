@@ -36,7 +36,7 @@ function loop(S,scheme)
         Diag = S.Diag
         Prog = S.Prog
 
-        if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
+        # if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
             temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
             S.Prog.v,
@@ -47,7 +47,7 @@ function loop(S,scheme)
 
             S.parameters.J += energy_lr
 
-        end
+        # end
 
     end
 
