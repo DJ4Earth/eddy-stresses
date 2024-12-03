@@ -80,31 +80,6 @@ function loop(S,scheme)
 
         Diag = S.Diag
         Prog = S.Prog
-    
-        @unpack u,v,η,sst = Prog
-        @unpack u0,v0,η0 = Diag.RungeKutta
-        @unpack u1,v1,η1 = Diag.RungeKutta
-        @unpack du,dv,dη = Diag.Tendencies
-        @unpack du_sum,dv_sum,dη_sum = Diag.Tendencies
-        @unpack du_comp,dv_comp,dη_comp = Diag.Tendencies
-    
-        @unpack um,vm = Diag.SemiLagrange
-    
-        @unpack dynamics,RKo,RKs,tracer_advection = S.parameters
-        @unpack time_scheme,compensated = S.parameters
-        @unpack RKaΔt,RKbΔt = S.constants
-        @unpack Δt_Δ,Δt_Δs = S.constants
-    
-        @unpack nt,dtint = S.grid
-        @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
-        t = S.t
-        i = S.parameters.i
-
-        # ghost point copy for boundary conditions
-        ShallowWaters.ghost_points!(u,v,η,S)
-        copyto!(u1,u)
-        copyto!(v1,v)
-        copyto!(η1,η)
 
         if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
