@@ -49,23 +49,6 @@ function checkpointed_integration(S, scheme)
     ShallowWaters.Ix!(Diag.VolumeFluxes.h_u,Diag.VolumeFluxes.h)
     ShallowWaters.Iy!(Diag.VolumeFluxes.h_v,Diag.VolumeFluxes.h)
     ShallowWaters.Ixy!(Diag.Vorticity.h_q,Diag.VolumeFluxes.h)
-
-    # calculate PV terms for initial conditions
-    urhs = convert(Diag.PrognosticVarsRHS.u,u)
-    vrhs = convert(Diag.PrognosticVarsRHS.v,v)
-    ηrhs = convert(Diag.PrognosticVarsRHS.η,η)
-
-    ShallowWaters.advection_coriolis!(urhs,vrhs,ηrhs,Diag,S)
-    ShallowWaters.PVadvection!(Diag,S)
-
-    # propagate initial conditions
-    copyto!(u0,u)
-    copyto!(v0,v)
-    copyto!(η0,η)
-
-    # store initial conditions of sst for relaxation
-    copyto!(Diag.SemiLagrange.sst_ref,sst)
-
     # run integration loop with checkpointing
     loop(S, scheme)
 
