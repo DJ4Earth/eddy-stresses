@@ -113,51 +113,6 @@ function loop(S,scheme)
             fill!(dη_sum,zero(Tprog))
         end
 
-        for rki = 1:RKo
-            if rki > 1
-                ShallowWaters.ghost_points!(u1,v1,η1,S)
-            end
-
-            # type conversion for mixed precision
-            u1rhs = convert(Diag.PrognosticVarsRHS.u,u1)
-            v1rhs = convert(Diag.PrognosticVarsRHS.v,v1)
-            η1rhs = convert(Diag.PrognosticVarsRHS.η,η1)
-
-            ShallowWaters.rhs!(u1rhs,v1rhs,η1rhs,Diag,S,t)          # momentum only
-            ShallowWaters.continuity!(u1rhs,v1rhs,η1rhs,Diag,S,t)   # continuity equation
-
-            if rki < RKo
-                ShallowWaters.caxb!(u1,u,RKbΔt[rki],du)   #u1 .= u .+ RKb[rki]*Δt*du
-                ShallowWaters.caxb!(v1,v,RKbΔt[rki],dv)   #v1 .= v .+ RKb[rki]*Δt*dv
-                ShallowWaters.caxb!(η1,η,RKbΔt[rki],dη)   #η1 .= η .+ RKb[rki]*Δt*dη
-            end
-
-            if compensated      # accumulate tendencies
-                ShallowWaters.axb!(du_sum,RKaΔt[rki],du)
-                ShallowWaters.axb!(dv_sum,RKaΔt[rki],dv)
-                ShallowWaters.axb!(dη_sum,RKaΔt[rki],dη)
-            else    # sum RK-substeps on the go
-                ShallowWaters.axb!(u0,RKaΔt[rki],du)          #u0 .+= RKa[rki]*Δt*du
-                ShallowWaters.axb!(v0,RKaΔt[rki],dv)          #v0 .+= RKa[rki]*Δt*dv
-                ShallowWaters.axb!(η0,RKaΔt[rki],dη)          #η0 .+= RKa[rki]*Δt*dη
-            end
-        end
-
-        if compensated
-            # add compensation term to total tendency
-            ShallowWaters.axb!(du_sum,-1,du_comp)
-            ShallowWaters.axb!(dv_sum,-1,dv_comp)
-            ShallowWaters.axb!(dη_sum,-1,dη_comp)
-
-            ShallowWaters.axb!(u0,1,du_sum)   # update prognostic variable with total tendency
-            ShallowWaters.axb!(v0,1,dv_sum)
-            ShallowWaters.axb!(η0,1,dη_sum)
-
-            ShallowWaters.dambmc!(du_comp,u0,u,du_sum)    # compute new compensation
-            ShallowWaters.dambmc!(dv_comp,v0,v,dv_sum)
-            ShallowWaters.dambmc!(dη_comp,η0,η,dη_sum)
-        end
-
         if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
             temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
