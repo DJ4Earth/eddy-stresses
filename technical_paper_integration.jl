@@ -106,13 +106,6 @@ function loop(S,scheme)
         copyto!(v1,v)
         copyto!(η1,η)
 
-
-        if compensated
-            fill!(du_sum,zero(Tprog))
-            fill!(dv_sum,zero(Tprog))
-            fill!(dη_sum,zero(Tprog))
-        end
-
         if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
             temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
