@@ -43,7 +43,7 @@ function loop(S,scheme)
             S.Prog.η,
             S.Prog.sst,S)...)
 
-            energy_lr = sum(temp.u.^2)
+            energy_lr = first(temp.u.^2)
 
             S.parameters.J += energy_lr
 
