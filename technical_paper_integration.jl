@@ -20,32 +20,7 @@ using LaTeXStrings
 
 
 function checkpointed_integration(S, scheme)
-
-    # setup
-    Diag = S.Diag
-    Prog = S.Prog
-
-    @unpack u,v,η,sst = Prog
-    @unpack u0,v0,η0 = Diag.RungeKutta
-    @unpack u1,v1,η1 = Diag.RungeKutta
-    @unpack du,dv,dη = Diag.Tendencies
-    @unpack du_sum,dv_sum,dη_sum = Diag.Tendencies
-    @unpack du_comp,dv_comp,dη_comp = Diag.Tendencies
-
-    @unpack um,vm = Diag.SemiLagrange
-
-    @unpack dynamics,RKo,RKs,tracer_advection = S.parameters
-    @unpack time_scheme,compensated = S.parameters
-    @unpack RKaΔt,RKbΔt = S.constants
-    @unpack Δt_Δ,Δt_Δs = S.constants
-
-    @unpack nt,dtint = S.grid
-    @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
-
-    S.parameters.data = zeros(S.grid.nt + 1)
-
-    # calculate layer thicknesses for initial conditions
-    ShallowWaters.thickness!(Diag.VolumeFluxes.h,η,S.forcing.H)
+    ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,S.Prog.η,S.forcing.H)
     # run integration loop with checkpointing
     loop(S, scheme)
 
