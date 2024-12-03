@@ -173,24 +173,6 @@ function loop(S,scheme)
             ShallowWaters.UVfluxes!(u0rhs,v0rhs,η0rhs,Diag,S)
             ShallowWaters.advection_coriolis!(u0rhs,v0rhs,η0rhs,Diag,S)
         end
-
-        # DIFFUSIVE TERMS - SEMI-IMPLICIT EULER
-        # use u0 = u^(n+1) to evaluate tendencies, add to u0 = u^n + rhs
-        # evaluate only every nstep_diff time steps
-        if (S.parameters.i % nstep_diff) == 0
-            ShallowWaters.bottom_drag!(u0rhs,v0rhs,η0rhs,Diag,S)
-            ShallowWaters.diffusion!(u0rhs,v0rhs,Diag,S)
-            ShallowWaters.add_drag_diff_tendencies!(u0,v0,Diag,S)
-            ShallowWaters.ghost_points_uv!(u0,v0,S)
-        end
-
-        t += dtint
-
-        # TRACER ADVECTION
-        u0rhs = convert(Diag.PrognosticVarsRHS.u,u0) 
-        v0rhs = convert(Diag.PrognosticVarsRHS.v,v0)
-        ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
-
         #### Energy objective function, time averaged
 
         if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
