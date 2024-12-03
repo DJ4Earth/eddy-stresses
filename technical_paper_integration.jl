@@ -158,23 +158,6 @@ function loop(S,scheme)
             ShallowWaters.dambmc!(dη_comp,η0,η,dη_sum)
         end
 
-
-        ShallowWaters.ghost_points!(u0,v0,η0,S)
-
-        # type conversion for mixed precision
-        u0rhs = convert(Diag.PrognosticVarsRHS.u,u0)
-        v0rhs = convert(Diag.PrognosticVarsRHS.v,v0)
-        η0rhs = convert(Diag.PrognosticVarsRHS.η,η0)
-
-        # ADVECTION and CORIOLIS TERMS
-        # although included in the tendency of every RK substep,
-        # only update every nstep_advcor steps if nstep_advcor > 0
-        if dynamics == "nonlinear" && nstep_advcor > 0 && (i % nstep_advcor) == 0
-            ShallowWaters.UVfluxes!(u0rhs,v0rhs,η0rhs,Diag,S)
-            ShallowWaters.advection_coriolis!(u0rhs,v0rhs,η0rhs,Diag,S)
-        end
-        #### Energy objective function, time averaged
-
         if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
             temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
