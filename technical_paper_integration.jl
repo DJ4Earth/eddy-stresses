@@ -46,7 +46,6 @@ function checkpointed_integration(S, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(Diag.VolumeFluxes.h,η,S.forcing.H)
-    ShallowWaters.Ix!(Diag.VolumeFluxes.h_u,Diag.VolumeFluxes.h)
     # run integration loop with checkpointing
     loop(S, scheme)
 
