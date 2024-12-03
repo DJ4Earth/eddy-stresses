@@ -5,7 +5,8 @@ Three files for technical paper:
     2) technical_paper_plotting.jl - just a bunch of random plots
     3) technical_paper.jl - running experiments
 """
-include("technical_paper_integration.jl")
+
+include("./technical_paper_integration.jl")
 
 function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters
@@ -27,40 +28,6 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     )
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-
-    enzyme_deriv = dS.Prog.u[62,20]
-
-    @show enzyme_deriv
-
-    # steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
-    steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
-
-    S_outer = ShallowWaters.model_setup(P)
-
-    snaps = Int(floor(sqrt(S_outer.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false
-    )
-
-    J_outer = checkpointed_integration(S_outer, revolve)
-
-    diffs = []
-
-    for s in steps
-
-        S_inner = ShallowWaters.model_setup(P)
-
-        S_inner.Prog.u[62,20] += s
-
-        J_inner = checkpointed_integration(S_inner, revolve)
-
-        push!(diffs, (J_inner - J_outer) / s)
-
-    end
-
-    return diffs, enzyme_deriv, S, dS
 
 end
 

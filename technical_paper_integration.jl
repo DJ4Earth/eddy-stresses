@@ -205,16 +205,7 @@ function loop(S,scheme)
             S.parameters.J += energy_lr
 
         end
-        #############################################
-
-        # Storing the energy over time
-        temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
-        S.Prog.v,
-        S.Prog.η,
-        S.Prog.sst,S)...)
-
-        S.parameters.data[S.parameters.i] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
-
+        
         # Copy back from substeps
         copyto!(u,u0)
         copyto!(v,v0)
