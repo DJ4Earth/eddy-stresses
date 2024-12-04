@@ -39,10 +39,9 @@ function myremove_halo(   u::Array{T,2},
                         S) where {T<:AbstractFloat}
 
     @unpack halo,haloη,halosstx,halossty = S.grid
-    @unpack scale_inv,scale_sst = S.constants
 
     # undo scaling as well
-    @views ucut = scale_inv*u[halo+1:end-halo,halo+1:end-halo]
+    @views ucut = u[halo+1:end-halo,halo+1:end-halo]
     @views ηcut = η[haloη+1:end-haloη,haloη+1:end-haloη]
 
     return ucut,ηcut
