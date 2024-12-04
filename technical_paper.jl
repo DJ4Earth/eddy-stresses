@@ -20,9 +20,9 @@ end
 function checkpointed_integration(S, scheme)
     h = S.h
     nu = S.Prog.nu
-    @inbounds for i in eachindex(nu)
-        h[i] = nu[i]
-    end
+    #@inbounds for i in eachindex(nu)
+      @inbounds  h[1] = @inbounds nu[1]
+    #end
     
     @checkpoint_struct scheme S for S.i = 1:S.nt
         Prog = S.Prog
