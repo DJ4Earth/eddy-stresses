@@ -50,6 +50,13 @@ function myremove_halo(   u::Array{T,2},
     return ucut,vcut,ηcut,sstcut
 end
 
+mutable struct MyPrognosticVars{T<:AbstractFloat}
+    u::Array{T,2}           # u-velocity
+    v::Array{T,2}           # v-velocity
+    η::Array{T,2}           # sea surface height / interface displacement
+    sst::Array{T,2}         # tracer / sea surface temperature
+end
+
 function loop(S,scheme)
 
 
@@ -60,7 +67,7 @@ function loop(S,scheme)
 
         # if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
-            temp = ShallowWaters.PrognosticVars{Float64}(myremove_halo(S.Prog.u,
+            temp = MyPrognosticVars{Float64}(myremove_halo(S.Prog.u,
             S.Prog.v,
             S.Prog.η,
             S.Prog.sst,S)...)
