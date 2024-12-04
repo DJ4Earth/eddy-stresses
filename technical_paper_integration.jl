@@ -47,13 +47,12 @@ function myremove_halo(   u::Array{T,2},
     @views ηcut = η[haloη+1:end-haloη,haloη+1:end-haloη]
     @views sstcut = sst[halosstx+1:end-halosstx,halossty+1:end-halossty]/scale_sst
 
-    return ucut,vcut,ηcut
+    return ucut,vcut
 end
 
 mutable struct MyPrognosticVars{T<:AbstractFloat}
     u::Array{T,2}           # u-velocity
     v::Array{T,2}           # v-velocity
-    η::Array{T,2}           # sea surface height / interface displacement
 end
 
 function loop(S,scheme)
