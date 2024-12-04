@@ -19,12 +19,12 @@ mutable struct MyPrognosticVars{T<:AbstractFloat}
 end
 
 
-mutable struct MyModelSetup{T<:AbstractFloat,Tprog<:AbstractFloat}
+mutable struct MyModelSetup
     i::Int
     J::Float64
     halo::Int
     nt::Int
-    Prog::MyPrognosticVars{Tprog}
+    Prog::MyPrognosticVars{Float32}
     h::Matrix{Float64}
     t::Int                              # SW: I believe this has something to do with Checkpointing, need to verify
 end
@@ -55,17 +55,9 @@ function checkpointed_integration(S, scheme)
     return S.J
 end
 
-function mymodel_setup(P::Parameter)
-    T = P.T
-    Tprog = P.Tprog
-
-    G = ShallowWaters.Grid{T,Tprog}(P)
-    C = ShallowWaters.Constants{T,Tprog}(P,G)
-
-    Prog = ShallowWaters.initial_conditions(Tprog,G,P,C)
-    Diag = ShallowWaters.preallocate(T,Tprog,G)
-
-    S = MyModelSetup{T,Tprog}(0, 0.0, G.halo, G.nt,MyPrognosticVars{Float32}(Prog.u, Prog.η),Diag.VolumeFluxes.h,0)
+function mymodel_setup()
+    nt = 6733
+    S = MyModelSetup(0, 0.0, 2, nt,MyPrognosticVars{Float32}(ones(Float32, 131, 132),ones(Float32, 130, 130)),ones(Float64, 130, 130),0)
 
     return S
 
@@ -74,11 +66,10 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters
     ) where {T<:AbstractFloat}
 
-    P = ShallowWaters.Parameter(T=T;kwargs...)
-    S = mymodel_setup(P)
+    S = mymodel_setup()
 
 
-    dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
+    dS = Enzyme.make_zero(S)
     snaps = Int(floor(sqrt(S.nt)))
     revolve = Revolve{MyModelSetup}(S.nt,
         snaps;
