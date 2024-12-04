@@ -20,7 +20,8 @@ end
 
 
 mutable struct MyModelSetup{T<:AbstractFloat,Tprog<:AbstractFloat}
-    parameters::ShallowWaters.Parameter
+    i::Int
+    J::Float64
     halo::Int
     nt::Int
     Prog::ShallowWaters.PrognosticVars{Tprog}
@@ -35,7 +36,7 @@ function checkpointed_integration(S, scheme)
         h[i] = nu[i]
     end
     
-    @checkpoint_struct scheme S for S.parameters.i = 1:S.nt
+    @checkpoint_struct scheme S for S.i = 1:S.nt
         Prog = S.Prog
 
         halo = S.halo
@@ -48,11 +49,10 @@ function checkpointed_integration(S, scheme)
 
         energy_lr = first(temp.u.^2)
 
-        S.parameters.J += energy_lr
+        S.J += energy_lr
     end
 
-    return S.parameters.J
-
+    return S.J
 end
 
 function mymodel_setup(P::Parameter)
@@ -65,7 +65,7 @@ function mymodel_setup(P::Parameter)
     Prog = ShallowWaters.initial_conditions(Tprog,G,P,C)
     Diag = ShallowWaters.preallocate(T,Tprog,G)
 
-    S = MyModelSetup{T,Tprog}(P, G.halo, G.nt,Prog,Diag.VolumeFluxes.h,0)
+    S = MyModelSetup{T,Tprog}(0, 0.0, G.halo, G.nt,Prog,Diag.VolumeFluxes.h,0)
 
     return S
 
