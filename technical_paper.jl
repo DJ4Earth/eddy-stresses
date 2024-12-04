@@ -6,7 +6,6 @@ mutable struct MyPrognosticVars{T<:AbstractFloat}
     nu::Array{T,2}           # sea surface height / interface displacement
 end
 
-
 mutable struct MyModelSetup
     i::Int
     J::Float64
@@ -20,9 +19,7 @@ end
 function checkpointed_integration(S, scheme)
     h = S.h
     nu = S.Prog.nu
-    #@inbounds for i in eachindex(nu)
-      @inbounds  h[1] = @inbounds nu[1]
-    #end
+      @inbounds  h[1] = 2.7
     
     @checkpoint_struct scheme S for S.i = 1:S.nt
         Prog = S.Prog
@@ -40,7 +37,7 @@ function checkpointed_integration(S, scheme)
         S.J += energy_lr
     end
 
-    return S.J
+    return
 end
 
 function mymodel_setup()
@@ -50,9 +47,7 @@ function mymodel_setup()
     return S
 
 end
-function run_adjoint_plusfd(::Type{T}=Float32;     # number format
-    kwargs...                               # all additional parameters
-    ) where {T<:AbstractFloat}
+function run_adjoint_plusfd()
 
     S = mymodel_setup()
 
@@ -61,32 +56,11 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     snaps = Int(floor(sqrt(S.nt)))
     revolve = Revolve{MyModelSetup}(S.nt,
         snaps;
-        verbose=1,
         gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_500m_4months_float32_112124",
-        write_checkpoints_period = 224
     )
 
-    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+    autodiff(Enzyme.Reverse, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
 end
 
-diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
-    output=false,
-    L_ratio=1,
-    g=9.81,
-    H=500,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    α=2,
-    # νB 
-    nx=128,
-    Ndays=30
-    # initial_cond="ncfile",
-    # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_noforcing_float64prog"
-)
+diffs, enzyme_deriv, S, dS = run_adjoint_plusfd()
