@@ -1,15 +1,3 @@
-"""
-Three files for technical paper:
-    1) technical_paper_integration.jl - contains the time stepping loop, checkpointed
-        only include once
-    2) technical_paper_plotting.jl - just a bunch of random plots
-    3) technical_paper.jl - running experiments
-"""
-
-
-include("../ShallowWaters.jl/src/ShallowWaters.jl")
-using .ShallowWaters
-
 using Enzyme
 using Checkpointing
 
