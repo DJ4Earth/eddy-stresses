@@ -42,7 +42,7 @@ function myremove_halo(   u::Array{T,2},
 
     # undo scaling as well
     @views ucut = u[halo+1:end-halo,halo+1:end-halo]
-    @views ηcut = η[haloη+1:end-haloη,haloη+1:end-haloη]
+    ηcut = η
 
     return ucut,ηcut
 end
