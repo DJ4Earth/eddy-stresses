@@ -24,14 +24,14 @@ mutable struct MyModelSetup{T<:AbstractFloat,Tprog<:AbstractFloat}
     J::Float64
     halo::Int
     nt::Int
-    Prog::ShallowWaters.PrognosticVars{Tprog}
+    Prog::MyPrognosticVars{Tprog}
     h::Matrix{Float64}
     t::Int                              # SW: I believe this has something to do with Checkpointing, need to verify
 end
 
 function checkpointed_integration(S, scheme)
     h = S.h
-    nu = S.Prog.η
+    nu = S.Prog.nu
     @inbounds for i in eachindex(nu)
         h[i] = nu[i]
     end
@@ -43,7 +43,7 @@ function checkpointed_integration(S, scheme)
 
         # undo scaling as well
         @views ucut = S.Prog.u[halo+1:end-halo,halo+1:end-halo]
-        ηcut = S.Prog.η
+        ηcut = S.Prog.nu
 
         temp = MyPrognosticVars{Float64}(ucut, ηcut) 
 
@@ -65,7 +65,7 @@ function mymodel_setup(P::Parameter)
     Prog = ShallowWaters.initial_conditions(Tprog,G,P,C)
     Diag = ShallowWaters.preallocate(T,Tprog,G)
 
-    S = MyModelSetup{T,Tprog}(0, 0.0, G.halo, G.nt,Prog,Diag.VolumeFluxes.h,0)
+    S = MyModelSetup{T,Tprog}(0, 0.0, G.halo, G.nt,MyPrognosticVars{Float32}(Prog.u, Prog.η),Diag.VolumeFluxes.h,0)
 
     return S
 
