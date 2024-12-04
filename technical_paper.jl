@@ -6,7 +6,46 @@ Three files for technical paper:
     3) technical_paper.jl - running experiments
 """
 
-include("./technical_paper_integration.jl")
+
+include("../ShallowWaters.jl/src/ShallowWaters.jl")
+using .ShallowWaters
+
+using Enzyme
+using Checkpointing
+
+mutable struct MyPrognosticVars{T<:AbstractFloat}
+    u::Array{T,2}           # u-velocity
+    nu::Array{T,2}           # sea surface height / interface displacement
+end
+
+function checkpointed_integration(S, scheme)
+    h = S.Diag.VolumeFluxes.h
+    H = S.forcing.H
+    nu = S.Prog.η
+    @inbounds for i in eachindex(nu)
+        h[i] = nu[i]
+    end
+    
+    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+        Diag = S.Diag
+        Prog = S.Prog
+
+        halo = S.grid.halo
+
+        # undo scaling as well
+        @views ucut = S.Prog.u[halo+1:end-halo,halo+1:end-halo]
+        ηcut = S.Prog.η
+
+        temp = MyPrognosticVars{Float64}(ucut, ηcut) 
+
+        energy_lr = first(temp.u.^2)
+
+        S.parameters.J += energy_lr
+    end
+
+    return S.parameters.J
+
+end
 
 function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters
@@ -49,29 +88,3 @@ diffs, enzyme_deriv, S, dS = run_adjoint_plusfd(
     # initial_cond="ncfile",
     # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_noforcing_float64prog"
 )
-
-# @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_500mdepth_4months_float64start_112224.jld2" S
-# @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_500mdepth_4months_float64start_112224.jld2" dS
-# @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_fdcheck_vector_500mdepth_4months_float64start_112224.jld2" diffs
-
-
-# create_adjoint_gif()
-
-# _, energy = ShallowWaters.run_model(T = Float64,
-#     output=true,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     # νB 
-#     nx=128,
-#     Ndays=10*12*30
-#     # initial_cond="ncfile",
-#     # initpath="eddy-stresses/data_files_gamma0.3/128_10yearspinup_noforcing_noslipbc_float64params"
-# )
