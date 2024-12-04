@@ -18,25 +18,36 @@ using Parameters
 using Optim
 using LaTeXStrings
 
-
-"""Layer thickness h obtained by adding sea surface height η to bottom height H."""
-function mythickness!(h::AbstractMatrix,η::AbstractMatrix,H::AbstractMatrix)
-    m,n = size(h)
-    @boundscheck (m,n) == size(η) || throw(BoundsError())
-    @boundscheck (m,n) == size(H) || throw(BoundsError())
-
-    @inbounds for i in eachindex(η)
-        h[i] = η[i] + H[i]
-    end
-end
-
 function checkpointed_integration(S, scheme)
-    mythickness!(S.Diag.VolumeFluxes.h,S.Prog.η,S.forcing.H)
+    h = S.Diag.VolumeFluxes.h
+    H = S.forcing.H
+    nu = S.Prog.η
+    @inbounds for i in eachindex(nu)
+        h[i] = nu[i]
+    end
     # run integration loop with checkpointing
     loop(S, scheme)
 
     return S.parameters.J
 
+end
+
+function myremove_halo(   u::Array{T,2},
+                        v::Array{T,2},
+                        η::Array{T,2},
+                        sst::Array{T,2},
+                        S) where {T<:AbstractFloat}
+
+    @unpack halo,haloη,halosstx,halossty = S.grid
+    @unpack scale_inv,scale_sst = S.constants
+
+    # undo scaling as well
+    @views ucut = scale_inv*u[halo+1:end-halo,halo+1:end-halo]
+    @views vcut = scale_inv*v[halo+1:end-halo,halo+1:end-halo]
+    @views ηcut = η[haloη+1:end-haloη,haloη+1:end-haloη]
+    @views sstcut = sst[halosstx+1:end-halosstx,halossty+1:end-halossty]/scale_sst
+
+    return ucut,vcut,ηcut,sstcut
 end
 
 function loop(S,scheme)
@@ -49,7 +60,7 @@ function loop(S,scheme)
 
         # if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
 
-            temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(S.Prog.u,
+            temp = ShallowWaters.PrognosticVars{Float64}(myremove_halo(S.Prog.u,
             S.Prog.v,
             S.Prog.η,
             S.Prog.sst,S)...)
