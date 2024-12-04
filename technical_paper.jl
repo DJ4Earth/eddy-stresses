@@ -21,7 +21,8 @@ end
 
 mutable struct MyModelSetup{T<:AbstractFloat,Tprog<:AbstractFloat}
     parameters::ShallowWaters.Parameter
-    grid::ShallowWaters.Grid{T,Tprog}
+    halo::Int
+    nt::Int
     Prog::ShallowWaters.PrognosticVars{Tprog}
     h::Matrix{Float64}
     t::Int                              # SW: I believe this has something to do with Checkpointing, need to verify
@@ -34,10 +35,10 @@ function checkpointed_integration(S, scheme)
         h[i] = nu[i]
     end
     
-    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+    @checkpoint_struct scheme S for S.parameters.i = 1:S.nt
         Prog = S.Prog
 
-        halo = S.grid.halo
+        halo = S.halo
 
         # undo scaling as well
         @views ucut = S.Prog.u[halo+1:end-halo,halo+1:end-halo]
@@ -64,7 +65,7 @@ function mymodel_setup(P::Parameter)
     Prog = ShallowWaters.initial_conditions(Tprog,G,P,C)
     Diag = ShallowWaters.preallocate(T,Tprog,G)
 
-    S = MyModelSetup{T,Tprog}(P,G,Prog,Diag.VolumeFluxes.h,0)
+    S = MyModelSetup{T,Tprog}(P, G.halo, G.nt,Prog,Diag.VolumeFluxes.h,0)
 
     return S
 
@@ -78,8 +79,8 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
 
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve{MyModelSetup}(S.grid.nt,
+    snaps = Int(floor(sqrt(S.nt)))
+    revolve = Revolve{MyModelSetup}(S.nt,
         snaps;
         verbose=1,
         gc=true,
