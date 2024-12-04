@@ -13,9 +13,9 @@ function stuff()
     ax = Axis(f[1,1])
     h = heatmap!(ax, 0:128:3840,
     0:127:3840,
-    temp.u,
+    dS12dv.u,
     colormap=:balance,
-    colorrange=(-maximum(temp.u), maximum(temp.u))
+    colorrange=(-maximum(dS12dv.u), maximum(dS12dv.u))
     )
     Colorbar(f[1,2], h)
     
@@ -26,32 +26,32 @@ function stuff()
     dunorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_dunorm_dividedbynxny_500m_1year_111424.jld2")
     dvnorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_dvnorm_dividedbynxny_500m_1year_111424.jld2")
 
-    timestep1 = 60:-0.99726:1
+    timestep1 = 1:0.99726:360
     f = Figure(size = (1000, 500));
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative, two-month integration from spinup",
+        title = "Norm of adjoint derivative, 12-month integration with double viscosity, spinup also with double viscosity",
         xlabel = "t (days)",
-        ylabel = L"||\partial J / \partial x||",
+        ylabel = L"||\partial J / \partial u||",
     )
-    timestep2 = 120:-0.99726:1
+    timestep2 = 1:0.99726:360
     ax2 = Axis(f[2,1],
-    title = "Norm of adjoint derivative, four-month integration from spinup",
+    title = "Norm of adjoint derivative, 12-month integration with double viscosity, spinup also with double viscosity",
     xlabel = "t (days)",
     # yscale=log10,
-    ylabel = L"||\partial J / \partial x||",
+    ylabel = L"||\partial J / \partial v||",
     )
-    timestep3 = 360:-0.99726:1
+    timestep3 = 1:0.99726:360
     ax3 = Axis(f[3, 1],
-    title = "Norm of adjoint derivative, twelve-month integration from spinup",
+    title = "Norm of adjoint derivative, 12-month integration with double viscosity, spinup also with double viscosity",
     xlabel = "t (days)",
     # yscale = log,
     ylabel = L"||\partial J / \partial x||")
 
 
-    lines!(ax1, timestep1, dunorm2, label = L"\partial J / \partial u(t)")
+    lines!(ax1, timestep1, dunorm12dv, label = L"||\partial J / \partial u(t)||")
     lines!(ax1, timestep1, dvnorm2, label = L"\partial J / \partial v(t)")
     axislegend(ax1, position = :rt)
-    lines!(ax2, timestep2, dunorm4, label = L"\partial J / \partial u(t)")
+    lines!(ax2, timestep2, dvnorm12dv, label = L"||\partial J / \partial v(t)||")
     lines!(ax2, timestep2, dvnorm4, label = L"\partial J / \partial v(t)")
     axislegend(ax2, position = :rt)
     lines!(ax3, timestep3, dunorm12, label = L"\partial J / \partial u(t)")
@@ -380,28 +380,25 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./technicalpaper_datafiles/finaldatafiles/adjoint_technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_500m_12months_float32_112024.h5")
-    # primal_fid = h5open("./primal_technicalpaper_timeavgobj_500m_2months_111524.h5")
+    adj_fid = h5open("./adjoint_technicalpaper_50km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_12months_float32_120324.h5")
+    primal_fid = h5open("./primal_technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_doubleviscosity_startingfromrest_everytimestep_500m_12months_float32_120324.h5")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
     # unorm_anim = Animation()
     # vnorm_anim = Animation()
     # etanorm_anim = Animation()
 
-    dunorm4 = []
-    dvnorm4 = []
-    detanorm4 = []
+    dunorm = []
+    dvnorm = []
+    detanorm = []
 
-    dcDnorm4 = []
-    dFxnorm4 = []
+    dcDnorm = []
+    dFxnorm = []
 
     J = []
 
-    final = 1:224:224*30*12
-    for j = final[end]:-224:1
-    # for j = 1:3651
-    # for j = 1:224:81761
-
+    # for j = 1:224:224*30*12
+    for j = 1:224:47927
 
         blob = read(adj_fid[string(j)])
         adj_chkp = deserialize(blob)
@@ -416,11 +413,11 @@ function create_adjoint_gif()
             adj_chkp.Prog.sst,adj_chkp)...
         )
 
-        push!(dcDnorm4, sum(adj_chkp.constants.cDfield.^2) / 128^2)
-        push!(dFxnorm4, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
-        push!(dunorm4, sum(temp.u.^2) / (127*128))
-        push!(dvnorm4, sum(temp.v.^2) / (127*128))
-        push!(detanorm4, sum(temp.η.^2) / (128 * 128))
+        push!(dcDnorm, sum(adj_chkp.constants.cDfield.^2) / 128^2)
+        push!(dFxnorm, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
+        push!(dunorm, sum(temp.u.^2) / (127*128))
+        push!(dvnorm, sum(temp.v.^2) / (127*128))
+        push!(detanorm, sum(temp.η.^2) / (128 * 128))
 
         # frame(eta_anim, heatmap(temp.η',
         #     # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
