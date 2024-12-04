@@ -19,8 +19,19 @@ using Optim
 using LaTeXStrings
 
 
+"""Layer thickness h obtained by adding sea surface height η to bottom height H."""
+function mythickness!(h::AbstractMatrix,η::AbstractMatrix,H::AbstractMatrix)
+    m,n = size(h)
+    @boundscheck (m,n) == size(η) || throw(BoundsError())
+    @boundscheck (m,n) == size(H) || throw(BoundsError())
+
+    @inbounds for i in eachindex(η)
+        h[i] = η[i] + H[i]
+    end
+end
+
 function checkpointed_integration(S, scheme)
-    ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,S.Prog.η,S.forcing.H)
+    mythickness!(S.Diag.VolumeFluxes.h,S.Prog.η,S.forcing.H)
     # run integration loop with checkpointing
     loop(S, scheme)
 
