@@ -47,12 +47,28 @@ function checkpointed_integration(S, scheme)
 
 end
 
+function mymodel_setup(P::Parameter)
+    T = P.T
+    Tprog = P.Tprog
+
+    G = ShallowWaters.Grid{T,Tprog}(P)
+    C = ShallowWaters.Constants{T,Tprog}(P,G)
+    F = ShallowWaters.Forcing{T}(P,G)
+
+    Prog = ShallowWaters.initial_conditions(Tprog,G,P,C)
+    Diag = ShallowWaters.preallocate(T,Tprog,G)
+
+    S = ShallowWaters.ModelSetup{T,Tprog}(P,G,C,F,Prog,Diag,0)
+
+    return S
+
+end
 function run_adjoint_plusfd(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters
     ) where {T<:AbstractFloat}
 
     P = ShallowWaters.Parameter(T=T;kwargs...)
-    S = ShallowWaters.model_setup(P)
+    S = mymodel_setup(P)
 
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
