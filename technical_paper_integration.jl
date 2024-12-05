@@ -9,6 +9,7 @@ include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 
 using Enzyme
+Enzyme.Compiler.RunAttributor[] = false
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 

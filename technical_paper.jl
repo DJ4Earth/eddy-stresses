@@ -5,6 +5,8 @@ Three files for technical paper:
     2) technical_paper_plotting.jl - just a bunch of random plots
     3) technical_paper.jl - running experiments
 """
+
+
 include("technical_paper_integration.jl")
 
 function run_adjoint_plusfd(::Type{T}=Float32;     # number format
