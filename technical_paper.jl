@@ -21,39 +21,39 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
 
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
-    enzyme_deriv = dS.Prog.u[62,20]
+    # enzyme_deriv = dS.Prog.u[62,20]
 
-    @show enzyme_deriv
+    # @show enzyme_deriv
 
-    # steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
-    steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    # # steps = [50, 40, 30, 20, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    # steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
-    S_outer = ShallowWaters.model_setup(P)
+    # S_outer = ShallowWaters.model_setup(P)
 
-    snaps = Int(floor(sqrt(S_outer.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false
-    )
+    # snaps = Int(floor(sqrt(S_outer.grid.nt)))
+    # revolve = Revolve{ShallowWaters.ModelSetup}(S_outer.grid.nt, snaps;
+    #     verbose=1,
+    #     gc=true,
+    #     write_checkpoints=false
+    # )
 
-    J_outer = checkpointed_integration(S_outer, revolve)
+    # J_outer = checkpointed_integration(S_outer, revolve)
 
-    diffs = []
+    # diffs = []
 
-    for s in steps
+    # for s in steps
 
-        S_inner = ShallowWaters.model_setup(P)
+    #     S_inner = ShallowWaters.model_setup(P)
 
-        S_inner.Prog.u[62,20] += s
+    #     S_inner.Prog.u[62,20] += s
 
-        J_inner = checkpointed_integration(S_inner, revolve)
+    #     J_inner = checkpointed_integration(S_inner, revolve)
 
-        push!(diffs, (J_inner - J_outer) / s)
+    #     push!(diffs, (J_inner - J_outer) / s)
 
-    end
+    # end
 
-    return diffs, enzyme_deriv, S, dS
+    return S, dS
 
 end
 

@@ -380,7 +380,7 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./adjoint_technicalpaper_50km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_12months_float32_120324.h5")
+    adj_fid = h5open("./adjoint_technicalpaper_100km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_12months_float32_120324.h5")
     primal_fid = h5open("./primal_technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_doubleviscosity_startingfromrest_everytimestep_500m_12months_float32_120324.h5")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
