@@ -1,6 +1,14 @@
+
+"""
+Placing the checkpointed integraton, loop, and all of the packages here, so that when running 
+include("technical_paper.jl") we never re-include them. This should help with Enzyme compile times
+
+When running the experiments for the technical paper only ever include("technical_paper_integration.jl") once
+"""
+
+
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
-
 using Enzyme
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
@@ -33,6 +41,7 @@ function checkpointed_integration(S, scheme)
 
     @unpack nt,dtint = S.grid
     @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
+
 
     S.parameters.data = zeros(S.grid.nt)
 
@@ -71,6 +80,7 @@ function loop(S,scheme)
     # @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
     for S.parameters.i = 1:S.grid.nt
 
+
         Diag = S.Diag
         Prog = S.Prog
     
@@ -98,6 +108,7 @@ function loop(S,scheme)
         copyto!(u1,u)
         copyto!(v1,v)
         copyto!(η1,η)
+
 
         if compensated
             fill!(du_sum,zero(Tprog))
@@ -184,7 +195,6 @@ function loop(S,scheme)
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
 
         #### Energy objective function, time averaged
-
         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
         S.Prog.v,
         S.Prog.η,
@@ -197,11 +207,12 @@ function loop(S,scheme)
             S.parameters.J = S.parameters.J + energy_lr
             # storing the objective function over time
             S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
-
+        
         end
         #############################################
 
         # S.parameters.data[S.parameters.i] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
+
 
         # Copy back from substeps
         copyto!(u,u0)

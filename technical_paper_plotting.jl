@@ -1,7 +1,11 @@
 """
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
-without all of this also running. The function deserialize opens any saved checkpoints
+without all of this also running. The function deserialize opens any saved checkpoints/deprecated now
 """
+
+
+
+
 function deserialize(x)
     s = IOBuffer(x)
     Serialization.deserialize(s)
@@ -13,9 +17,9 @@ function stuff()
     ax = Axis(f[1,1])
     h = heatmap!(ax, 0:128:3840,
     0:127:3840,
-    dS12dv.u,
+    temp.u,
     colormap=:balance,
-    colorrange=(-maximum(dS12dv.u), maximum(dS12dv.u))
+    colorrange=(-maximum(temp.u), maximum(temp.u))
     )
     Colorbar(f[1,2], h)
     
@@ -46,7 +50,6 @@ function stuff()
     xlabel = "t (days)",
     # yscale = log,
     ylabel = L"||\partial J / \partial x||")
-
 
     lines!(ax1, timestep1, dunorm12dv, label = L"||\partial J / \partial u(t)||")
     lines!(ax1, timestep1, dvnorm2, label = L"\partial J / \partial v(t)")
@@ -402,6 +405,7 @@ function create_adjoint_gif()
     # for j = 1:66:23964*3 # 100km run
     # for j = 1:87:31546 # 75km run
 
+
         blob = read(adj_fid[string(j)])
         adj_chkp = deserialize(blob)
 
@@ -420,6 +424,7 @@ function create_adjoint_gif()
         push!(dunorm, sum(temp.u.^2) / (127*128))
         push!(dvnorm, sum(temp.v.^2) / (127*128))
         push!(detanorm, sum(temp.η.^2) / (128 * 128))
+
 
         # frame(eta_anim, heatmap(temp.η',
         #     # title=L"\partial \mathcal{E}(t_f)/\partial u(%$j)",
@@ -659,3 +664,4 @@ function fd_plots()
     end
 
 end
+
