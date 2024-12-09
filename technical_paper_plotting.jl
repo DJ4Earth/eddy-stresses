@@ -26,16 +26,16 @@ function stuff()
     dunorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_dunorm_dividedbynxny_500m_1year_111424.jld2")
     dvnorm = load_object("./technicalpaper_timeaveragedobjective_starting3monthsin_dvnorm_dividedbynxny_500m_1year_111424.jld2")
 
-    timestep1 = 1:0.99726:360
+    timestep1 = 1:0.99726:364
     f = Figure(size = (1000, 500));
     ax1 = Axis(f[1, 1],
-        title = "Norm of adjoint derivative, 12-month integration with double viscosity, spinup also with double viscosity",
+        title = "Norm of adjoint derivative in 100km model, 12-month integration",
         xlabel = "t (days)",
         ylabel = L"||\partial J / \partial u||",
     )
-    timestep2 = 1:0.99726:360
+    timestep2 = 1:0.99726:364
     ax2 = Axis(f[2,1],
-    title = "Norm of adjoint derivative, 12-month integration with double viscosity, spinup also with double viscosity",
+    # title = "Norm of adjoint derivative in 100km, 12-month integration with double viscosity, spinup also with double viscosity",
     xlabel = "t (days)",
     # yscale=log10,
     ylabel = L"||\partial J / \partial v||",
@@ -380,7 +380,7 @@ end
 function create_adjoint_gif()
 
     # primal_fid = h5open("technicalpaper.h5")
-    adj_fid = h5open("./adjoint_technicalpaper_100km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_12months_float32_120324.h5")
+    adj_fid = h5open("./technicalpaper_datafiles/finaldatafiles/50km/adjoint_technicalpaper_50km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_everytimestep_12months_float32_120324.h5")
     primal_fid = h5open("./primal_technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_doubleviscosity_startingfromrest_everytimestep_500m_12months_float32_120324.h5")
     # states = ncread("../data_files_gamma0.3/1024_spinup/eta.nc", "eta")
 
@@ -398,7 +398,9 @@ function create_adjoint_gif()
     J = []
 
     # for j = 1:224:224*30*12
-    for j = 1:224:47927
+    for j = 1:224:47927 # 50 km run
+    # for j = 1:66:23964*3 # 100km run
+    # for j = 1:87:31546 # 75km run
 
         blob = read(adj_fid[string(j)])
         adj_chkp = deserialize(blob)
@@ -522,6 +524,137 @@ function energy_plot()
 
         lines!(ax, S.parameters.data[1:end-1])
         hlines!(ax, sum(S.parameters.data) / S.grid.nt)
+
+    end
+
+end
+
+function fd_plots()
+
+    # first generating and saving the unperturbed objective function over time
+    S_unperturbed = ShallowWaters.model_setup(
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        α=2,
+        nx=128,
+        Ndays=2*30
+        # initial_cond="ncfile",
+        # initpath="./run_0001/"
+    )
+
+    snaps = Int(floor(sqrt(S_unperturbed.grid.nt)))
+    revolve = Revolve{ShallowWaters.ModelSetup}(S_unperturbed.grid.nt,
+        snaps;
+        verbose=1,
+        gc=true,
+        write_checkpoints=false
+    )
+
+    J_unperturbed = checkpointed_integration(S_unperturbed, revolve)
+
+    # running and storing with a perturbed initial condition, still not using 
+    # autodiff or checkpointing
+
+    S_perturbed = ShallowWaters.model_setup(
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        α=2,
+        nx=128,
+        Ndays=2*30
+        # initial_cond="ncfile",
+        # initpath="./run_0001/"
+    )
+
+    # adjust the value of the perturbation here
+    perturbation = 1e-4
+    S_perturbed.Prog.u[62,20] += perturbation
+
+    revolve_perturbed = Revolve{ShallowWaters.ModelSetup}(S_perturbed.grid.nt,
+    snaps;
+    verbose=1,
+    gc=true,
+    write_checkpoints=true)
+
+    J_perturbed = checkpointed_integration(S_perturbed, revolve_perturbed)
+
+    t = S_unperturbed.grid.nt-224*30:S_unperturbed.grid.nt
+    adj_fid =  h5open("./technicalpaper_datafiles/finaldatafiles/30km/running_from_rest/adjoint_technicalpaper_timeavgobj_onlyfinalmonth_startingfromrest_everytimestep_500m_12months_float32_112024.h5")
+    rhs = []
+    lhs = []
+    for j = (S_unperturbed.grid.nt-224*30):S_unperturbed.grid.nt
+
+        push!(lhs, (S_perturbed.parameters.data[j] - S_unperturbed.parameters.data[j]) / perturbation)
+
+    end
+
+    final_adj = load_object("./technicalpaper_datafiles/finaldatafiles/30km/running_from_rest/technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_startingfromrest_finaladjoint_struct_500mdepth_2months_float32start_112024.jld2")
+    final_adj_nohalo = ShallowWaters.PrognosticVars{Float32}(
+        ShallowWaters.remove_halo(final_adj.Prog.u,
+        final_adj.Prog.v,
+        final_adj.Prog.η,
+        final_adj.Prog.sst,final_adj)...
+    )
+
+    for k = 1:224:S_unperturbed.grid.nt
+
+        blob = read(adj_fid[string(k)])
+        adj_chkp = deserialize(blob)
+
+        temp = ShallowWaters.PrognosticVars{Float32}(
+            ShallowWaters.remove_halo(adj_chkp.Prog.u,
+            adj_chkp.Prog.v,
+            adj_chkp.Prog.η,
+            adj_chkp.Prog.sst,adj_chkp)...
+        )
+        push!(rhs, temp.u[62,20])#*perturbation)
+
+    end
+
+    steps = [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+
+    diffs = []
+
+    for s in steps
+
+        S_inner = ShallowWaters.model_setup(
+            output=false,
+            L_ratio=1,
+            g=9.81,
+            H=500,
+            wind_forcing_x="double_gyre",
+            Lx=3840e3,
+            seasonal_wind_x=false,
+            topography="flat",
+            bc="nonperiodic",
+            bottom_drag="quadratic",
+            α=2,
+            nx=128,
+            Ndays=2*30
+            # initial_cond="ncfile",
+            # initpath="./run_0001/"
+        )
+
+        S_inner.Prog.u[62,20] += s
+
+        J_inner = checkpointed_integration(S_inner, revolve_perturbed)
+
+        push!(diffs, (J_inner - J_unperturbed) / s)
 
     end
 

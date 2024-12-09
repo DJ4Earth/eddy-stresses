@@ -34,7 +34,7 @@ function checkpointed_integration(S, scheme)
     @unpack nt,dtint = S.grid
     @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
 
-    S.parameters.data = zeros(S.grid.nt + 1)
+    S.parameters.data = zeros(S.grid.nt)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(Diag.VolumeFluxes.h,η,S.forcing.H)
@@ -68,7 +68,8 @@ end
 function loop(S,scheme)
 
 
-    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+    # @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+    for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
         Prog = S.Prog
@@ -193,12 +194,14 @@ function loop(S,scheme)
 
             energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
-            S.parameters.J += energy_lr
+            S.parameters.J = S.parameters.J + energy_lr
+            # storing the objective function over time
+            S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
 
         end
         #############################################
 
-        S.parameters.data[S.parameters.i] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
+        # S.parameters.data[S.parameters.i] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
         # Copy back from substeps
         copyto!(u,u0)
