@@ -77,8 +77,8 @@ end
 function loop(S,scheme)
 
 
-    # @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
-    for S.parameters.i = 1:S.grid.nt
+    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+    # for S.parameters.i = 1:S.grid.nt
 
 
         Diag = S.Diag
@@ -205,6 +205,7 @@ function loop(S,scheme)
             energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
             S.parameters.J = S.parameters.J + energy_lr
+
             # storing the objective function over time
             S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
         

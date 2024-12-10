@@ -4,8 +4,6 @@ without all of this also running. The function deserialize opens any saved check
 """
 
 
-
-
 function deserialize(x)
     s = IOBuffer(x)
     Serialization.deserialize(s)
