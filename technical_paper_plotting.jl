@@ -398,27 +398,27 @@ function create_adjoint_gif()
 
     J = []
 
-    # for j = 1:224:224*30*12
-    for j = 1:224:47927 # 50 km run
+    for j = 1:31
+    # for j = 1:224:47927 # 50 km run
     # for j = 1:66:23964*3 # 100km run
     # for j = 1:87:31546 # 75km run
 
 
-        blob = read(adj_fid[string(j)])
-        adj_chkp = deserialize(blob)
+        # blob = read(adj_fid[string(j)])
+        # adj_chkp = deserialize(blob)
 
         # push!(J, primal_chkp.parameters.J)
 
 
         temp = ShallowWaters.PrognosticVars{Float32}(
-            ShallowWaters.remove_halo(adj_chkp.Prog.u,
-            adj_chkp.Prog.v,
-            adj_chkp.Prog.η,
-            adj_chkp.Prog.sst,adj_chkp)...
+            ShallowWaters.remove_halo(adj_chkp[j].Prog.u,
+            adj_chkp[j].Prog.v,
+            adj_chkp[j].Prog.η,
+            adj_chkp[j].Prog.sst,adj_chkp[j])...
         )
 
-        push!(dcDnorm, sum(adj_chkp.constants.cDfield.^2) / 128^2)
-        push!(dFxnorm, sum(adj_chkp.forcing.Fx.^2) / (127 * 128))
+        push!(dcDnorm, sum(adj_chkp[j].constants.cDfield.^2) / 128^2)
+        push!(dFxnorm, sum(adj_chkp[j].forcing.Fx.^2) / (127 * 128))
         push!(dunorm, sum(temp.u.^2) / (127*128))
         push!(dvnorm, sum(temp.v.^2) / (127*128))
         push!(detanorm, sum(temp.η.^2) / (128 * 128))
