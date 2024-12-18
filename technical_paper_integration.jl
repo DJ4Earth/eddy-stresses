@@ -19,7 +19,12 @@ using Parameters
 using Optim
 using LaTeXStrings
 
-function checkpointed_integration(S, scheme)
+
+function set_value(S)
+    S.parameters.νB *= 1.0
+end
+
+function checkpointed_integration(S, scheme, vB)
 
     # setup
     Diag = S.Diag
@@ -68,6 +73,8 @@ function checkpointed_integration(S, scheme)
 
     # run integration loop with checkpointing
     loop(S, scheme)
+
+    set_value(S)
 
     return S.parameters.J
 
@@ -572,7 +579,7 @@ function onestep(S, step)
         S.Prog.η,
         S.Prog.sst,S)...)
 
-        if step in (S.grid.nt - 30*224):1:S.grid.nt
+        if step in (S.grid.nt - 7*224):1:S.grid.nt
 
             energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 

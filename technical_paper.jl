@@ -167,7 +167,6 @@ function enzyme_derivatives(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters
     ) where {T<:AbstractFloat}
 
-    states = []
     P = ShallowWaters.Parameter(T=T;kwargs...)
     S = ShallowWaters.model_setup(P)
 
@@ -218,18 +217,21 @@ function enzyme_derivatives(::Type{T}=Float32;     # number format
     # store initial conditions of sst for relaxation
     copyto!(Diag.SemiLagrange.sst_ref,sst)
 
+    states_for_enzyme = []
     for j = 1:S.grid.nt
-        _ = onestep(S, j)
+        push!(states_for_enzyme, deepcopy(S))
         push!(states, deepcopy(S))
+        _ = onestep(S, j)
     end
 
-    dS = Enzyme.make_zero(Core.Typeof(S), IdDict(), S)
+    dS = Enzyme.make_zero(S)
     derivatives = []
 
     # run the backwards problem and save all the adjoint computed derivatives
-    for k = S.grid.nt-1:-1:1
+    for k = Base.reverse(1:S.grid.nt)
+        St = pop!(states_for_enzyme)
 
-        autodiff(Enzyme.Reverse, onestep, Duplicated(states[k+1], dS), Const(k))
+        autodiff(Enzyme.Reverse, onestep, Duplicated(St, dS), Const(k))
 
         if k in 1:224:S.grid.nt
             push!(derivatives, deepcopy(dS))
