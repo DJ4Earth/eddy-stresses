@@ -579,7 +579,7 @@ function onestep(S, step)
         S.Prog.η,
         S.Prog.sst,S)...)
 
-        if step in (S.grid.nt - 7*224):1:S.grid.nt
+        if step in (S.grid.nt - 7*224):1:S.grid.nt # currently accumulating over one week of the one month integration
 
             energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
@@ -599,7 +599,7 @@ function onestep(S, step)
         copyto!(η,η0)
 
     ##### use if time-averaging the objective function #######
-    S.parameters.J = S.parameters.J / length((S.grid.nt - 30*224):1:S.grid.nt)
+    S.parameters.J = S.parameters.J / length((S.grid.nt - 7*224):1:S.grid.nt) # time-averaging
     ##########################################################
 
     return S.parameters.J
