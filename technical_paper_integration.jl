@@ -6,7 +6,6 @@ include("technical_paper.jl") we never re-include them. This should help with En
 When running the experiments for the technical paper only ever include("technical_paper_integration.jl") once
 """
 
-
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 using Enzyme
@@ -20,10 +19,14 @@ using Optim
 using LaTeXStrings
 
 
+# don't quite remember what this is from, but presumably from computing 
+# individual derivatives using Enzyme and saving them when I don't use 
+# checkpointing
 function set_value(S)
     S.parameters.νB *= 1.0
 end
 
+# for running with checkpointing
 function checkpointed_integration(S, scheme, vB)
 
     # setup
@@ -242,7 +245,8 @@ function loop(S,scheme)
 
 end
 
-function checkpointed_integration(S)
+# for running without checkpointing
+function integration(S)
 
     # setup
     Diag = S.Diag
@@ -290,7 +294,7 @@ function checkpointed_integration(S)
     # store initial conditions of sst for relaxation
     copyto!(Diag.SemiLagrange.sst_ref,sst)
 
-    # run integration loop with checkpointing
+    # run integration loop without checkpointing
     loop(S)
 
     return S.parameters.J
@@ -300,6 +304,7 @@ end
 function loop(S)
 
     t = 0
+    i = S.parameters.i
     for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
@@ -411,7 +416,7 @@ function loop(S)
         # TRACER ADVECTION
         u0rhs = convert(Diag.PrognosticVarsRHS.u,u0) 
         v0rhs = convert(Diag.PrognosticVarsRHS.v,v0)
-        ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
+        ShallowWaters.tracer!(S.parameters.i,u0rhs,v0rhs,Prog,Diag,S)
 
         #### Energy objective function, time averaged
         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
@@ -438,7 +443,7 @@ function loop(S)
         copyto!(v,v0)
         copyto!(η,η0)
 
-        push!(data, deepcopy(S))
+        # push!(S.parameters.data, deepcopy(S))
 
     end
 
@@ -460,6 +465,7 @@ function loop(S)
 
 end
 
+# for running a single step of integration
 function onestep(S, step)
 
         Diag = S.Diag

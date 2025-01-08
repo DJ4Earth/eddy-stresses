@@ -24,7 +24,8 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
         write_checkpoints_period = 224
     )
 
-    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+    # autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+    autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
 
     enzyme_deriv = dS.Prog.u[72,120]
 
@@ -42,7 +43,8 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
         write_checkpoints=false
     )
 
-    J_outer = checkpointed_integration(S_outer, revolve)
+    # J_outer = checkpointed_integration(S_outer, revolve)
+    J_outer = integration(S_outer)
 
     diffs = []
 
@@ -52,7 +54,8 @@ function run_adjoint_plusfd(::Type{T}=Float32;     # number format
 
         S_inner.Prog.u[72,120] += s
 
-        J_inner = checkpointed_integration(S_inner, revolve)
+        # J_inner = checkpointed_integration(S_inner, revolve)
+        J_inner = integration(S_inner)
 
         push!(diffs, (J_inner - J_outer) / s)
 
@@ -79,32 +82,33 @@ function finite_difference_only(dS,x_coord,y_coord;kwargs...)
         write_checkpoints=false
     )
 
-    J_outer = checkpointed_integration(S_outer, revolve)
+    J_outer = integration(S_outer)
 
     diffs = []
 
     for s in steps
 
-        S_inner = ShallowWaters.model_setup(
-            output=false,
-            L_ratio=1,
-            g=9.81,
-            H=500,
-            wind_forcing_x="double_gyre",
-            Lx=3840e3,
-            seasonal_wind_x=false,
-            topography="flat",
-            bc="nonperiodic",
-            bottom_drag="quadratic",
-            α=2,
-            # νB=1000,
-            nx=128,
-            Ndays=10
+        S_inner = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        α=2,
+        # νB=1000,
+        nx=128,
+        Ndays=30,
+        # initial_cond="ncfile",
+        # initpath="./run_0001/"
         )
-
         S_inner.Prog.u[x_coord, y_coord] += s
 
-        J_inner = checkpointed_integration(S_inner, revolve)
+        # J_inner = checkpointed_integration(S_inner, revolve)
+        J_inner = integration(S_inner)
 
         push!(diffs, (J_inner - J_outer) / s)
 
@@ -114,7 +118,7 @@ function finite_difference_only(dS,x_coord,y_coord;kwargs...)
 
 end
 
-S10onecp, dS10onecp, diffs10onecp, enzyme_deriv10onecp = run_adjoint_plusfd(
+S30, dS30, diffs30, enzyme_deriv30 = run_adjoint_plusfd(
     output=false,
     L_ratio=1,
     g=9.81,
@@ -137,7 +141,23 @@ S10onecp, dS10onecp, diffs10onecp, enzyme_deriv10onecp = run_adjoint_plusfd(
 
 # 72, 120 is the entry with the largest relative error after 10 days
 
-# bigdiffsbiggest, bigderivbiggest = finite_difference_only(dS10cp, 130, 130)
+diffs, deriv = finite_difference_only(dS30, 20, 20, output=false,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    α=2,
+    # νB=1000,
+    nx=128,
+    Ndays=30,
+    # initial_cond="ncfile",
+    # initpath="./run_0001/"
+)
 
 # @save "technicalpaper_75km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_12months_120524.jld2" S
 # @save "technicalpaper_75km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_12months_120524.jld2" dS
@@ -243,21 +263,21 @@ function enzyme_derivatives(::Type{T}=Float32;     # number format
 
 end
 
-S, dS, derivatives, states = enzyme_derivatives(
-    output=false,
-    L_ratio=1,
-    g=9.81,
-    H=500,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    α=2,
-    # νB=1000,
-    nx=128,
-    Ndays=30,
-    # initial_cond="ncfile",
-    # initpath="./run_0001/"
-);
+# S, dS, derivatives, states = enzyme_derivatives(
+#     output=false,
+#     L_ratio=1,
+#     g=9.81,
+#     H=500,
+#     wind_forcing_x="double_gyre",
+#     Lx=3840e3,
+#     seasonal_wind_x=false,
+#     topography="flat",
+#     bc="nonperiodic",
+#     bottom_drag="quadratic",
+#     α=2,
+#     # νB=1000,
+#     nx=128,
+#     Ndays=30,
+#     # initial_cond="ncfile",
+#     # initpath="./run_0001/"
+# );
