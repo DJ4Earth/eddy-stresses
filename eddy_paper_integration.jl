@@ -1,24 +1,4 @@
 
-"""
-Placing the checkpointed integraton, loop, and all of the packages here, so that when running 
-include("technical_paper.jl") we never re-include them. This should help with Enzyme compile times
-
-When running the experiments for the technical paper only ever include("technical_paper_integration.jl") once
-"""
-
-include("../ShallowWaters.jl/src/ShallowWaters.jl")
-using .ShallowWaters
-using Enzyme
-using Checkpointing, HDF5, Serialization
-using NetCDF, JLD2, CairoMakie
-
-Enzyme.API.looseTypeAnalysis!(true)
-
-using Parameters
-using Optim
-using LaTeXStrings
-
-
 # don't quite remember what this is from, but presumably from computing 
 # individual derivatives using Enzyme and saving them when I don't use 
 # checkpointing
@@ -27,7 +7,7 @@ function set_value(S)
 end
 
 # for running with checkpointing
-function checkpointed_integration(S, scheme, vB)
+function checkpointed_integration(S, scheme)
 
     # setup
     Diag = S.Diag
