@@ -1,7 +1,7 @@
 """
 runs just the adjoint computation
 """
-S30, dS20 = run_adjoint(
+S30, dS30 = run_adjoint(
     output=false,
     L_ratio=1,
     g=9.81,
@@ -13,10 +13,11 @@ S30, dS20 = run_adjoint(
     bc="nonperiodic",
     bottom_drag="quadratic",
     nn_forcing_dissipation=true,
+    handwritten=true,
     α=2,
     # νB=1000,
     nx=128,
-    Ndays=7,
+    Ndays=30,
     # initial_cond="ncfile",
     # initpath="./run_0001/"
 )

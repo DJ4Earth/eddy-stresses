@@ -24,12 +24,12 @@ function cost_eval(param_guess)
     nx=128,
     Ndays=30,
     data=data,
-    data_steps=data_steps,
-    weights_diagonal=reshape(param_guess[1:44], 2, 22),
-    weights_offdiagonal = reshape(param_guess[45:end], 1, 17)
+    data_steps=data_steps
     # initial_cond="ncfile",
     # initpath="./run_0001/"
     )
+    S.Diag.NNVars.weights_corner=reshape(param_guess[1:44], 2, 22)
+    S.Diag.NNVars.weights_center=reshape(param_guess[45:end], 1, 17)
 
     # snaps = Int(floor(sqrt(S.grid.nt)))
     # revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
@@ -71,12 +71,12 @@ function gradient_eval(G, param_guess)
     nx=128,
     Ndays=30,
     data=data,
-    data_steps=data_steps,
-    weights_diagonal=reshape(param_guess[1:44], 2, 22),
-    weights_offdiagonal = reshape(param_guess[45:end], 1, 17)
+    data_steps=data_steps
     # initial_cond="ncfile",
     # initpath="./run_0001/"
     )
+    S.Diag.NNVars.weights_corner=reshape(param_guess[1:44], 2, 22)
+    S.Diag.NNVars.weights_center=reshape(param_guess[45:end], 1, 17)
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     # snaps = Int(floor(sqrt(S.grid.nt)))

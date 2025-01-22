@@ -3,12 +3,11 @@
 Placing the checkpointed integraton, loop, experiment functions, etc. here in one place
 """
 
-include("../ShallowWaters.jl/src/ShallowWaters.jl")
-using .ShallowWaters
 using Enzyme
+Enzyme.Compiler.VERBOSE_ERRORS[] = true
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
-using Lux
+using Lux, Random
 
 Enzyme.API.looseTypeAnalysis!(true)
 
@@ -16,5 +15,9 @@ using Parameters
 using Optim
 using LaTeXStrings
 
+include("../ShallowWaters.jl/src/ShallowWaters.jl")
+using .ShallowWaters
+
 include("eddy_paper_integration.jl")
 include("eddy_paper_optim.jl")
+include("eddy_paper_experiment_functions.jl")
