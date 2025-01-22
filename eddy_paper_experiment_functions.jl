@@ -143,8 +143,9 @@ function finite_difference_only(dS,x_coord,y_coord;kwargs...)
 
 end
 
-# trying to save individual derivatives from Enzyme
+"""
 
+"""
 function enzyme_derivatives(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters
     ) where {T<:AbstractFloat}
@@ -224,7 +225,6 @@ function enzyme_derivatives(::Type{T}=Float32;     # number format
     return S, dS, derivatives, states
 
 end
-
 
 """
 Optim experiment functions

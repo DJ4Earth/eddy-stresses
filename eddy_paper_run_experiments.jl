@@ -16,7 +16,7 @@ S30, dS20 = run_adjoint(
     α=2,
     # νB=1000,
     nx=128,
-    Ndays=30,
+    Ndays=7,
     # initial_cond="ncfile",
     # initpath="./run_0001/"
 )
@@ -26,8 +26,10 @@ runs the optim experiment
 """
 obj_fg = Optim.only_fg!(FG)
 
+param_guess = zeros(61)
+
 result = Optim.optimize(obj_fg,
-[0.3],
+param_guess,
 Optim.LBFGS(),
 Optim.Options(
 iterations = 1)

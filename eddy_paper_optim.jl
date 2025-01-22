@@ -25,8 +25,8 @@ function cost_eval(param_guess)
     Ndays=30,
     data=data,
     data_steps=data_steps,
-    param_guess[1] = weights_diagonal,
-    param_guess[2] = weights_offdiagonal
+    weights_diagonal=reshape(param_guess[1:44], 2, 22),
+    weights_offdiagonal = reshape(param_guess[45:end], 1, 17)
     # initial_cond="ncfile",
     # initpath="./run_0001/"
     )
@@ -72,8 +72,8 @@ function gradient_eval(G, param_guess)
     Ndays=30,
     data=data,
     data_steps=data_steps,
-    param_guess[1] = weights_diagonal,
-    param_guess[2] = weights_offdiagonal
+    weights_diagonal=reshape(param_guess[1:44], 2, 22),
+    weights_offdiagonal = reshape(param_guess[45:end], 1, 17)
     # initial_cond="ncfile",
     # initpath="./run_0001/"
     )

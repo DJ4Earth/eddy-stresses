@@ -404,7 +404,7 @@ function loop(S)
         S.Prog.η,
         S.Prog.sst,S)...)
 
-        if S.parameters.i in (S.grid.nt - 30*224):1:S.grid.nt
+        if S.parameters.i in (S.grid.nt - 7*224):1:S.grid.nt
 
             energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
