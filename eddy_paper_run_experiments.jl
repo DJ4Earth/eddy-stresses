@@ -27,7 +27,7 @@ runs the optim experiment
 """
 obj_fg = Optim.only_fg!(FG)
 
-param_guess = zeros(61)
+param_guess = 0.001.*randn(61)
 
 result = Optim.optimize(obj_fg,
 param_guess,

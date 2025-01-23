@@ -8,26 +8,28 @@ function cost_eval(param_guess)
     data = energy_high_resolution[data_steps[1]*grid_scale:225*grid_scale:data_steps[end]*grid_scale]
 
     S = ShallowWaters.model_setup(
-    output=false,
-    L_ratio=1,
-    g=9.81,
-    H=500,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    nn_forcing_dissipation=true,
-    α=2,
-    # νB=1000,
-    nx=128,
-    Ndays=30,
-    data=data,
-    data_steps=data_steps
-    # initial_cond="ncfile",
-    # initpath="./run_0001/"
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        nn_forcing_dissipation=true,
+        handwritten=false,
+        α=2,
+        # νB=1000,
+        nx=128,
+        Ndays=1,
+        data_steps=data_steps,
+        data=data,
+        initial_cond="ncfile",
+        initpath="./spinup_files/128_10yearspinup_fromrest_nozbforcing_noslipbc"
     )
+
     S.Diag.NNVars.weights_corner=reshape(param_guess[1:44], 2, 22)
     S.Diag.NNVars.weights_center=reshape(param_guess[45:end], 1, 17)
 
@@ -55,26 +57,28 @@ function gradient_eval(G, param_guess)
     data = energy_high_resolution[data_steps[1]*grid_scale:225*grid_scale:data_steps[end]*grid_scale]
 
     S = ShallowWaters.model_setup(
-    output=false,
-    L_ratio=1,
-    g=9.81,
-    H=500,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    nn_forcing_dissipation=true,
-    α=2,
-    # νB=1000,
-    nx=128,
-    Ndays=30,
-    data=data,
-    data_steps=data_steps
-    # initial_cond="ncfile",
-    # initpath="./run_0001/"
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        nn_forcing_dissipation=true,
+        handwritten=false,
+        α=2,
+        # νB=1000,
+        nx=128,
+        Ndays=1,
+        data_steps=data_steps,
+        data=data,
+        initial_cond="ncfile",
+        initpath="./spinup_files/128_10yearspinup_fromrest_nozbforcing_noslipbc"
     )
+
     S.Diag.NNVars.weights_corner=reshape(param_guess[1:44], 2, 22)
     S.Diag.NNVars.weights_center=reshape(param_guess[45:end], 1, 17)
 
@@ -92,7 +96,7 @@ function gradient_eval(G, param_guess)
     Duplicated(S, dS)
     )
 
-    G[1] = dS.parameters.γ₀
+    G = [reshape(dS.Diag.NNVars.weights_corner, 44); reshape(dS.Diag.NNVars.weights_center, 17)]
 
     return nothing
 
