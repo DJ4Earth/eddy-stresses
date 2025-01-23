@@ -13,11 +13,11 @@ S30, dS30 = run_adjoint(
     bc="nonperiodic",
     bottom_drag="quadratic",
     nn_forcing_dissipation=true,
-    handwritten=true,
+    handwritten=false,
     α=2,
     # νB=1000,
     nx=128,
-    Ndays=30,
+    Ndays=1,
     # initial_cond="ncfile",
     # initpath="./run_0001/"
 )
