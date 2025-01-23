@@ -17,7 +17,7 @@ S30, dS30 = run_adjoint(
     α=2,
     # νB=1000,
     nx=128,
-    Ndays=1,
+    Ndays=30,
     # initial_cond="ncfile",
     # initpath="./run_0001/"
 )
@@ -65,23 +65,26 @@ runs both the adjoint problem and a finite difference check in one go
 """
 runs the finite difference check, requires prior computation of derivatives with enzyme
 """
-# diffs, deriv = finite_difference_only(dS30, 20, 20, output=false,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     # νB=1000,
-#     nx=128,
-#     Ndays=30,
-#     # initial_cond="ncfile",
-#     # initpath="./run_0001/"
-# )
+diffs, deriv = finite_difference_only(dS30, 20, 20,
+    output=false,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    nn_forcing_dissipation=true,
+    handwritten=false,
+    α=2,
+    # νB=1000,
+    nx=128,
+    Ndays=30,
+    # initial_cond="ncfile",
+    # initpath="./run_0001/"
+)
 
 # @save "technicalpaper_75km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_12months_120524.jld2" S
 # @save "technicalpaper_75km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_12months_120524.jld2" dS
@@ -90,42 +93,42 @@ runs the finite difference check, requires prior computation of derivatives with
 """
 For saving all derivatives computed with Enzyme (runs the backwards pass step by step)
 """
-# S, dS, derivatives, states = enzyme_derivatives(
-#     output=false,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     # νB=1000,
-#     nx=128,
-#     Ndays=30,
-#     # initial_cond="ncfile",
-#     # initpath="./run_0001/"
-# );
+S, dS, derivatives, states = enzyme_derivatives(
+    output=false,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    α=2,
+    # νB=1000,
+    nx=128,
+    Ndays=30,
+    # initial_cond="ncfile",
+    # initpath="./run_0001/"
+)
 
 """
 Just runs the shallow water model
 """
-# _, energy = ShallowWaters.run_model(
-#     output=true,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     nx=50,
-#     Ndays=12*30*10
-#     # initial_cond="ncfile",
-#     # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
-# )
+_, energy = ShallowWaters.run_model(
+    output=true,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    α=2,
+    nx=50,
+    Ndays=12*30*10
+    # initial_cond="ncfile",
+    # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
+)

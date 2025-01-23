@@ -16,7 +16,7 @@ function run_adjoint(::Type{T}=Float32;
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        1;
+        snaps;
         verbose=1,
         gc=true,
         write_checkpoints=false,
@@ -25,7 +25,7 @@ function run_adjoint(::Type{T}=Float32;
     )
 
     # autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-    autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
+    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
 
     return S, dS
 
@@ -41,7 +41,7 @@ function run_adjoint_plusfd(::Type{T}=Float32;
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        1;
+        snaps;
         verbose=1,
         gc=true,
         write_checkpoints=false,
