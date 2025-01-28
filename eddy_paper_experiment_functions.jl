@@ -24,8 +24,8 @@ function run_adjoint(::Type{T}=Float32;
         write_checkpoints_period = 224
     )
 
-    # autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
     autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+    # autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
 
     return S, dS
 

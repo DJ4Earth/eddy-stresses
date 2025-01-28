@@ -21,3 +21,5 @@ using .ShallowWaters
 include("eddy_paper_integration.jl")
 include("eddy_paper_optim.jl")
 include("eddy_paper_experiment_functions.jl")
+
+include("eddy_paper_run_experiments.jl")
