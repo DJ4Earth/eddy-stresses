@@ -1,6 +1,4 @@
-using Reactant
 
-Reactant.allowscalar(true)
 
 """
 runs just the adjoint computation

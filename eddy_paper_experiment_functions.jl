@@ -39,6 +39,8 @@ function run_adjoint(::Type{T}=Float32;
     S = Reactant.to_rarray(S)
     dS = Reactant.to_rarray(dS)
     compiled_outer = @compile outer(S, dS)
+
+    compiled_outer = outer
     compiled_outer(S, dS)
     return S, dS
 
