@@ -14,6 +14,9 @@ Enzyme.API.looseTypeAnalysis!(true)
 using Parameters
 using Optim
 using LaTeXStrings
+using Reactant
+
+Reactant.allowscalar(true)
 
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters

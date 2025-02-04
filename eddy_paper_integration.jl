@@ -1,3 +1,4 @@
+using Reactant
 
 # don't quite remember what this is from, but presumably from computing 
 # individual derivatives using Enzyme and saving them when I don't use 
@@ -285,8 +286,9 @@ function loop(S)
 
     t = 0
     i = S.parameters.i
-    for S.parameters.i = 1:S.grid.nt
-
+    nt = S.grid.nt
+    @trace for i = 1:nt
+        S.parameters.i = i
         Diag = S.Diag
         Prog = S.Prog
 

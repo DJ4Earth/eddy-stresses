@@ -1,3 +1,7 @@
+using Reactant
+
+Reactant.allowscalar(true)
+
 """
 runs just the adjoint computation
 """
@@ -12,12 +16,12 @@ S30, dS30 = run_adjoint(
     topography="flat",
     bc="nonperiodic",
     bottom_drag="quadratic",
-    nn_forcing_dissipation=true,
+    nn_forcing_dissipation=false,
     handwritten=false,
     α=2,
     # νB=1000,
     nx=128,
-    Ndays=10,
+    Ndays=30,
     # initial_cond="ncfile",
     # initpath="./run_0001/"
 )

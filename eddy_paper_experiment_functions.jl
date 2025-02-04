@@ -6,14 +6,22 @@ Three files for technical paper:
     3) eddy_paper.jl - running experiments
 """
 
+
+
+function outer(S, dS)
+    autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
+    nothing
+end
+
 function run_adjoint(::Type{T}=Float32;
     kwargs...
     ) where {T<:AbstractFloat}
 
     P = ShallowWaters.Parameter(T=T;kwargs...)
+    @show typeof(P)
     S = ShallowWaters.model_setup(P)
 
-    dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
+    dS = Enzyme.Compiler.make_zero(S)
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
         snaps;
@@ -24,9 +32,14 @@ function run_adjoint(::Type{T}=Float32;
         write_checkpoints_period = 224
     )
 
-    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
+    # autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
     # autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
+    # outer()
 
+    S = Reactant.to_rarray(S)
+    dS = Reactant.to_rarray(dS)
+    compiled_outer = @compile outer(S, dS)
+    compiled_outer(S, dS)
     return S, dS
 
 end
@@ -37,6 +50,9 @@ function run_adjoint_plusfd(::Type{T}=Float32;
 
     P = ShallowWaters.Parameter(T=T;kwargs...)
     S = ShallowWaters.model_setup(P)
+
+    S.Diag.NNVars.weights_corner=0.01 .* randn(2, 22)
+    S.Diag.NNVars.weights_center=0.01 .* randn(1, 17)
 
     dS = Enzyme.Compiler.make_zero(Core.Typeof(S), IdDict(), S)
     snaps = Int(floor(sqrt(S.grid.nt)))
