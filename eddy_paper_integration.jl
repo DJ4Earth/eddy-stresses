@@ -260,9 +260,9 @@ function integration(S)
     ShallowWaters.Ixy!(Diag.Vorticity.h_q,Diag.VolumeFluxes.h)
 
     # calculate PV terms for initial conditions
-    urhs = convert(Diag.PrognosticVarsRHS.u,u)
-    vrhs = convert(Diag.PrognosticVarsRHS.v,v)
-    ηrhs = convert(Diag.PrognosticVarsRHS.η,η)
+    urhs = ShallowWaters.convert(Diag.PrognosticVarsRHS.u,u)
+    vrhs = ShallowWaters.convert(Diag.PrognosticVarsRHS.v,v)
+    ηrhs = ShallowWaters.convert(Diag.PrognosticVarsRHS.η,η)
 
     ShallowWaters.advection_coriolis!(urhs,vrhs,ηrhs,Diag,S)
     ShallowWaters.PVadvection!(Diag,S)
@@ -401,21 +401,21 @@ function loop(S)
         ShallowWaters.tracer!(S.parameters.i,u0rhs,v0rhs,Prog,Diag,S)
 
         #### Energy objective function, time averaged
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
-        S.Prog.v,
-        S.Prog.η,
-        S.Prog.sst,S)...)
+        # temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(S.Prog.u,
+        # S.Prog.v,
+        # S.Prog.η,
+        # S.Prog.sst,S)...)
 
-        if S.parameters.i in (S.grid.nt - 7*224):1:S.grid.nt
+        # if S.parameters.i in (S.grid.nt - 7*224):1:S.grid.nt
 
-            energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
+        #     energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)
 
-            S.parameters.J = S.parameters.J + energy_lr
+        #     S.parameters.J = S.parameters.J + energy_lr
 
-            # storing the objective function over time
-            # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        #     # storing the objective function over time
+        #     # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
         
-        end
+        # end
         #############################################
 
         # S.parameters.data[S.parameters.i] = (sum(temp.u.^2) + sum(temp.v.^2)) / (S.grid.nx * S.grid.ny)

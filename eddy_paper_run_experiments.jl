@@ -19,7 +19,7 @@ S30, dS30 = run_adjoint(
     α=2,
     # νB=1000,
     nx=128,
-    Ndays=30,
+    Ndays=1,
     # initial_cond="ncfile",
     # initpath="./run_0001/"
 )
