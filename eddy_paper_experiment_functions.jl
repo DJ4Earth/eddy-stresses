@@ -6,8 +6,6 @@ Three files for technical paper:
     3) eddy_paper.jl - running experiments
 """
 
-
-
 function outer(S, dS)
     autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
     nothing
