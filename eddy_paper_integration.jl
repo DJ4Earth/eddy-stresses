@@ -67,12 +67,13 @@ end
 function loop(S,scheme)
 
     t = 0
-    i = S.parameters.i
-    @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
+    # i = S.parameters.i
+    @trace for j = 1:S.grid.nt
+    # @checkpoint_struct scheme S for S.parameters.i = 1:S.grid.nt
 
         Diag = S.Diag
         Prog = S.Prog
-
+        S.parameters.i = j
         @unpack u,v,η,sst = Prog
         @unpack u0,v0,η0 = Diag.RungeKutta
         @unpack u1,v1,η1 = Diag.RungeKutta
