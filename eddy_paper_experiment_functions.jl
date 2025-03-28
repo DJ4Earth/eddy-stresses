@@ -6,8 +6,8 @@ Three files for technical paper:
     3) eddy_paper.jl - running experiments
 """
 
-function outer(S, dS)
-    autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
+function outer(S, dS, revolve)
+    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
     nothing
 end
 
@@ -37,10 +37,10 @@ function run_adjoint(::Type{T}=Float32;
     S = Reactant.to_rarray(S)
     dS = Reactant.to_rarray(dS)
     revolve = Reactant.to_rarray(revolve)
-    compiled_outer = @compile outer(S, dS)
+    compiled_outer = @compile outer(S, dS, revolve)
 
     compiled_outer = outer
-    compiled_outer(S, dS)
+    compiled_outer(S, dS, revolve)
     return S, dS
 
 end
