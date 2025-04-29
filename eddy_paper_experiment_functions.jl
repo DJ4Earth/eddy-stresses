@@ -1,50 +1,3 @@
-"""
-Three files for technical paper:
-    1) eddy_paper_integration.jl - contains the time stepping loop, checkpointed
-        only include once
-    2) eddy_paper_plotting.jl - just a bunch of random plots
-    3) eddy_paper.jl - running experiments
-"""
-
-function outer(S, dS, revolve)
-    autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-    nothing
-end
-
-function run_adjoint(::Type{T}=Float32;
-    kwargs...
-    ) where {T<:AbstractFloat}
-
-    P = ShallowWaters.Parameter(T=T;kwargs...)
-    @show typeof(P)
-    S = ShallowWaters.model_setup(P)
-
-    dS = Enzyme.Compiler.make_zero(S)
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve{ShallowWaters.ModelSetup}(S.grid.nt,
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "technicalpaper_checkingderivatives_30dayrun_withcheckpointing_120924",
-        write_checkpoints_period = 224
-    )
-
-    # autodiff(Enzyme.ReverseWithPrimal, checkpointed_integration, Duplicated(S, dS), Const(revolve))
-    # autodiff(Enzyme.ReverseWithPrimal, integration, Duplicated(S, dS))
-    # outer()
-
-    S = Reactant.to_rarray(S)
-    dS = Reactant.to_rarray(dS)
-    revolve = Reactant.to_rarray(revolve)
-    compiled_outer = @compile outer(S, dS, revolve)
-
-    compiled_outer = outer
-    compiled_outer(S, dS, revolve)
-    return S, dS
-
-end
-
 function run_adjoint_plusfd(::Type{T}=Float32;
     kwargs...
     ) where {T<:AbstractFloat}
@@ -161,7 +114,7 @@ function finite_difference_only(dS,x_coord,y_coord;kwargs...)
 end
 
 """
-
+just computes the derivatives and stores them
 """
 function enzyme_derivatives(::Type{T}=Float32;     # number format
     kwargs...                               # all additional parameters

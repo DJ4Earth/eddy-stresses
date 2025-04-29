@@ -2,8 +2,6 @@
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
 without all of this also running. The function deserialize opens any saved checkpoints/deprecated now
 """
-
-
 function deserialize(x)
     s = IOBuffer(x)
     Serialization.deserialize(s)

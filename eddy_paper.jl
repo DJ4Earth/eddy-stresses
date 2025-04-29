@@ -14,15 +14,11 @@ Enzyme.API.looseTypeAnalysis!(true)
 using Parameters
 using Optim
 using LaTeXStrings
-using Reactant
-
-Reactant.allowscalar(true)
 
 include("../ShallowWaters.jl/src/ShallowWaters.jl")
 using .ShallowWaters
 
-include("eddy_paper_integration.jl")
+include("exp1_timeavgenergy_integration.jl")
+include("exp1_run.jl")
 include("eddy_paper_optim.jl")
 include("eddy_paper_experiment_functions.jl")
-
-include("eddy_paper_run_experiments.jl")
