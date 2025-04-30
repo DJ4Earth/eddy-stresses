@@ -10,8 +10,7 @@ using Parameters
 using Optim
 using LaTeXStrings
 
-include("../ShallowWaters.jl/src/ShallowWaters.jl")
-using .ShallowWaters
+using ShallowWaters
 
 mutable struct exp1_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
@@ -212,7 +211,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
-    
+
     end
 
     ##### time-averaging the objective function #######
@@ -298,8 +297,10 @@ function exp1_compute_gradient(G, data, data_steps, Ndays)
 
     # Get gradient
     @unpack u, v, η = dchkp.S.Prog
-    G .= [vec(u); vec(v); vec(η)]
+    G = [vec(u); vec(v); vec(η)]
 
-    return nothing
+    return G
 
 end
+
+exp1_compute_gradient(nothing, nothing, nothing, 1)
