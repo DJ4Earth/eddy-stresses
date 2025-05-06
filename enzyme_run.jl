@@ -1,5 +1,5 @@
 using Enzyme
-Enzyme.Compiler.VERBOSE_ERRORS[] = true
+# Enzyme.Compiler.VERBOSE_ERRORS[] = true
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
@@ -10,7 +10,8 @@ using Parameters
 using Optim
 using LaTeXStrings
 
-using ShallowWaters
+include("../ShallowWaters.jl/src/ShallowWaters.jl")
+using .ShallowWaters
 
 mutable struct exp1_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
@@ -30,10 +31,11 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
     ShallowWaters.Iy!(chkp.S.Diag.VolumeFluxes.h_v, chkp.S.Diag.VolumeFluxes.h)
     ShallowWaters.Ixy!(chkp.S.Diag.Vorticity.h_q, chkp.S.Diag.VolumeFluxes.h)
 
+
     # calculate PV terms for initial conditions
-    urhs = convert(chkp.S.Diag.PrognosticVarsRHS.u, chkp.S.Prog.u)
-    vrhs = convert(chkp.S.Diag.PrognosticVarsRHS.v, chkp.S.Prog.v)
-    ηrhs = convert(chkp.S.Diag.PrognosticVarsRHS.η, chkp.S.Prog.η)
+    urhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Prog.u
+    vrhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Prog.v
+    ηrhs = chkp.S.Diag.PrognosticVarsRHS.η .= chkp.S.Prog.η
 
     ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, chkp.S.Diag, chkp.S)
     ShallowWaters.PVadvection!(chkp.S.Diag, chkp.S)
@@ -76,9 +78,9 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
             end
 
             # type conversion for mixed precision
-            u1rhs = convert(chkp.S.Diag.PrognosticVarsRHS.u, chkp.S.Diag.RungeKutta.u1)
-            v1rhs = convert(chkp.S.Diag.PrognosticVarsRHS.v, chkp.S.Diag.RungeKutta.v1)
-            η1rhs = convert(chkp.S.Diag.PrognosticVarsRHS.η, chkp.S.Diag.RungeKutta.η1)
+            u1rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u1
+            v1rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v1
+            η1rhs = chkp.S.Diag.PrognosticVarsRHS.η .= chkp.S.Diag.RungeKutta.η1
 
             ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, chkp.S.Diag, chkp.S, t)          # momentum only
             ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, chkp.S.Diag, chkp.S, t)   # continuity equation
@@ -163,16 +165,16 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
             chkp.S
         )
 
-        u0rhs = convert(chkp.S.Diag.PrognosticVarsRHS.u, chkp.S.Diag.RungeKutta.u0)
-        v0rhs = convert(chkp.S.Diag.PrognosticVarsRHS.v, chkp.S.Diag.RungeKutta.v0)
-        η0rhs = convert(chkp.S.Diag.PrognosticVarsRHS.η, chkp.S.Diag.RungeKutta.η0)
+        u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+        v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+        η0rhs = chkp.S.Diag.PrognosticVarsRHS.η .= chkp.S.Diag.RungeKutta.η0
 
         if chkp.S.parameters.dynamics == "nonlinear" && chkp.S.grid.nstep_advcor > 0 && (i % chkp.S.grid.nstep_advcor) == 0
             ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
             ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
         end
 
-        if (chkp.i % chkp.S.grid.nstep_diff) == 0
+        if (chkp.S.parameters.i % chkp.S.grid.nstep_diff) == 0
         ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
         ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
         ShallowWaters.add_drag_diff_tendencies!(
@@ -190,8 +192,9 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
     t += chkp.S.grid.dtint
 
-    u0rhs = convert(chkp.S.Diag.PrognosticVarsRHS.u, chkp.S.Diag.RungeKutta.u0)
-    v0rhs = convert(chkp.S.Diag.PrognosticVarsRHS.v, chkp.S.Diag.RungeKutta.v0)
+    u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+    v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
     #### Energy objective function, time averaged
@@ -227,7 +230,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
 end
 
-function exp1_compute_gradient(G, data, data_steps, Ndays)
+function exp1_compute_gradient()
 
     # Type precision
     T = Float32
@@ -246,15 +249,12 @@ function exp1_compute_gradient(G, data, data_steps, Ndays)
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
+        zb_forcing_dissipation=true,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
+        Ndays=30,
         initial_cond="rest",
         # initpath="./data_files_forkf/128_spinup_noforcing/"
     )
@@ -302,5 +302,3 @@ function exp1_compute_gradient(G, data, data_steps, Ndays)
     return G
 
 end
-
-exp1_compute_gradient(nothing, nothing, nothing, 1)
