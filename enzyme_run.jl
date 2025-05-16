@@ -174,7 +174,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
             ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
         end
 
-        if (chkp.S.parameters.i % chkp.S.grid.nstep_diff) == 0
+        if (chkp.i % chkp.S.grid.nstep_diff) == 0
         ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
         ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
         ShallowWaters.add_drag_diff_tendencies!(
@@ -249,19 +249,22 @@ function exp1_compute_gradient()
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
+        zb_forcing_dissipation=false,
+        nn_forcing_momentum=true,
+        nn_forcing_dissipation=false,
+        handwritten=false,
         zb_filtered=true,
         N=1,
         α=2,
         nx=128,
-        Ndays=30,
+        Ndays=1,
         initial_cond="rest",
         # initpath="./data_files_forkf/128_spinup_noforcing/"
     )
 
     S = ShallowWaters.model_setup(P)
 
-    data_steps = (S.grid.nt - (7*224)):1:S.grid.nt
+    data_steps = 1:1:S.grid.nt
 
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{exp1_Chkp{T, T}}(S.grid.nt,
@@ -278,7 +281,7 @@ function exp1_compute_gradient()
         0.0,
         1,
         1,
-        0.0
+        0
     )
     dchkp = Enzyme.make_zero(chkp)
 
@@ -302,3 +305,5 @@ function exp1_compute_gradient()
     return G
 
 end
+
+G =  exp1_compute_gradient()
