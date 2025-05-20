@@ -4,7 +4,7 @@ using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
 
-Enzyme.API.looseTypeAnalysis!(true)
+# Enzyme.API.looseTypeAnalysis!(true)
 
 using Parameters
 using Optim
@@ -250,7 +250,7 @@ function exp1_compute_gradient()
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
-        nn_forcing_momentum=true,
+        nn_forcing_momentum=false,
         nn_forcing_dissipation=false,
         handwritten=false,
         zb_filtered=true,
@@ -306,4 +306,4 @@ function exp1_compute_gradient()
 
 end
 
-G =  exp1_compute_gradient()
+# G =  exp1_compute_gradient()
