@@ -302,7 +302,7 @@ function exp1_compute_gradient()
     @unpack u, v, η = dchkp.S.Prog
     G = [vec(u); vec(v); vec(η)]
 
-    return G
+    return dchkp
 
 end
 
