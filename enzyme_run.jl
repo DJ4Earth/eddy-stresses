@@ -313,4 +313,4 @@ function exp1_compute_gradient()
 
 end
 
-# G =  exp1_compute_gradient()
+# G = exp1_compute_gradient()
