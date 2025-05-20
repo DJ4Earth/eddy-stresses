@@ -15,7 +15,6 @@ using .ShallowWaters
 
 mutable struct exp1_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    # data::Matrix{Float32}                 # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -50,7 +49,8 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
     # run integration loop with checkpointing
     chkp.j = 1
-    @checkpoint_struct scheme chkp for chkp.i = 1:chkp.S.grid.nt
+    @checkpoint_struct scheme chkp for chkp.i = 1:10
+    # for chkp.i = 1:10
 
         t = chkp.t
         i = chkp.i
@@ -129,34 +129,34 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
             end
         end
 
-        if chkp.S.parameters.compensated
-            ShallowWaters.axb!(chkp.S.Diag.Tendencies.du_sum, -1, chkp.S.Diag.Tendencies.du_comp)
-            ShallowWaters.axb!(chkp.S.Diag.Tendencies.dv_sum, -1, chkp.S.Diag.Tendencies.dv_comp)
-            ShallowWaters.axb!(chkp.S.Diag.Tendencies.dη_sum, -1, chkp.S.Diag.Tendencies.dη_comp)
+        # if chkp.S.parameters.compensated
+        #     ShallowWaters.axb!(chkp.S.Diag.Tendencies.du_sum, -1, chkp.S.Diag.Tendencies.du_comp)
+        #     ShallowWaters.axb!(chkp.S.Diag.Tendencies.dv_sum, -1, chkp.S.Diag.Tendencies.dv_comp)
+        #     ShallowWaters.axb!(chkp.S.Diag.Tendencies.dη_sum, -1, chkp.S.Diag.Tendencies.dη_comp)
 
-            ShallowWaters.axb!(chkp.S.Diag.RungeKutta.u0, 1, chkp.S.Diag.Tendencies.du_sum)
-            ShallowWaters.axb!(chkp.S.Diag.RungeKutta.v0, 1, chkp.S.Diag.Tendencies.dv_sum)
-            ShallowWaters.axb!(chkp.S.Diag.RungeKutta.η0, 1, chkp.S.Diag.Tendencies.dη_sum)
+        #     ShallowWaters.axb!(chkp.S.Diag.RungeKutta.u0, 1, chkp.S.Diag.Tendencies.du_sum)
+        #     ShallowWaters.axb!(chkp.S.Diag.RungeKutta.v0, 1, chkp.S.Diag.Tendencies.dv_sum)
+        #     ShallowWaters.axb!(chkp.S.Diag.RungeKutta.η0, 1, chkp.S.Diag.Tendencies.dη_sum)
 
-            ShallowWaters.dambmc!(
-                chkp.S.Diag.Tendencies.du_comp,
-                chkp.S.Diag.RungeKutta.u0,
-                chkp.S.Prog.u,
-                chkp.S.Diag.Tendencies.du_sum
-            )
-            ShallowWaters.dambmc!(
-                chkp.S.Diag.Tendencies.dv_comp,
-                chkp.S.Diag.RungeKutta.v0,
-                chkp.S.Prog.v,
-                chkp.S.Diag.Tendencies.dv_sum
-            )
-            ShallowWaters.dambmc!(
-                chkp.S.Diag.Tendencies.dη_comp,
-                chkp.S.Diag.RungeKutta.η0,
-                chkp.S.Prog.η,
-                chkp.S.Diag.Tendencies.dη_sum
-            )
-        end
+        #     ShallowWaters.dambmc!(
+        #         chkp.S.Diag.Tendencies.du_comp,
+        #         chkp.S.Diag.RungeKutta.u0,
+        #         chkp.S.Prog.u,
+        #         chkp.S.Diag.Tendencies.du_sum
+        #     )
+        #     ShallowWaters.dambmc!(
+        #         chkp.S.Diag.Tendencies.dv_comp,
+        #         chkp.S.Diag.RungeKutta.v0,
+        #         chkp.S.Prog.v,
+        #         chkp.S.Diag.Tendencies.dv_sum
+        #     )
+        #     ShallowWaters.dambmc!(
+        #         chkp.S.Diag.Tendencies.dη_comp,
+        #         chkp.S.Diag.RungeKutta.η0,
+        #         chkp.S.Prog.η,
+        #         chkp.S.Diag.Tendencies.dη_sum
+        #     )
+        # end
 
         ShallowWaters.ghost_points!(
             chkp.S.Diag.RungeKutta.u0,
@@ -188,42 +188,43 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
             chkp.S.Diag.RungeKutta.v0,
             chkp.S
         )
-    end
+        end
 
-    t += chkp.S.grid.dtint
+        t += chkp.S.grid.dtint
 
-    u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
-    v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+        u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+        v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
 
-    ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+        ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
-    if chkp.i in chkp.data_steps
+        #### Energy objective function, time averaged
+        if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-            chkp.S.Prog.u,
-            chkp.S.Prog.v,
-            chkp.S.Prog.η,
-            chkp.S.Prog.sst,
-            chkp.S
-        )...)
+            temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+                chkp.S.Prog.u,
+                chkp.S.Prog.v,
+                chkp.S.Prog.η,
+                chkp.S.Prog.sst,
+                chkp.S
+            )...)
 
-        energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
+            energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
 
-        chkp.J = chkp.J + energy_lr
+            chkp.J = chkp.J + energy_lr
 
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+            # storing the objective function over time
+            # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
 
-    end
+        end
 
-    ##### time-averaging the objective function #######
-    chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
-    ##########################################################
+        ##### time-averaging the objective function #######
+        chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
+        ##########################################################
 
-    copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
-    copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
-    copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
+        copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
+        copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
+        copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
+
     end
 
     return chkp.J
@@ -250,7 +251,7 @@ function exp1_compute_gradient()
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
-        nn_forcing_momentum=false,
+        nn_forcing_momentum=true,
         nn_forcing_dissipation=false,
         handwritten=false,
         zb_filtered=true,
@@ -263,6 +264,12 @@ function exp1_compute_gradient()
     )
 
     S = ShallowWaters.model_setup(P)
+
+    weights_corner = randn(T,2,22)
+    weights_center = randn(T,1,17)
+
+    S.Diag.NNVars.weights_corner = weights_corner
+    S.Diag.NNVars.weights_center = weights_center
 
     data_steps = 1:1:S.grid.nt
 
