@@ -3,6 +3,7 @@ using Enzyme
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
+using Reactant
 
 # Enzyme.API.looseTypeAnalysis!(true)
 
@@ -49,7 +50,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
     # run integration loop with checkpointing
     chkp.j = 1
-    @checkpoint_struct scheme chkp for chkp.i = 1:10
+    # @checkpoint_struct scheme chkp for chkp.i = 1:10
     # for chkp.i = 1:10
 
         t = chkp.t
@@ -225,7 +226,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
         copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
         copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
-    end
+    # end
 
     return chkp.J
 
@@ -265,16 +266,10 @@ function exp1_compute_gradient()
 
     S = ShallowWaters.model_setup(P)
 
-    weights_corner = randn(T,2,22)
-    weights_center = randn(T,1,17)
-
-    S.Diag.NNVars.weights_corner = weights_corner
-    S.Diag.NNVars.weights_center = weights_center
-
     data_steps = 1:1:S.grid.nt
 
     snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve{exp1_Chkp{T, T}}(S.grid.nt,
+    revolve = Revolve{exp1_Chkp{T, T}}(1,
         snaps;
         verbose=1,
         gc=true,
@@ -293,17 +288,19 @@ function exp1_compute_gradient()
     dchkp = Enzyme.make_zero(chkp)
 
     chkp_prim = deepcopy(chkp)
-    J = exp1_checkpointed_integration(chkp_prim, revolve)
+    @time J = exp1_checkpointed_integration(chkp_prim, revolve)
     println("Cost without AD: $J")
 
-    @time J = autodiff(
-        set_runtime_activity(Enzyme.ReverseWithPrimal),
-        exp1_checkpointed_integration,
-        Active,
-        Duplicated(chkp, dchkp),
-        Const(revolve)
-    )[2]
-    println("Cost with AD: $J")
+    if S.Diag.NNVars.compiled_corner isa Nothing
+        @time J = autodiff(
+            set_runtime_activity(Enzyme.ReverseWithPrimal),
+            exp1_checkpointed_integration,
+            Active,
+            Duplicated(chkp, dchkp),
+            Const(revolve)
+        )[2]
+        println("Cost with AD: $J")
+    end
 
     # Get gradient
     @unpack u, v, η = dchkp.S.Prog
@@ -313,4 +310,4 @@ function exp1_compute_gradient()
 
 end
 
-# G = exp1_compute_gradient()
+G = exp1_compute_gradient();
