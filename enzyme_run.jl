@@ -5,6 +5,8 @@ using NetCDF, JLD2, CairoMakie
 using Lux, Random
 using Reactant
 
+Enzyme.API.printall!(true)
+
 # Enzyme.API.looseTypeAnalysis!(true)
 
 using Parameters
@@ -291,16 +293,14 @@ function exp1_compute_gradient()
     @time J = exp1_checkpointed_integration(chkp_prim, revolve)
     println("Cost without AD: $J")
 
-    if S.Diag.NNVars.compiled_corner isa Nothing
-        @time J = autodiff(
-            set_runtime_activity(Enzyme.ReverseWithPrimal),
-            exp1_checkpointed_integration,
-            Active,
-            Duplicated(chkp, dchkp),
-            Const(revolve)
-        )[2]
-        println("Cost with AD: $J")
-    end
+    @time J = autodiff(
+        set_runtime_activity(Enzyme.ReverseWithPrimal),
+        exp1_checkpointed_integration,
+        Active,
+        Duplicated(chkp, dchkp),
+        Const(revolve)
+    )[2]
+    println("Cost with AD: $J")
 
     # Get gradient
     @unpack u, v, η = dchkp.S.Prog
