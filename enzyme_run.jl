@@ -5,7 +5,7 @@ using NetCDF, JLD2, CairoMakie
 using Lux, Random
 using Reactant
 
-Enzyme.API.printall!(true)
+# Enzyme.API.printall!(true)
 
 # Enzyme.API.looseTypeAnalysis!(true)
 
