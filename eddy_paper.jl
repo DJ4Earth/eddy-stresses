@@ -1,24 +1,22 @@
-
-"""
-Placing the checkpointed integraton, loop, experiment functions, etc. here in one place
-"""
-
 using Enzyme
-Enzyme.Compiler.VERBOSE_ERRORS[] = true
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
-
-Enzyme.API.looseTypeAnalysis!(true)
+using Reactant
+using DSP, FFTW, AbstractFFTs
+using ChainRules
+Enzyme.EnzymeRules.inactive(::typeof(plan_fft), args...; kwargs...) = true
+Enzyme.EnzymeRules.inactive(::typeof(plan_rfft), args...; kwargs...) = true
+Enzyme.@import_rrule(typeof(*), AbstractFFTs.Plan, AbstractArray)
+Enzyme.@import_rrule(typeof(*), AbstractFFTs.ScaledPlan, AbstractArray)
 
 using Parameters
 using Optim
 using LaTeXStrings
 
-include("../ShallowWaters.jl/src/ShallowWaters.jl")
-using .ShallowWaters
+if !Base.isdefined(@__MODULE__, :ShallowWaters)
+    include("../ShallowWaters.jl/src/ShallowWaters.jl")
+    using .ShallowWaters
+end
 
-include("exp1_timeavgenergy_integration.jl")
-include("exp1_run.jl")
-include("eddy_paper_optim.jl")
-include("eddy_paper_experiment_functions.jl")
+include("timeavgenergy_7dayintegration_nnrun.jl")

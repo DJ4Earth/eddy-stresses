@@ -1,4 +1,5 @@
 using Enzyme
+# Enzyme.Compiler.CheckNan[] = true
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
@@ -28,7 +29,7 @@ mutable struct exp1_Chkp{T1,T2}
     t::Int64                                # model time
 end
 
-function exp1_checkpointed_integration(chkp, scheme)::Float64
+function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
 
     # additions to get derivatives with respect to forcing amplitude
     forcing = chkp.S.forcing
@@ -60,7 +61,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
     # run integration loop with checkpointing
     chkp.j = 1
-    @checkpoint_struct scheme chkp for chkp.i = 1:chkp.S.grid.nt
+    @checkpoint_struct scheme chkp for chkp.i = 1:steps
 
         t = chkp.t
         i = chkp.i
@@ -244,7 +245,7 @@ function exp1_checkpointed_integration(chkp, scheme)::Float64
 
 end
 
-function exp1_integration(chkp, scheme)::Float64
+function exp1_integration(chkp, steps)::Float64
 
     # additions to get derivatives with respect to forcing amplitude
     forcing = chkp.S.forcing
@@ -276,7 +277,7 @@ function exp1_integration(chkp, scheme)::Float64
 
     # run integration loop with checkpointing
     chkp.j = 1
-    for chkp.i = 1:chkp.S.grid.nt
+    for chkp.i = 1:steps
 
         t = chkp.t
         i = chkp.i
@@ -464,6 +465,7 @@ function compare_gradients()
     # Type precision
     T = Float32
     Ndays = 1
+    steps = Int(225)
 
     P = ShallowWaters.Parameter(T=T;
         output=false,
@@ -480,7 +482,7 @@ function compare_gradients()
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
-        nn_forcing_momentum=true,
+        nn_forcing_momentum=false,
         nn_forcing_dissipation=false,
         handwritten=false,
         zb_filtered=true,
@@ -489,7 +491,7 @@ function compare_gradients()
         nx=128,
         Ndays=Ndays,
         initial_cond="rest",
-        # initpath="./data_files_forkf/128_spinup_noforcing/"
+        # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
     S = ShallowWaters.model_setup(P)
@@ -497,7 +499,7 @@ function compare_gradients()
     data_steps = 1:1:S.grid.nt
 
     snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve{exp1_Chkp{T, T}}(S.grid.nt,
+    revolve = Revolve{exp1_Chkp{T, T}}(steps,
         snaps;
         verbose=1,
         gc=true,
@@ -513,42 +515,47 @@ function compare_gradients()
         1,
         0
     )
-    dchkp = Enzyme.make_zero(chkp)
 
+    chkp1 = deepcopy(chkp)
+    dchkp1 = Enzyme.make_zero(chkp)
     @time Jnew1 = autodiff(
     set_runtime_activity(Enzyme.ReverseWithPrimal),
     exp1_checkpointed_integration,
     Active,
-    Duplicated(deepcopy(chkp), dchkp),
-    Const(revolve)
+    Duplicated(chkp1, dchkp1),
+    Const(revolve),
+    Const(steps)
     )[2]
     println("Cost with Checkpointing + AD: $Jnew1")
 
-    deriv1 = dchkp.S.parameters.Fx0
+    # deriv1 = dchkp1.S.Diag.NNVars.model_center[1][1]
+    deriv1 = dchkp1.S.parameters.Fx0
     println("Derivative with Checkpointing + AD: $deriv1")
 
+    chkp2 = deepcopy(chkp)
     dchkp2 = Enzyme.make_zero(chkp)
     @time Jnew2 = autodiff(
     set_runtime_activity(Enzyme.ReverseWithPrimal),
     exp1_integration,
     Active,
-    Duplicated(deepcopy(chkp), dchkp2),
-    Const(revolve)
+    Duplicated(chkp2, dchkp2),
+    Const(steps)
     )[2]
     println("Cost with AD: $Jnew2")
 
+    # deriv2 = dchkp2.S.Diag.NNVars.model_center[1][1]
     deriv2 = dchkp2.S.parameters.Fx0
     println("Derivative with AD: $deriv2")
 
     chkp_prim = deepcopy(chkp)
-    @time J = exp1_checkpointed_integration(chkp_prim, revolve)
+    @time J = exp1_checkpointed_integration(chkp_prim, revolve, steps)
     println("Cost without AD: $J")
 
-    steps = [10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    steps2 = [10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
     diffs = []
 
-    for s in steps
+    for s in steps2
 
         P3 = ShallowWaters.Parameter(T=T;
         output=false,
@@ -565,7 +572,7 @@ function compare_gradients()
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
-        nn_forcing_momentum=true,
+        nn_forcing_momentum=false,
         nn_forcing_dissipation=false,
         handwritten=false,
         zb_filtered=true,
@@ -574,10 +581,11 @@ function compare_gradients()
         nx=128,
         Ndays=Ndays,
         initial_cond="rest",
-        # initpath="./data_files_forkf/128_spinup_noforcing/"
+        # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
         )
 
         S_inner = ShallowWaters.model_setup(P3)
+        # S_inner.Diag.NNVars.model_center[1][1][3] += s
         S_inner.parameters.Fx0 += s
 
         chkp_inner = exp1_Chkp{T, T}(S_inner,
@@ -588,7 +596,7 @@ function compare_gradients()
         0.0
         )
 
-        J_inner = exp1_integration(chkp_inner, revolve)
+        J_inner = exp1_integration(chkp_inner, steps)
 
         push!(diffs, (J_inner - J) / s)
 
@@ -600,4 +608,4 @@ function compare_gradients()
 
 end
 
-compare_gradients()
+# compare_gradients()

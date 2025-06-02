@@ -1820,8 +1820,8 @@ uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.6+0"
 
 [[deps.Optim]]
-deps = ["Compat", "EnumX", "FillArrays", "ForwardDiff", "InteractiveUtils", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-path = "/Users/swilliamson/.julia/dev/Optim"
+deps = ["Compat", "EnumX", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "31b3b1b8e83ef9f1d50d74f1dd5f19a37a304a1f"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
 version = "1.12.0"
 
