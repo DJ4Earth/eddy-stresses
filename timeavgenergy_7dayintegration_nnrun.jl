@@ -463,11 +463,11 @@ function exp1_compute_loss(Ndays, param_guess, data, data_steps)
         α=2,
         nx=128,
         Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
-    S.Diag.NNVars.model_center[1][1] .= reshape(param_guess[1:17], 1, 17)
-    S.Diag.NNVars.model_corner[1][1] .= reshape(param_guess[18:end], 2, 22)
+    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:17], 1, 17)
+    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[18:end], 2, 22)
 
     chkp = exp1_Chkp{T, T}(S,
         data,
@@ -505,17 +505,18 @@ function exp1_compute_gradient(G, param_guess, data, data_steps, Ndays)
         zb_forcing_dissipation=false,
         zb_filtered=true,
         nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
+        nn_forcing_dissipation=false,
         handwritten=false,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays,
-        initpath="./data_files_forkf/128_spinup_noforcing/"
+        initial_cond="ncfile",
+        initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
-    S.Diag.NNVars.model_center[1][1] .= 0.0.*reshape(param_guess[1:17], 1, 17)
-    S.Diag.NNVars.model_corner[1][1] .= 0.0.*reshape(param_guess[18:end], 2, 22)
+    S.Diag.NNVars.model_center[1][1] .= reshape(param_guess[1:17], 1, 17)
+    S.Diag.NNVars.model_corner[1][1] .= reshape(param_guess[18:end], 2, 22)
 
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{exp1_Chkp{T, T}}(S.grid.nt,
@@ -564,7 +565,7 @@ end
 
 function run_exp1()
 
-    Ndays = 4
+    Ndays = 30
     S_for_values = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -592,8 +593,8 @@ function run_exp1()
 
     energy_high_resolution = load_object("./spinup_files/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2")
     grid_scale = 8
-    data_steps = (S_for_values.grid.nt - 3*224):224:S_for_values.grid.nt
-    data = energy_high_resolution[(S_for_values.grid.nt - 3*224)*grid_scale:224*grid_scale:S_for_values.grid.nt*grid_scale]
+    data_steps = (S_for_values.grid.nt - 7*224):224:S_for_values.grid.nt
+    data = energy_high_resolution[(S_for_values.grid.nt - 7*224)*grid_scale:224*grid_scale:S_for_values.grid.nt*grid_scale]
 
     param_guess = 1e-10 .* randn(17+44)
 
@@ -713,3 +714,17 @@ end
 #     # initial_cond="ncfile",
 #     # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
 # )
+
+# temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+#     chkp.S.Prog.u,
+#     chkp.S.Prog.v,
+#     chkp.S.Prog.η,
+#     chkp.S.Prog.sst,
+#     chkp.S
+# )...)
+# fig = Figure();
+# ax, hm = heatmap(fig[1,1], temp.u, colormap=:balance,
+#         axis=(xlabel=L"x", ylabel=L"y", title=L"\partial J / \partial u(t_0)"), 
+#         colorrange=(-maximum(temp.u),maximum(temp.u))
+# );
+# Colorbar(fig[1,2], hm);

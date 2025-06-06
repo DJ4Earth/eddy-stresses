@@ -1,5 +1,4 @@
 using Enzyme
-# Enzyme.Compiler.CheckNan[] = true
 using Checkpointing, HDF5, Serialization
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
@@ -209,7 +208,7 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
         ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
         #### Energy objective function, time averaged
-        if chkp.i in chkp.data_steps
+         if chkp.i in chkp.data_steps
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
                 chkp.S.Prog.u,
@@ -308,7 +307,7 @@ function exp1_integration(chkp, steps)::Float64
             u1rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u1
             v1rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v1
             η1rhs = chkp.S.Diag.PrognosticVarsRHS.η .= chkp.S.Diag.RungeKutta.η1
-
+    
             ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, chkp.S.Diag, chkp.S, t)          # momentum only
             ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, chkp.S.Diag, chkp.S, t)   # continuity equation
 
@@ -465,7 +464,7 @@ function compare_gradients()
     # Type precision
     T = Float32
     Ndays = 1
-    steps = Int(225)
+    steps = Int(300)     # instead of running Ndays I'm just running some number of steps
 
     P = ShallowWaters.Parameter(T=T;
         output=false,
@@ -483,15 +482,16 @@ function compare_gradients()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
+        nn_forcing_dissipation=true,
         handwritten=false,
         zb_filtered=true,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays,
-        initial_cond="rest",
-        # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        initial_cond="rest"
+        # initial_cond="ncfile",
+        # initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
     S = ShallowWaters.model_setup(P)
@@ -528,8 +528,8 @@ function compare_gradients()
     )[2]
     println("Cost with Checkpointing + AD: $Jnew1")
 
-    # deriv1 = dchkp1.S.Diag.NNVars.model_center[1][1]
-    deriv1 = dchkp1.S.parameters.Fx0
+    deriv1 = dchkp1.S.Diag.NNVars.model_diag[1][1][1,2]
+    # deriv1 = dchkp1.S.parameters.Fx0
     println("Derivative with Checkpointing + AD: $deriv1")
 
     chkp2 = deepcopy(chkp)
@@ -543,8 +543,8 @@ function compare_gradients()
     )[2]
     println("Cost with AD: $Jnew2")
 
-    # deriv2 = dchkp2.S.Diag.NNVars.model_center[1][1]
-    deriv2 = dchkp2.S.parameters.Fx0
+    deriv2 = dchkp2.S.Diag.NNVars.model_diag[1][1][1,2]
+    # deriv2 = dchkp2.S.parameters.Fx0
     println("Derivative with AD: $deriv2")
 
     chkp_prim = deepcopy(chkp)
@@ -573,20 +573,21 @@ function compare_gradients()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
+        nn_forcing_dissipation=true,
         handwritten=false,
         zb_filtered=true,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays,
-        initial_cond="rest",
-        # initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        initial_cond="rest"
+        # initial_cond="ncfile",
+        # initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
         )
 
         S_inner = ShallowWaters.model_setup(P3)
-        # S_inner.Diag.NNVars.model_center[1][1][3] += s
-        S_inner.parameters.Fx0 += s
+        S_inner.Diag.NNVars.model_diag[1][1][1,2] += s
+        # S_inner.parameters.Fx0 += s
 
         chkp_inner = exp1_Chkp{T, T}(S_inner,
         data_steps,
@@ -609,3 +610,10 @@ function compare_gradients()
 end
 
 # compare_gradients()
+
+# fig = Figure();
+# ax, hm = heatmap(fig[1,1], temp.u, colormap=:balance,
+#         axis=(xlabel=L"x", ylabel=L"y", title=L"\partial J / \partial u(t_0)"), 
+#         colorrange=(-maximum(temp.u),maximum(temp.u))
+# );
+# Colorbar(fig[1,2], hm);
