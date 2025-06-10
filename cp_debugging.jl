@@ -21,6 +21,7 @@ end
 
 mutable struct exp1_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
+    data::Vector{Float32}                   # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -60,7 +61,7 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
 
     # run integration loop with checkpointing
     chkp.j = 1
-    @checkpoint_struct scheme chkp for chkp.i = 1:steps
+    @ad_checkpoint scheme for chkp.i = 1:steps
 
         t = chkp.t
         i = chkp.i
@@ -208,7 +209,7 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
         ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
         #### Energy objective function, time averaged
-         if chkp.i in chkp.data_steps
+        if chkp.i in chkp.data_steps
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
                 chkp.S.Prog.u,
@@ -218,15 +219,15 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
                 chkp.S
             )...)
 
-            # energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
-            # chkp.J = chkp.J + sum(energy_lr)
+            energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
+            energy_hr = chkp.data[chkp.j]
 
-            ke_u = power(periodogram(temp.u; radialavg=true))
-            ke_v = power(periodogram(temp.v; radialavg=true))
-            chkp.J = chkp.J + sum(ke_u.^2 + ke_v.^2)
+            chkp.J = chkp.J + (energy_hr - energy_lr)^2
 
             # storing the objective function over time
             # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+
+            chkp.j += 1
 
         end
 
@@ -434,15 +435,15 @@ function exp1_integration(chkp, steps)::Float64
                 chkp.S
             )...)
 
-            # energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
-            # chkp.J = chkp.J + sum(energy_lr)
+            energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
+            energy_hr = chkp.data[chkp.j]
 
-            ke_u = power(periodogram(temp.u; radialavg=true))
-            ke_v = power(periodogram(temp.v; radialavg=true))
-            chkp.J = chkp.J + sum(ke_u.^2 + ke_v.^2)
+            chkp.J = chkp.J + (energy_hr - energy_lr)^2
 
             # storing the objective function over time
             # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+
+            chkp.j += 1
 
         end
 
@@ -464,7 +465,7 @@ function compare_gradients()
     # Type precision
     T = Float32
     Ndays = 1
-    steps = Int(300)     # instead of running Ndays I'm just running some number of steps
+    steps = Int(100)     # instead of running Ndays I'm just running some number of steps
 
     P = ShallowWaters.Parameter(T=T;
         output=false,
@@ -496,7 +497,11 @@ function compare_gradients()
 
     S = ShallowWaters.model_setup(P)
 
+    # energy_high_resolution = load_object("./spinup_files/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2")
+    # grid_scale = 8
     data_steps = 1:1:S.grid.nt
+    # data = energy_high_resolution[grid_scale:grid_scale:S.grid.nt*grid_scale]
+    data = zeros(length(data_steps))
 
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve{exp1_Chkp{T, T}}(steps,
@@ -509,6 +514,7 @@ function compare_gradients()
     )
 
     chkp = exp1_Chkp{T, T}(S,
+        data,
         data_steps,
         0.0,
         1,
@@ -521,7 +527,6 @@ function compare_gradients()
     @time Jnew1 = autodiff(
     set_runtime_activity(Enzyme.ReverseWithPrimal),
     exp1_checkpointed_integration,
-    Active,
     Duplicated(chkp1, dchkp1),
     Const(revolve),
     Const(steps)
@@ -590,6 +595,7 @@ function compare_gradients()
         # S_inner.parameters.Fx0 += s
 
         chkp_inner = exp1_Chkp{T, T}(S_inner,
+        data,
         data_steps,
         0.0,
         1,
