@@ -222,7 +222,7 @@ function exp1_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
-    @checkpoint_struct scheme chkp for chkp.i = 1:chkp.S.grid.nt
+    @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
         t = chkp.t
         i = chkp.i
@@ -773,7 +773,7 @@ function run_exp1()
     data_steps = (S_for_values.grid.nt - 7*224):224:S_for_values.grid.nt
     data = energy_high_resolution[(S_for_values.grid.nt - 7*224)*grid_scale:224*grid_scale:S_for_values.grid.nt*grid_scale]
 
-    # param_guess = 1e-5 .* randn(22 + 34)
+    param_guess = 1e-2 .* randn(22 + 34)
 
     fg!_closure(F, G, param_guess) = exp1_FG(F, G, param_guess, data, data_steps, Ndays)
     obj_fg = Optim.only_fg!(fg!_closure)
@@ -783,128 +783,11 @@ function run_exp1()
 
 end
 
+# how to save with jld2
 
-# """
-# runs the optim experiment
-# """
-# obj_fg = Optim.only_fg!(FG)
-
-# param_guess = 0.001.*randn(61)
-
-# result = Optim.optimize(obj_fg,
-# param_guess,
-# Optim.LBFGS(),
-# Optim.Options(
-# iterations = 1)
+# jldsave("exp3_minimizer_initcond_forcing_adjoint_042925.jld2",
+#     u = reshape(result.minimizer[1:17292], 131, 132),
+#     v = reshape(result.minimizer[17293:34584], 132, 131),
+#     eta = reshape(result.minimizer[34585:end-1], 130, 130),
+#     Fx0 = result.minimizer[end]
 # )
-
-# """
-# runs both the adjoint problem and a finite difference check in one go
-# """
-# S30, dS30, diffs30, enzyme_deriv30 = run_adjoint_plusfd(
-#     output=false,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     # νB=1000,
-#     nx=128,
-#     Ndays=1,
-#     # initial_cond="ncfile",
-#     # initpath="./run_0001/"
-# )
-
-# 109, 129 is the entry with the largest relative error after 30 days
-
-# # 72, 120 is the entry with the largest relative error after 10 days
-
-# """
-# runs the finite difference check, requires prior computation of derivatives with enzyme
-# """
-# diffs, deriv = finite_difference_only(dS30, 20, 20,
-#     output=false,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     nn_forcing_dissipation=true,
-#     handwritten=false,
-#     α=2,
-#     # νB=1000,
-#     nx=128,
-#     Ndays=30,
-#     # initial_cond="ncfile",
-#     # initpath="./run_0001/"
-# )
-
-# # @save "technicalpaper_75km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finalprimal_struct_12months_120524.jld2" S
-# # @save "technicalpaper_75km_timeavgobj_onlyfinalmonth_everytimestep_startingfromspinup_finaladjoint_struct_12months_120524.jld2" dS
-# # @save "technicalpaper_timeavgobj_onlyfinalmonth_everytimestep_fourtimesviscosity_startingfromspinup_fdcheck_vector_500mdepth_12months_float32start_120324.jld2" diffs
-
-# """
-# For saving all derivatives computed with Enzyme (runs the backwards pass step by step)
-# """
-# S, dS, derivatives, states = enzyme_derivatives(
-#     output=false,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     # νB=1000,
-#     nx=128,
-#     Ndays=30,
-#     # initial_cond="ncfile",
-#     # initpath="./run_0001/"
-# )
-
-# """
-# Just runs the shallow water model
-# """
-# _, energy = ShallowWaters.run_model(
-#     output=true,
-#     L_ratio=1,
-#     g=9.81,
-#     H=500,
-#     wind_forcing_x="double_gyre",
-#     Lx=3840e3,
-#     seasonal_wind_x=false,
-#     topography="flat",
-#     bc="nonperiodic",
-#     bottom_drag="quadratic",
-#     α=2,
-#     nx=50,
-#     Ndays=12*30*10
-#     # initial_cond="ncfile",
-#     # initpath="./data_files_gamma0.3/10yearspinup_128_noslipbc_fromrest_float32params"
-# )
-
-# temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-#     chkp.S.Prog.u,
-#     chkp.S.Prog.v,
-#     chkp.S.Prog.η,
-#     chkp.S.Prog.sst,
-#     chkp.S
-# )...)
-# fig = Figure();
-# ax, hm = heatmap(fig[1,1], temp.u, colormap=:balance,
-#         axis=(xlabel=L"x", ylabel=L"y", title=L"\partial J / \partial u(t_0)"), 
-#         colorrange=(-maximum(temp.u),maximum(temp.u))
-# );
-# Colorbar(fig[1,2], hm);

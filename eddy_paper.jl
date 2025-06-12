@@ -19,4 +19,5 @@ if !Base.isdefined(@__MODULE__, :ShallowWaters)
     using .ShallowWaters
 end
 
-include("timeavgenergy_7dayintegration_nnrun.jl")
+include("timeavgenergy_10dayintegration_nnrun.jl")
+include("kespectrum_10dayintegration_nnrun.jl")
