@@ -187,7 +187,9 @@ function plots()
         initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
     S.Diag.NNVars.model_diag[1][1] .= reshape(result.minimizer[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:end], 1, 22)
+    S.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:56], 1, 22)
+    S.Diag.NNVars.model_diag[1][2] .= reshape(result.minimizer[57:58], 2, 1)
+    S.Diag.NNVars.model_offdiag[1][2] .= result.minimizer[end]
 
     ShallowWaters.time_integration(S)
     temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
@@ -207,29 +209,29 @@ function plots()
     up_true = zeros(513)
     vp_true = zeros(513)
     t = 10
-    up_nn[:] = power(periodogram(temp.u; radialavg=true))
-    vp_nn[:] = power(periodogram(temp.v; radialavg=true))
+    up_nn[:] = power(periodogram(temp.u; radialavg=true, radialsum=false)) ./ 128^2
+    vp_nn[:] = power(periodogram(temp.v; radialavg=true, radialsum=false)) ./ 128^2
 
-    up_zb[:] = power(periodogram(u_zb[:, :, t]; radialavg=true))
-    vp_zb[:] = power(periodogram(v_zb[:, :, t]; radialavg=true))
+    up_zb[:] = power(periodogram(u_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+    vp_zb[:] = power(periodogram(v_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
 
-    up_true[:] = power(periodogram(u_hr[:,:,t]; radialavg=true))
-    vp_true[:] = power(periodogram(v_hr[:,:,t]; radialavg=true))
+    up_true[:] = power(periodogram(u_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+    vp_true[:] = power(periodogram(v_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
-    nn_wl = 1 ./ freq(periodogram(u_zb[:,:,t]; radialavg=true));
+    nn_wl = (1 ./ freq(periodogram(u_zb[:,:,t]; radialavg=true, radialsum=false))) * 30;
     nnu_freq = LinRange(0, 64, 65)
     nnu_freq = nnu_freq ./ 65
     nnu_freq = 1 ./ nnu_freq 
     nnu_freq[1] =  1000
     nn_wl[1] = 1000
 
-    true_wl = 1 ./ freq(periodogram(u_hr[:,:,3]; radialavg=true));
+    true_wl = 1 ./ freq(periodogram(u_hr[:,:,3]; radialavg=true)) * 3.75;
     true_wl[1] = 1100
 
     fig2 = Figure(size=(800, 500));
     t = 10
     lines(fig2[1,1], nn_wl[2:end], up_nn[2:end] + vp_nn[2:end], label="NN", axis=(
-            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[100, 30, 10, 2], title="KE Spectrum after training")
+            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, title="KE Spectrum after training")
     )
     lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end] + vp_zb[2:end], label="ZB")
     lines!(fig2[1,1], true_wl[2:end], up_true[2:end] + vp_true[2:end], label="HR")

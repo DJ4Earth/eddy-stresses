@@ -21,3 +21,5 @@ end
 
 include("timeavgenergy_10dayintegration_nnrun.jl")
 include("kespectrum_10dayintegration_nnrun.jl")
+include("kespectrum_weightsandbias_10dayintegration_nnrun.jl")
+include("justmodelstates_10dayintegration_nnrun.jl")
