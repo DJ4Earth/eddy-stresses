@@ -19,7 +19,7 @@ if !Base.isdefined(@__MODULE__, :ShallowWaters)
     using .ShallowWaters
 end
 
-mutable struct exp1_Chkp{T1,T2}
+mutable struct Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
     data::Vector{Float32}                   # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
@@ -29,7 +29,7 @@ mutable struct exp1_Chkp{T1,T2}
     t::Int64                                # model time
 end
 
-function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
+function checkpointed_integration(chkp, scheme, steps)::Float64
 
     # additions to get derivatives with respect to forcing amplitude
     forcing = chkp.S.forcing
@@ -209,7 +209,9 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
         ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
         #### Energy objective function, time averaged
+        @show chkp.i
         if chkp.i in chkp.data_steps
+        @show chkp.i
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
                 chkp.S.Prog.u,
@@ -231,6 +233,7 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
 
         end
 
+
         ##### time-averaging the objective function #######
         # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
         ##########################################################
@@ -245,7 +248,7 @@ function exp1_checkpointed_integration(chkp, scheme, steps)::Float64
 
 end
 
-function exp1_integration(chkp, steps)::Float64
+function integration(chkp, steps)::Float64
 
     # additions to get derivatives with respect to forcing amplitude
     forcing = chkp.S.forcing
@@ -425,7 +428,9 @@ function exp1_integration(chkp, steps)::Float64
         ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
         #### Energy objective function, time averaged
+        @show chkp.i
         if chkp.i in chkp.data_steps
+            @show chkp.i
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
                 chkp.S.Prog.u,
@@ -465,7 +470,7 @@ function compare_gradients()
     # Type precision
     T = Float32
     Ndays = 1
-    steps = Int(100)     # instead of running Ndays I'm just running some number of steps
+    steps = Int(2)     # instead of running Ndays I'm just running some number of steps
 
     P = ShallowWaters.Parameter(T=T;
         output=false,
@@ -499,7 +504,7 @@ function compare_gradients()
 
     # energy_high_resolution = load_object("./spinup_files/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2")
     # grid_scale = 8
-    data_steps = 1:1:S.grid.nt
+    data_steps = 5:S.grid.nt
     # data = energy_high_resolution[grid_scale:grid_scale:S.grid.nt*grid_scale]
     data = zeros(length(data_steps))
 
@@ -513,7 +518,7 @@ function compare_gradients()
         write_checkpoints_period = 2
     )
 
-    chkp = exp1_Chkp{T, T}(S,
+    chkp = Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -526,7 +531,7 @@ function compare_gradients()
     dchkp1 = Enzyme.make_zero(chkp)
     @time Jnew1 = autodiff(
     set_runtime_activity(Enzyme.ReverseWithPrimal),
-    exp1_checkpointed_integration,
+    checkpointed_integration,
     Duplicated(chkp1, dchkp1),
     Const(revolve),
     Const(steps)
@@ -541,7 +546,7 @@ function compare_gradients()
     dchkp2 = Enzyme.make_zero(chkp)
     @time Jnew2 = autodiff(
     set_runtime_activity(Enzyme.ReverseWithPrimal),
-    exp1_integration,
+    integration,
     Active,
     Duplicated(chkp2, dchkp2),
     Const(steps)
@@ -553,7 +558,7 @@ function compare_gradients()
     println("Derivative with AD: $deriv2")
 
     chkp_prim = deepcopy(chkp)
-    @time J = exp1_checkpointed_integration(chkp_prim, revolve, steps)
+    @time J = checkpointed_integration(chkp_prim, revolve, steps)
     println("Cost without AD: $J")
 
     steps2 = [10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
@@ -594,7 +599,7 @@ function compare_gradients()
         S_inner.Diag.NNVars.model_diag[1][1][1,2] += s
         # S_inner.parameters.Fx0 += s
 
-        chkp_inner = exp1_Chkp{T, T}(S_inner,
+        chkp_inner = Chkp{T, T}(S_inner,
         data,
         data_steps,
         0.0,
@@ -603,7 +608,7 @@ function compare_gradients()
         0.0
         )
 
-        J_inner = exp1_integration(chkp_inner, steps)
+        J_inner = integration(chkp_inner, steps)
 
         push!(diffs, (J_inner - J) / s)
 
