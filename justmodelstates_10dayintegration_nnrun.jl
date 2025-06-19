@@ -1,7 +1,7 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct kespec2_Chkp{T1,T2}
+mutable struct modelstates_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
     data::Vector{Array{T1, 3}}                   # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
@@ -196,7 +196,7 @@ function save_states(S)
 end
 
 # for running with checkpointing
-function kespec2_checkpointed_integration(chkp, scheme)
+function modelstates_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -368,8 +368,7 @@ function kespec2_checkpointed_integration(chkp, scheme)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    @show chkp.i
-    if chkp.i in chkp.data_steps
+     if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
@@ -409,7 +408,7 @@ function kespec2_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function kespec2_integration(chkp)
+function modelstates_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -583,7 +582,7 @@ function kespec2_integration(chkp)
 
     #### Energy objective function, time averaged
 
-    if chkp.i in chkp.data_steps
+     if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
@@ -593,16 +592,9 @@ function kespec2_integration(chkp)
             chkp.S
         )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
+        uhr_coarsegrained, vhr_coarsegrained = ShallowWaters.coarse_grain(chkp.data[1][:,:,chkp.j], chkp.data[2][:,:,chkp.j],1024,1024,chkp.S)
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
-
-        chkp.J += sum(((ke_u_hr[1:65] + ke_v_hr[1:65]) - (ke_u_lr[1:65] + ke_v_lr[1:65])).^2)
-
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum((temp.u .- uhr_coarsegrained).^2 + (temp.v .- vhr_coarsegrained).^2)
 
         chkp.j += 1
 
@@ -622,7 +614,7 @@ function kespec2_integration(chkp)
 
 end
 
-function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+function modelstates_compute_loss(Ndays, param_guess, data, data_steps)
 
      # Type precision
     T = Float32
@@ -648,19 +640,16 @@ function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
+        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
-
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
 
     S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
     S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
     S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
     S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
 
-    chkp = kespec2_Chkp{T, T}(S,
+    chkp = modelstates_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -669,13 +658,13 @@ function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         0
     )
 
-    J = kespec2_integration(chkp)
+    J = modelstates_integration(chkp)
 
     return J
 
 end
 
-function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+function modelstates_compute_gradient(G, param_guess, data, data_steps, Ndays)
 
     # Type precision
     T = Float32
@@ -701,12 +690,9 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
+        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
-
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
 
     S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
     S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
@@ -723,7 +709,7 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         write_checkpoints_period = 224
     )
 
-    chkp = kespec2_Chkp{T, T}(S,
+    chkp = kespec_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -735,10 +721,10 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec2_integration,
+        kespec_integration,
         Active,
         Duplicated(chkp, dchkp)
-        #Const(revolve)
+        # Const(revolve)
     )[2]
     println("Cost with AD: $J")
 
@@ -752,17 +738,17 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
 end
 
-function kespec2_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+function modelstates_FG(F, G, param_guess, data, data_steps, Ndays)
 
-    G === nothing || kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
-    F === nothing || return kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+    G === nothing || modelstates_compute_gradient(G, param_guess, data, data_steps, Ndays)
+    F === nothing || return modelstates_compute_loss(Ndays, param_guess, data, data_steps)
 
 end
 
-function run_kespec2()
+function run_modelstates()
 
     Ndays = 10
-    Slr = ShallowWaters.model_setup(output=false,
+    S_for_values = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -777,53 +763,30 @@ function run_kespec2()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
+        nn_forcing_momentum=true,
+        nn_forcing_dissipation=false,
         handwritten=false,
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
-    )
-
-    Shr = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
         Ndays=Ndays,
-        initial_cond="ncfile",
-        initpath="./spinup_files/1024_postspinup_noslip_5years_061824/"
+        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+    grid_scale = 8
+    data_steps = (S_for_values.grid.nt - 7*224):224:S_for_values.grid.nt
 
     uhr_data = uhr[:, :, (Ndays-7):Ndays]
     vhr_data = vhr[:, :, (Ndays-7):Ndays]
     data = [uhr_data, vhr_data]
 
-    ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,1], vhr[:,:,1], etahr[:,:,1], Shr.grid.nx, Slr)
-    uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
-
-    initial_cond = [uinit, vinit, etainit]
     param_guess = 1e-2 .* randn(22 + 34 + 2 + 1)
 
-    fg!_closure(F, G, param_guess) = kespec2_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+    fg!_closure(F, G, param_guess) = modelstates_FG(F, G, param_guess, data, data_steps, Ndays)
     obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=2))
+    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
 
     return result
 

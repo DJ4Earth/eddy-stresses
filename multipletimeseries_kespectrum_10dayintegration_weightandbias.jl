@@ -1,7 +1,7 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multi_Chkp{T1,T2}
+mutable struct multiks_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
     data::Vector{Array{T1, 3}}              # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
@@ -196,7 +196,7 @@ function save_states(S)
 end
 
 # for running with checkpointing
-function multi_checkpointed_integration(chkp, scheme)
+function multiks_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -408,7 +408,7 @@ function multi_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function multi_integration(chkp)
+function multiks_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -621,12 +621,12 @@ function multi_integration(chkp)
 
 end
 
-function multi_compute_loss(Ndays, param_guess, data, data_steps)
+function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
      # Type precision
     T = Float32
 
-    S = ShallowWaters.model_setup(output=false,
+    S = ShallowWaters.model_setup(output=true,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -647,16 +647,19 @@ function multi_compute_loss(Ndays, param_guess, data, data_steps)
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        Ndays=Ndays
     )
+
+    S.Prog.u .= initial_cond[1]
+    S.Prog.v .= initial_cond[2]
+    S.Prog.η .= initial_cond[3]
 
     S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
     S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
     S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
     S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
 
-    chkp = multi_Chkp{T, T}(S,
+    chkp = multiks_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -665,13 +668,13 @@ function multi_compute_loss(Ndays, param_guess, data, data_steps)
         0
     )
 
-    J = multi_integration(chkp)
+    J = multiks_integration(chkp)
 
     return J
 
 end
 
-function multi_compute_gradient(G, param_guess, data, data_steps, Ndays)
+function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
 
     # Type precision
     T = Float32
@@ -697,9 +700,11 @@ function multi_compute_gradient(G, param_guess, data, data_steps, Ndays)
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        Ndays=Ndays
     )
+    S.Prog.u .= initial_cond[1]
+    S.Prog.v .= initial_cond[2]
+    S.Prog.η .= initial_cond[3]
 
     S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
     S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
@@ -745,14 +750,14 @@ function multi_compute_gradient(G, param_guess, data, data_steps, Ndays)
 
 end
 
-function multi_FG(F, G, param_guess, data, data_steps, Ndays)
+function multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
 
-    G === nothing || multi_compute_gradient(G, param_guess, data, data_steps, Ndays)
-    F === nothing || return multi_compute_loss(Ndays, param_guess, data, data_steps)
+    G === nothing || multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+    F === nothing || return multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
 end
 
-function run_multi()
+function run_multiks()
 
     Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
@@ -799,77 +804,31 @@ function run_multi()
         initpath="./spinup_files/1024_postspinup_noslip_5years_061824/"
     )
 
+    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
     grid_scale = 8
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
-
-    uhr_data = uhr[:, :, (Ndays-7):Ndays]
-    vhr_data = vhr[:, :, (Ndays-7):Ndays]
-    data = [uhr_data, vhr_data]
-
-    uinit, vinit, etainit = ShallowWaters.coarse_grain(uhr[:,:,1], vhr[:,:,1], etahr[:,:,1], Shr.grid.nx, Slr)
-
+   
     param_guess = 1e-2 .* randn(22 + 34 + 2 + 1)
 
-    initial_conds = []
-    sigma_initcond = 5
-    push!(initial_conds, S_for_values.Prog)
-    for k = 2:10
+    for k = 1:3
 
-        upert = zeros(size(S_for_values.Prog.u))
-        vpert = zeros(size(S_for_values.Prog.v))
-        etapert = zeros(size(S_for_values.Prog.η))
+        uhr_data = uhr[:, :, (Ndays-7+k):Ndays+k]
+        vhr_data = vhr[:, :, (Ndays-7+k):Ndays+k]
+        data = [uhr_data, vhr_data]
 
-        for n = 1:5
-            for m = 1:5
-                urand = randn(4)
-                vrand = randn(4)
-                for k = 1:131
-                    for j = 1:132
-                        upert[k,j] = sigma_initcond * urand[1] * cos((pi * n / 127) * k)*cos(pi * m / 128 * j)
-                            + sigma_initcond * urand[2] * sin((pi * n / 127) * k)*cos(pi * m / 128 * j)
-                            + sigma_initcond * urand[3] * cos((pi * n / 127) * k)*sin(pi * m / 128 * j)
-                            + sigma_initcond * urand[4] * sin((pi * n / 127) * k)*sin(pi * m / 128 * j)
-                        vpert[j,k] = sigma_initcond * vrand[1] * cos(pi * n / 128 * j) * cos(pi * m / 127 * k)
-                            + sigma_initcond * vrand[2] * cos(pi * n / 128 * j) * sin(pi * m / 127 * k)
-                            + sigma_initcond * vrand[3] * sin(pi * n / 128 * j) * cos(pi * m / 127 * k)
-                            + sigma_initcond * vrand[4] * sin(pi * n / 128 * j) * sin(pi * m / 127 * k)
-                    end
-                end
+        ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,k], vhr[:,:,k], etahr[:,:,k], Shr.grid.nx, Slr)
+        uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
 
-            end
-        end
-
-        for n = 1:5
-            for m = 1:5
-                etarand = randn(4)
-                for k = 1:130
-                    for j = 1:130
-                        etapert[k,j] = sigma_initcond * etarand[1] * cos((pi * n / 128) * k)*cos(pi * m / 128 * j)
-                            + sigma_initcond * etarand[2] * cos((pi * n / 128) * k)*sin(pi * m / 128 * j)
-                            + sigma_initcond * etarand[3] * sin((pi * n / 128) * k)*cos(pi * m / 128 * j)
-                            + sigma_initcond * etarand[4] * sin((pi * n / 128) * k)*sin(pi * m / 128 * j)
-                    end
-                end
-            end
-        end
-
-        push!(initial_conds,ShallowWaters.PrognosticVars{Float32}(
-            S_for_values.Prog.u + upert,
-            S_for_values.Prog.v + vpert,
-            S_for_values.Prog.η + etapert,
-            S_for_values.Prog.sst)
-        )
-
-    end
-
-    for j = 1:10
-        fg!_closure(F, G, param_guess) = multi_FG(F, G, param_guess, data, data_steps, Ndays)
+        initial_cond = [uinit, vinit, etainit]
+        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
         result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=2))
+
         param_guess = result.minimizer
+
     end
 
     return result
