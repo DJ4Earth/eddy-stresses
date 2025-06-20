@@ -1,7 +1,7 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multiks_Chkp{T1,T2}
+mutable struct multistate_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
     data::Array{Array{Float32, 2}, 1}              # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
@@ -196,7 +196,7 @@ function save_states(S)
 end
 
 # for running with checkpointing
-function multiks_checkpointed_integration(chkp, scheme)
+function multistate_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -368,7 +368,7 @@ function multiks_checkpointed_integration(chkp, scheme)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-     if chkp.i in chkp.data_steps
+    if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
@@ -378,13 +378,7 @@ function multiks_checkpointed_integration(chkp, scheme)
             chkp.S
         )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
-
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
-
-        chkp.J += sum(((ke_u_hr[1:65] + ke_v_hr[1:65]) - (ke_u_lr[1:65] + ke_v_lr[1:65])).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2 + (temp.v .- chkp.data[2][:,:,j]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -408,7 +402,7 @@ function multiks_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function multiks_integration(chkp)
+function multistate_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -580,9 +574,7 @@ function multiks_integration(chkp)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
-
-     if chkp.i in chkp.data_steps
+    if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
@@ -592,13 +584,7 @@ function multiks_integration(chkp)
             chkp.S
         )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
-
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
-
-        chkp.J += sum(((ke_u_hr[1:65] + ke_v_hr[1:65]) - (ke_u_lr[1:65] + ke_v_lr[1:65])).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2 + (temp.v .- chkp.data[2][:,:,j]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -621,7 +607,7 @@ function multiks_integration(chkp)
 
 end
 
-function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
      # Type precision
     T = Float32
@@ -659,7 +645,7 @@ function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
     S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
     S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
 
-    chkp = multiks_Chkp{T, T}(S,
+    chkp = multistate_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -668,13 +654,13 @@ function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         0
     )
 
-    J = multiks_integration(chkp)
+    J = multistate_integration(chkp)
 
     return J
 
 end
 
-function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
 
     # Type precision
     T = Float32
@@ -721,7 +707,7 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         write_checkpoints_period = 224
     )
 
-    chkp = multiks_Chkp{T, T}(S,
+    chkp = multistate_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -750,16 +736,16 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
 end
 
-function multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+function multistate_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
 
-    G === nothing || multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
-    F === nothing || return multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+    G === nothing || multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+    F === nothing || return multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
 end
 
-function run_multiks()
+function run_multistate()
 
-    Ndays = 1
+    Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -811,7 +797,7 @@ function run_multiks()
    
     param_guess = 1e-2 .* randn(22 + 34 + 2 + 1)
 
-    for k = 1:3
+    for k = 1:2:10
 
         uhr_data = uhr[:, :, 2]
         vhr_data = vhr[:, :, 2]
@@ -821,7 +807,7 @@ function run_multiks()
         uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
 
         initial_cond = [uinit, vinit, etainit]
-        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+        fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
         result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
 
