@@ -3,6 +3,7 @@
 *.out
 *.bash
 *.h5
+*.jld2
 /data_files_tunedgammavalues
 /spinup_files
 /for_video

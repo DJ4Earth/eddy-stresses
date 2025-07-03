@@ -638,6 +638,7 @@ function testing_integration(chkp)
 
     end
 
+    # Enzyme can't differentiate through this loss, not sure why
     chkp.J = (chkp.S.Prog.u[50,50] - chkp.S.Diag.NNVars.model_diag[1][1][1])^2
 
     return chkp.J
