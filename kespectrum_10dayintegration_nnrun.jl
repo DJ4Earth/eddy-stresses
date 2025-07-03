@@ -730,10 +730,10 @@ function kespec_compute_gradient(G, param_guess, data, data_steps, Ndays, initia
 
     @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec_checkpointed_integration,
+        kespec_integration,
         Active,
-        Duplicated(chkp, dchkp),
-        Const(revolve)
+        Duplicated(chkp, dchkp)
+        # Const(revolve)
     )
 
     # Get gradient
@@ -808,10 +808,11 @@ function run_kespec()
     vhr_data = vhr[:, :, (Ndays-7):Ndays]
     data = [uhr_data, vhr_data]
 
-    ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,1], vhr[:,:,1], etahr[:,:,1], Shr.grid.nx, Slr)
-    uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
+    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
 
-    initial_cond = [uinit, vinit, etainit]
+    initial_cond = [u0, v0, eta0]
 
     param_guess = 1e-2 .* randn(22 + 34)
 
