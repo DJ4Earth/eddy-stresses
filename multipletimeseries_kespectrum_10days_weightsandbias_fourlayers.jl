@@ -1,30 +1,9 @@
-using Enzyme
-using Checkpointing, HDF5, Serialization
-using NetCDF, JLD2, CairoMakie
-using Lux, Random
-using Reactant
-using DSP, FFTW, AbstractFFTs
-using ChainRules, LinearAlgebra
-Enzyme.EnzymeRules.inactive(::typeof(plan_fft), args...; kwargs...) = true
-Enzyme.EnzymeRules.inactive(::typeof(plan_rfft), args...; kwargs...) = true
-Enzyme.@import_rrule(typeof(*), AbstractFFTs.Plan, AbstractArray)
-Enzyme.@import_rrule(typeof(*), AbstractFFTs.ScaledPlan, AbstractArray)
-
-using Parameters
-using Optim
-using LaTeXStrings
-
-if !Base.isdefined(@__MODULE__, :ShallowWaters)
-    include("../ShallowWaters.jl/src/ShallowWaters.jl")
-    using .ShallowWaters
-end
-
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct testing_Chkp{T1,T2}
+mutable struct multiks2_fourlayers_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Vector{Array{T1, 3}}                   # computed data
+    data::Array{Array{Float32, 2}, 1}              # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -217,7 +196,7 @@ function save_states(S)
 end
 
 # for running with checkpointing
-function testing_checkpointed_integration(chkp, scheme)
+function multiks2_fourlayers_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -429,7 +408,7 @@ function testing_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function testing_integration(chkp)
+function multiks2_fourlayers_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -603,14 +582,14 @@ function testing_integration(chkp)
 
     #### Energy objective function, time averaged
 
-    if chkp.i in chkp.data_steps
+     if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-        chkp.S.Prog.u,
-        chkp.S.Prog.v,
-        chkp.S.Prog.η,
-        chkp.S.Prog.sst,
-        chkp.S
+         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+            chkp.S.Prog.u,
+            chkp.S.Prog.v,
+            chkp.S.Prog.η,
+            chkp.S.Prog.sst,
+            chkp.S
         )...)
 
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
@@ -619,11 +598,13 @@ function testing_integration(chkp)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
+        chkp.J += sum(((ke_u_hr[1:65] + ke_v_hr[1:65]) - (ke_u_lr[1:65] + ke_v_lr[1:65])).^2)
+
+        # storing the objective function over time
+        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
 
         chkp.j += 1
 
-        # chkp.J += sum((chkp.S.Prog.v[1:100, 1:100] .- chkp.S.Diag.NNVars.T11[1:100,1:100]).^2)
     end
 
     ##### time-averaging the objective function #######
@@ -640,9 +621,9 @@ function testing_integration(chkp)
 
 end
 
-function testing_compute_loss(Ndays, param_guess, data_steps, initial_cond, data)
+function multiks2_fourlayers_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
-    # Type precision
+     # Type precision
     T = Float32
 
     S = ShallowWaters.model_setup(output=false,
@@ -660,8 +641,8 @@ function testing_compute_loss(Ndays, param_guess, data_steps, initial_cond, data
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         handwritten=false,
         N=1,
         α=2,
@@ -669,22 +650,50 @@ function testing_compute_loss(Ndays, param_guess, data_steps, initial_cond, data
         Ndays=Ndays
     )
 
+    mdiag1, ndiag1 = size(S.Diag.NNVars.model_diag[1][1][1])
+    bmdiag1 = length(S.Diag.NNVars.model_diag[1][1][2])
+    mdiag2, ndiag2 = size(S.Diag.NNVars.model_diag[1][2][1])
+    bmdiag2 = length(S.Diag.NNVars.model_diag[1][2][2])
+    mdiag3, ndiag3 = size(S.Diag.NNVars.model_diag[1][3][1])
+    bmdiag3 = length(S.Diag.NNVars.model_diag[1][3][2])
+    mdiag4, ndiag4 = size(S.Diag.NNVars.model_diag[1][4][1])
+    bmdiag4 = length(S.Diag.NNVars.model_diag[1][4][2])
+
+    modiag1, nodiag1 = size(S.Diag.NNVars.model_offdiag[1][1][1])
+    bmodiag1 = length(S.Diag.NNVars.model_offdiag[1][1][2])
+    modiag2, nodiag2 = size(S.Diag.NNVars.model_offdiag[1][2][1])
+    bmodiag2 = length(S.Diag.NNVars.model_offdiag[1][2][2])
+    modiag3, nodiag3 = size(S.Diag.NNVars.model_offdiag[1][3][1])
+    bmodiag3 = length(S.Diag.NNVars.model_offdiag[1][3][2])
+    modiag4, nodiag4 = size(S.Diag.NNVars.model_offdiag[1][4][1])
+    bmodiag4 = length(S.Diag.NNVars.model_offdiag[1][4][2])
+
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
-    end
+    param_guess_diag = @view(param_guess[1:((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4))])
+    param_guess_offdiag = @view(param_guess[((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4)+1):end])
 
-    chkp = testing_Chkp{T, T}(S,
+    S.Diag.NNVars.model_diag[1][1][1] .= reshape(param_guess_diag[1:mdiag1*ndiag1], mdiag1, ndiag1)
+    S.Diag.NNVars.model_diag[1][1][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+1):(mdiag1*ndiag1+bmdiag1)], bmdiag1, 1)
+    S.Diag.NNVars.model_diag[1][2][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+1+bmdiag1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2)], mdiag2, ndiag2)
+    S.Diag.NNVars.model_diag[1][2][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2)], bmdiag2, 1)
+    S.Diag.NNVars.model_diag[1][3][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3)], mdiag3, ndiag3)
+    S.Diag.NNVars.model_diag[1][3][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3)], bmdiag3, 1)
+    S.Diag.NNVars.model_diag[1][4][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4)], mdiag4, ndiag4)
+    S.Diag.NNVars.model_diag[1][4][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4+1):end], bmdiag4, 1)
+
+    S.Diag.NNVars.model_offdiag[1][1][1] .= reshape(param_guess_offdiag[1:modiag1*nodiag1], modiag1, nodiag1)
+    S.Diag.NNVars.model_offdiag[1][1][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+1):(modiag1*nodiag1+bmodiag1)], bmodiag1, 1)
+    S.Diag.NNVars.model_offdiag[1][2][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2)], modiag2, nodiag2)
+    S.Diag.NNVars.model_offdiag[1][2][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2)], bmodiag2, 1)
+    S.Diag.NNVars.model_offdiag[1][3][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3)], modiag3, nodiag3)
+    S.Diag.NNVars.model_offdiag[1][3][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3)], bmodiag3, 1)
+    S.Diag.NNVars.model_offdiag[1][4][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4)], modiag4, nodiag4)
+    S.Diag.NNVars.model_offdiag[1][4][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4+1):end], bmodiag4, 1)
+
+    chkp = multiks2_fourlayers_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -693,13 +702,13 @@ function testing_compute_loss(Ndays, param_guess, data_steps, initial_cond, data
         0
     )
 
-    J = testing_integration(chkp)
+    J = multiks2_fourlayers_integration(chkp)
 
-    return J, chkp
+    return J
 
 end
 
-function testing_compute_gradient(G, param_guess, data_steps, Ndays, initial_cond, data)
+function multiks2_fourlayers_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
 
     # Type precision
     T = Float32
@@ -719,8 +728,8 @@ function testing_compute_gradient(G, param_guess, data_steps, Ndays, initial_con
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         handwritten=false,
         N=1,
         α=2,
@@ -728,20 +737,48 @@ function testing_compute_gradient(G, param_guess, data_steps, Ndays, initial_con
         Ndays=Ndays
     )
 
+    mdiag1, ndiag1 = size(S.Diag.NNVars.model_diag[1][1][1])
+    bmdiag1 = length(S.Diag.NNVars.model_diag[1][1][2])
+    mdiag2, ndiag2 = size(S.Diag.NNVars.model_diag[1][2][1])
+    bmdiag2 = length(S.Diag.NNVars.model_diag[1][2][2])
+    mdiag3, ndiag3 = size(S.Diag.NNVars.model_diag[1][3][1])
+    bmdiag3 = length(S.Diag.NNVars.model_diag[1][3][2])
+    mdiag4, ndiag4 = size(S.Diag.NNVars.model_diag[1][4][1])
+    bmdiag4 = length(S.Diag.NNVars.model_diag[1][4][2])
+
+    modiag1, nodiag1 = size(S.Diag.NNVars.model_offdiag[1][1][1])
+    bmodiag1 = length(S.Diag.NNVars.model_offdiag[1][1][2])
+    modiag2, nodiag2 = size(S.Diag.NNVars.model_offdiag[1][2][1])
+    bmodiag2 = length(S.Diag.NNVars.model_offdiag[1][2][2])
+    modiag3, nodiag3 = size(S.Diag.NNVars.model_offdiag[1][3][1])
+    bmodiag3 = length(S.Diag.NNVars.model_offdiag[1][3][2])
+    modiag4, nodiag4 = size(S.Diag.NNVars.model_offdiag[1][4][1])
+    bmodiag4 = length(S.Diag.NNVars.model_offdiag[1][4][2])
+
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
-    end
+    param_guess_diag = @view(param_guess[1:((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4))])
+    param_guess_offdiag = @view(param_guess[((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4)+1):end])
+
+    S.Diag.NNVars.model_diag[1][1][1] .= reshape(param_guess_diag[1:mdiag1*ndiag1], mdiag1, ndiag1)
+    S.Diag.NNVars.model_diag[1][1][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+1):(mdiag1*ndiag1+bmdiag1)], bmdiag1, 1)
+    S.Diag.NNVars.model_diag[1][2][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+1+bmdiag1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2)], mdiag2, ndiag2)
+    S.Diag.NNVars.model_diag[1][2][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2)], bmdiag2, 1)
+    S.Diag.NNVars.model_diag[1][3][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3)], mdiag3, ndiag3)
+    S.Diag.NNVars.model_diag[1][3][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3)], bmdiag3, 1)
+    S.Diag.NNVars.model_diag[1][4][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4)], mdiag4, ndiag4)
+    S.Diag.NNVars.model_diag[1][4][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4+1):end], bmdiag4, 1)
+
+    S.Diag.NNVars.model_offdiag[1][1][1] .= reshape(param_guess_offdiag[1:modiag1*nodiag1], modiag1, nodiag1)
+    S.Diag.NNVars.model_offdiag[1][1][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+1):(modiag1*nodiag1+bmodiag1)], bmodiag1, 1)
+    S.Diag.NNVars.model_offdiag[1][2][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2)], modiag2, nodiag2)
+    S.Diag.NNVars.model_offdiag[1][2][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2)], bmodiag2, 1)
+    S.Diag.NNVars.model_offdiag[1][3][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3)], modiag3, nodiag3)
+    S.Diag.NNVars.model_offdiag[1][3][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3)], bmodiag3, 1)
+    S.Diag.NNVars.model_offdiag[1][4][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4)], modiag4, nodiag4)
+    S.Diag.NNVars.model_offdiag[1][4][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4+1):end], bmodiag4, 1)
 
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve(
@@ -753,7 +790,7 @@ function testing_compute_gradient(G, param_guess, data_steps, Ndays, initial_con
         write_checkpoints_period = 224
     )
 
-    chkp = testing_Chkp{T, T}(S,
+    chkp = multiks2_fourlayers_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -763,38 +800,48 @@ function testing_compute_gradient(G, param_guess, data_steps, Ndays, initial_con
     )
     dchkp = Enzyme.make_zero(chkp)
 
-    @time autodiff(
+    J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        testing_integration,
+        multiks2_fourlayers_integration,
         Active,
         Duplicated(chkp, dchkp)
         # Const(revolve)
-    )
+    )[2]
+    println("Cost with AD: $J")
 
     # Get gradient
-    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])]
+    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);  # layer one weights for diagonal model
+        vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);    # layer one bias
+        vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);    # layer two weights
+        vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);    # layer two bias, and etc.
+        vec(dchkp.S.Diag.NNVars.model_diag[1][3][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][3][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][4][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][4][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);   # layer one weights for off-diagonal model
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);    # layer one bias
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);    # layer two weights
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2]);    # layer two bias, and etc.
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][2])
+    ]
 
     return nothing
 
 end
 
-function testing_FG(F, G, param_guess, data_steps, Ndays, initial_cond, data)
+function multiks2_fourlayers_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
 
-    G === nothing || testing_compute_gradient(G, param_guess, data_steps, Ndays, initial_cond, data)
-    F === nothing || return testing_compute_loss(Ndays, param_guess, data_steps, initial_cond, data)
+    G === nothing || multiks2_fourlayers_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+    F === nothing || return multiks2_fourlayers_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
 end
 
-function run_testing()
+function run_multiks2_fourlayers()
 
-    Ndays = 2
+    Ndays = 1
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -834,31 +881,35 @@ function run_testing()
         N=1,
         α=2,
         nx=1024,
-        Ndays=Ndays,
-        initial_cond="ncfile",
-        initpath="./spinup_files/1024_postspinup_noslip_5years_061824/"
+        Ndays=Ndays
     )
+
+    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
 
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    # data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+    grid_scale = 8
 
-    uhr_data = uhr[:, :, 1:Ndays]
-    vhr_data = vhr[:, :, 1:Ndays]
-    data = [uhr_data, vhr_data]
-    data_steps = 224:224:224*20
+    param_guess = zeros(422+461,1)
 
-    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+    for k = 1:3
 
-    initial_cond = [u0, v0, eta0]
+        uhr_data = uhr[:, :, 2]
+        vhr_data = vhr[:, :, 2]
+        data = [uhr_data, vhr_data]
 
-    param_guess = 1e-2 .* randn(241 + 202)
+        ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,k], vhr[:,:,k], etahr[:,:,k], Shr.grid.nx, Slr)
+        uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
 
-    fg!_closure(F, G, param_guess) = testing_FG(F, G, param_guess, data_steps, Ndays, initial_cond, data)
-    obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=2))
+        initial_cond = [uinit, vinit, etainit]
+        fg!_closure(F, G, param_guess) = multiks2_fourlayers_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+        obj_fg = Optim.only_fg!(fg!_closure)
+        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
+
+        param_guess = result.minimizer
+
+    end
 
     return result
 

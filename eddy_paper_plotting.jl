@@ -133,6 +133,7 @@ function plots()
         vp_true[:,t] = power(periodogram(v_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
     end
 
+    t = 10
     nn_wl = (1 ./ freq(periodogram(u_zb[:,:,t]; radialavg=true, radialsum=false))) * 30;
     nnu_freq = LinRange(0, 64, 65)
     nnu_freq = nnu_freq ./ 65
@@ -146,7 +147,7 @@ function plots()
     fig2 = Figure(size=(800, 500));
     t = 10
     lines(fig2[1,1], nn_wl[2:end], up_nn[2:end,t] + vp_nn[2:end,t], label="NN", axis=(
-            xscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[100, 30, 10, 2], title="KE Spectrum before training")
+            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[100, 30, 10, 2], title="KE Spectrum before training")
     )
     lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end,t] + vp_zb[2:end,t], label="ZB")
     lines!(fig2[1,1], true_wl[2:end], up_true[2:end,t] + vp_true[2:end,t], label="HR")
@@ -185,15 +186,36 @@ function plots()
         nx=128,
         Ndays=Ndays
     )
-    S.Diag.NNVars.model_diag[1][1] .= reshape(result.minimizer[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(result.minimizer[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= result.minimizer[end]
+    # S.Diag.NNVars.model_diag[1][1] .= reshape(result.minimizer[1:34], 2, 17)
+    # S.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:56], 1, 22)
+    # S.Diag.NNVars.model_diag[1][2] .= reshape(result.minimizer[57:58], 2, 1)
+    # S.Diag.NNVars.model_offdiag[1][2] .= result.minimizer[end]
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+    # S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
+    # S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
+    # S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
+    # S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+
+    param_guess_diag = @view(param_guess[1:((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4))])
+    param_guess_offdiag = @view(param_guess[((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4)+1):end])
+
+    S.Diag.NNVars.model_diag[1][1][1] .= reshape(param_guess_diag[1:mdiag1*ndiag1], mdiag1, ndiag1)
+    S.Diag.NNVars.model_diag[1][1][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+1):(mdiag1*ndiag1+bmdiag1)], bmdiag1, 1)
+    S.Diag.NNVars.model_diag[1][2][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+1+bmdiag1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2)], mdiag2, ndiag2)
+    S.Diag.NNVars.model_diag[1][2][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2)], bmdiag2, 1)
+    S.Diag.NNVars.model_diag[1][3][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3)], mdiag3, ndiag3)
+    S.Diag.NNVars.model_diag[1][3][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3)], bmdiag3, 1)
+    S.Diag.NNVars.model_diag[1][4][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4)], mdiag4, ndiag4)
+    S.Diag.NNVars.model_diag[1][4][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4+1):end], bmdiag4, 1)
+
+    S.Diag.NNVars.model_offdiag[1][1][1] .= reshape(param_guess_offdiag[1:modiag1*nodiag1], modiag1, nodiag1)
+    S.Diag.NNVars.model_offdiag[1][1][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+1):(modiag1*nodiag1+bmodiag1)], bmodiag1, 1)
+    S.Diag.NNVars.model_offdiag[1][2][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2)], modiag2, nodiag2)
+    S.Diag.NNVars.model_offdiag[1][2][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2)], bmodiag2, 1)
+    S.Diag.NNVars.model_offdiag[1][3][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3)], modiag3, nodiag3)
+    S.Diag.NNVars.model_offdiag[1][3][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3)], bmodiag3, 1)
+    S.Diag.NNVars.model_offdiag[1][4][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4)], modiag4, nodiag4)
+    S.Diag.NNVars.model_offdiag[1][4][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4+1):end], bmodiag4, 1)
 
     ShallowWaters.time_integration(S)
     temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
@@ -235,7 +257,7 @@ function plots()
     fig2 = Figure(size=(800, 500));
     t = 10
     lines(fig2[1,1], nn_wl[2:end], up_nn[2:end] + vp_nn[2:end], label="NN", axis=(
-            xscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, title="KE Spectrum after training")
+            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, title="KE Spectrum after training")
     )
     lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end] + vp_zb[2:end], label="ZB")
     lines!(fig2[1,1], true_wl[2:end], up_true[2:end] + vp_true[2:end], label="HR")
@@ -337,10 +359,31 @@ function longer_integration_kespec()
     S_after.Prog.v .= initial_cond[2]
     S_after.Prog.η .= initial_cond[3]
 
-    S_after.Diag.NNVars.model_diag[1][1] .= reshape(result.minimizer[1:34], 2, 17)
-    S_after.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:56], 1, 22)
-    S_after.Diag.NNVars.model_diag[1][2] .= reshape(result.minimizer[57:58], 2, 1)
-    S_after.Diag.NNVars.model_offdiag[1][2] .= result.minimizer[end]
+    # S_after.Diag.NNVars.model_diag[1][1] .= reshape(result.minimizer[1:34], 2, 17)
+    # S_after.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:56], 1, 22)
+    # S_after.Diag.NNVars.model_diag[1][2] .= reshape(result.minimizer[57:58], 2, 1)
+    # S_after.Diag.NNVars.model_offdiag[1][2] .= result.minimizer[end]
+
+    param_guess_diag = @view(param_guess[1:((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4))])
+    param_guess_offdiag = @view(param_guess[((mdiag1*ndiag1+bmdiag1)+(mdiag2*ndiag2+bmdiag2)+(mdiag3*ndiag3+bmdiag3)+(mdiag4*ndiag4+bmdiag4)+1):end])
+
+    S.Diag.NNVars.model_diag[1][1][1] .= reshape(param_guess_diag[1:mdiag1*ndiag1], mdiag1, ndiag1)
+    S.Diag.NNVars.model_diag[1][1][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+1):(mdiag1*ndiag1+bmdiag1)], bmdiag1, 1)
+    S.Diag.NNVars.model_diag[1][2][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+1+bmdiag1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2)], mdiag2, ndiag2)
+    S.Diag.NNVars.model_diag[1][2][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2)], bmdiag2, 1)
+    S.Diag.NNVars.model_diag[1][3][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3)], mdiag3, ndiag3)
+    S.Diag.NNVars.model_diag[1][3][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3)], bmdiag3, 1)
+    S.Diag.NNVars.model_diag[1][4][1] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+1):(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4)], mdiag4, ndiag4)
+    S.Diag.NNVars.model_diag[1][4][2] .= reshape(param_guess_diag[(mdiag1*ndiag1+bmdiag1+mdiag2*ndiag2+bmdiag2+mdiag3*ndiag3+bmdiag3+mdiag4*ndiag4+1):end], bmdiag4, 1)
+
+    S.Diag.NNVars.model_offdiag[1][1][1] .= reshape(param_guess_offdiag[1:modiag1*nodiag1], modiag1, nodiag1)
+    S.Diag.NNVars.model_offdiag[1][1][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+1):(modiag1*nodiag1+bmodiag1)], bmodiag1, 1)
+    S.Diag.NNVars.model_offdiag[1][2][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2)], modiag2, nodiag2)
+    S.Diag.NNVars.model_offdiag[1][2][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2)], bmodiag2, 1)
+    S.Diag.NNVars.model_offdiag[1][3][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3)], modiag3, nodiag3)
+    S.Diag.NNVars.model_offdiag[1][3][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3)], bmodiag3, 1)
+    S.Diag.NNVars.model_offdiag[1][4][1] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+1):(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4)], modiag4, nodiag4)
+    S.Diag.NNVars.model_offdiag[1][4][2] .= reshape(param_guess_offdiag[(modiag1*nodiag1+bmodiag1+modiag2*nodiag2+bmodiag2+modiag3*nodiag3+bmodiag3+modiag4*nodiag4+1):end], bmodiag4, 1)
 
     ShallowWaters.time_integration(S_after)
     ShallowWaters.time_integration(S_before)
