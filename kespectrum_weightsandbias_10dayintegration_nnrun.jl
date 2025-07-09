@@ -184,7 +184,6 @@ function kespec2_checkpointed_integration(chkp, scheme)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    @show chkp.i
     if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
@@ -201,7 +200,7 @@ function kespec2_checkpointed_integration(chkp, scheme)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum(((ke_u_hr[1:65] + ke_v_hr[1:65]) - (ke_u_lr[1:65] + ke_v_lr[1:65])).^2)
+        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -417,7 +416,6 @@ function kespec2_integration(chkp)
 
         chkp.j += 1
 
-        # chkp.J += sum((chkp.S.Prog.v[1:100, 1:100] .- chkp.S.Diag.NNVars.T11[1:100,1:100]).^2)
     end
 
     ##### time-averaging the objective function #######
@@ -436,7 +434,7 @@ end
 
 function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
-     # Type precision
+    # Type precision
     T = Float32
 
     S = ShallowWaters.model_setup(output=false,
@@ -456,7 +454,6 @@ function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
@@ -479,12 +476,12 @@ function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
     end
 
     chkp = kespec2_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0
+    data,
+    data_steps,
+    0.0,
+    1,
+    1,
+    0
     )
 
     J = kespec2_integration(chkp)
@@ -513,9 +510,8 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        handwritten=false,
+        nn_forcing_momentum=true,
+        nn_forcing_dissipation=false,
         N=1,
         α=2,
         nx=128,
@@ -559,10 +555,10 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec2_integration,
+        kespec2_checkpointed_integration,
         Active,
-        Duplicated(chkp, dchkp)
-        #Const(revolve)
+        Duplicated(chkp, dchkp),
+        Const(revolve)
     )[2]
     println("Cost with AD: $J")
 
@@ -605,44 +601,21 @@ function run_kespec2()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        handwritten=false,
+        nn_forcing_momentum=true,
+        nn_forcing_dissipation=false,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays
     )
 
-    Shr = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays,
-        initial_cond="ncfile",
-        initpath="./spinup_files/1024_postspinup_noslip_5years_061824/"
-    )
-
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
     data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
 
     uhr_data = uhr[:, :, (Ndays-7):Ndays]
     vhr_data = vhr[:, :, (Ndays-7):Ndays]
     data = [uhr_data, vhr_data]
-
 
     u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
@@ -668,3 +641,34 @@ end
 #     eta = reshape(result.minimizer[34585:end-1], 130, 130),
 #     Fx0 = result.minimizer[end]
 # )
+
+
+# S_before = ShallowWaters.model_setup(output=true,
+#     L_ratio=1,
+#     g=9.81,
+#     H=500,
+#     wind_forcing_x="double_gyre",
+#     Lx=3840e3,
+#     seasonal_wind_x=false,
+#     topography="flat",
+#     bc="nonperiodic",
+#     bottom_drag="quadratic",
+#     tracer_advection=false,
+#     tracer_relaxation=false,
+#     zb_forcing_momentum=true,
+#     zb_forcing_dissipation=false,
+#     zb_filtered=true,
+#     nn_forcing_momentum=false,
+#     nn_forcing_dissipation=false,
+#     handwritten=false,
+#     N=1,
+#     α=2,
+#     nx=128,
+#     Ndays=30
+# )
+
+# S_before.Prog.u .= initial_cond[1]
+# S_before.Prog.v .= initial_cond[2]
+# S_before.Prog.η .= initial_cond[3]
+
+# ShallowWaters.time_integration(S_before)

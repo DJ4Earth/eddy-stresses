@@ -279,11 +279,9 @@ weakdeps = ["SparseArrays"]
 
 [[deps.Checkpointing]]
 deps = ["Accessors", "ChainRulesCore", "DataStructures", "Enzyme", "EnzymeCore", "HDF5", "LinearAlgebra", "Serialization"]
-git-tree-sha1 = "f6e034ca612f5a62974891690d1926234f77bfd7"
-repo-rev = "ms/closure"
-repo-url = "https://github.com/Argonne-National-Laboratory/Checkpointing.jl.git"
+git-tree-sha1 = "8896f1fad824ffbda39af428bd959c838e2f5f6d"
 uuid = "eb46d486-4f9c-4c3d-b445-a617f2a2f1ca"
-version = "0.11.0"
+version = "0.11.1"
 
 [[deps.CloseOpenIntervals]]
 deps = ["Static", "StaticArrayInterface"]

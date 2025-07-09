@@ -21,7 +21,7 @@ end
 
 mutable struct Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Vector{Float32}                   # computed data
+    data::Vector{Array{T1, 3}}                   # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -209,27 +209,28 @@ function checkpointed_integration(chkp, scheme, steps)::Float64
         ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
         #### Energy objective function, time averaged
-        @show chkp.i
         if chkp.i in chkp.data_steps
-        @show chkp.i
 
             temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-                chkp.S.Prog.u,
-                chkp.S.Prog.v,
-                chkp.S.Prog.η,
-                chkp.S.Prog.sst,
-                chkp.S
-            )...)
+            chkp.S.Prog.u,
+            chkp.S.Prog.v,
+            chkp.S.Prog.η,
+            chkp.S.Prog.sst,
+            chkp.S
+        )...)
 
-            energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
-            energy_hr = chkp.data[chkp.j]
+        ke_u_lr = power(periodogram(temp.u; radialavg=true))
+        ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-            chkp.J = chkp.J + (energy_hr - energy_lr)^2
+        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-            # storing the objective function over time
-            # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
 
-            chkp.j += 1
+        # storing the objective function over time
+        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+
+        chkp.j += 1
 
         end
 
@@ -427,30 +428,30 @@ function integration(chkp, steps)::Float64
 
         ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-        #### Energy objective function, time averaged
-        # @show chkp.i
-        # if chkp.i in chkp.data_steps
-        #     @show chkp.i
+        if chkp.i in chkp.data_steps
 
-        #     temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-        #         chkp.S.Prog.u,
-        #         chkp.S.Prog.v,
-        #         chkp.S.Prog.η,
-        #         chkp.S.Prog.sst,
-        #         chkp.S
-        #     )...)
+        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+        chkp.S.Prog.u,
+        chkp.S.Prog.v,
+        chkp.S.Prog.η,
+        chkp.S.Prog.sst,
+        chkp.S
+        )...)
 
-        #     energy_lr = (sum(temp.u.^2) + sum(temp.v.^2)) / (chkp.S.grid.nx * chkp.S.grid.ny)
-        #     energy_hr = chkp.data[chkp.j]
+        ke_u_lr = power(periodogram(temp.u; radialavg=true))
+        ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-        #     chkp.J = chkp.J + (energy_hr - energy_lr)^2
+        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        #     # storing the objective function over time
-        #     # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
 
-        #     chkp.j += 1
+        # storing the objective function over time
+        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
 
-        # end
+        chkp.j += 1
+
+        end
 
         ##### time-averaging the objective function #######
         # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
@@ -461,7 +462,6 @@ function integration(chkp, steps)::Float64
         copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
-    chkp.J = (chkp.S.Prog.u[50,50] - chkp.S.Diag.NNVars.model_diag[1][1][1])^2
 
     return chkp.J
 
@@ -471,7 +471,7 @@ function compare_gradients()
     # Type precision
     T = Float32
     Ndays = 1
-    steps = Int(2)     # instead of running Ndays I'm just running some number of steps
+    steps = Int(224)     # instead of running Ndays I'm just running some number of steps
 
     P = ShallowWaters.Parameter(T=T;
         output=false,
@@ -488,26 +488,26 @@ function compare_gradients()
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        handwritten=false,
+        nn_forcing_momentum=true,
+        nn_forcing_dissipation=false,
         zb_filtered=true,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays,
         initial_cond="rest"
-        # initial_cond="ncfile",
-        # initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
     )
 
     S = ShallowWaters.model_setup(P)
 
-    # energy_high_resolution = load_object("./spinup_files/1024_postspinup_noslip_5years_061824/energy_post_spinup_1024_noslip_5years_061224.jld2")
-    # grid_scale = 8
-    data_steps = 5:S.grid.nt
-    # data = energy_high_resolution[grid_scale:grid_scale:S.grid.nt*grid_scale]
-    data = zeros(length(data_steps))
+    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+    data_steps = S.grid.nt:225:S.grid.nt
+
+    uhr_data = uhr[:, :, 1]
+    vhr_data = vhr[:, :, 1]
+    data = [uhr_data, vhr_data]
 
     snaps = 3
     revolve = Revolve(
@@ -539,8 +539,7 @@ function compare_gradients()
     )[2]
     println("Cost with Checkpointing + AD: $Jnew1")
 
-    deriv1 = dchkp1.S.Diag.NNVars.model_diag[1][1][1,2]
-    # deriv1 = dchkp1.S.parameters.Fx0
+    deriv1 = dchkp1.S.Diag.NNVars.model_diag[1][1][1]
     println("Derivative with Checkpointing + AD: $deriv1")
 
     chkp2 = deepcopy(chkp)
@@ -554,7 +553,7 @@ function compare_gradients()
     )[2]
     println("Cost with AD: $Jnew2")
 
-    deriv2 = dchkp2.S.Diag.NNVars.model_diag[1][1][1,2]
+    deriv2 = dchkp2.S.Diag.NNVars.model_diag[1][1][1]
     # deriv2 = dchkp2.S.parameters.Fx0
     println("Derivative with AD: $deriv2")
 
@@ -562,60 +561,60 @@ function compare_gradients()
     @time J = checkpointed_integration(chkp_prim, revolve, steps)
     println("Cost without AD: $J")
 
-    steps2 = [10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    # steps2 = [10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 
-    diffs = []
+    # diffs = []
 
-    for s in steps2
+    # for s in steps2
 
-        P3 = ShallowWaters.Parameter(T=T;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        handwritten=false,
-        zb_filtered=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays,
-        initial_cond="rest"
-        # initial_cond="ncfile",
-        # initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
-        )
+    #     P3 = ShallowWaters.Parameter(T=T;
+    #     output=false,
+    #     L_ratio=1,
+    #     g=9.81,
+    #     H=500,
+    #     wind_forcing_x="double_gyre",
+    #     Lx=3840e3,
+    #     seasonal_wind_x=false,
+    #     topography="flat",
+    #     bc="nonperiodic",
+    #     bottom_drag="quadratic",
+    #     tracer_advection=false,
+    #     tracer_relaxation=false,
+    #     zb_forcing_momentum=false,
+    #     zb_forcing_dissipation=false,
+    #     nn_forcing_momentum=false,
+    #     nn_forcing_dissipation=true,
+    #     handwritten=false,
+    #     zb_filtered=true,
+    #     N=1,
+    #     α=2,
+    #     nx=128,
+    #     Ndays=Ndays,
+    #     initial_cond="rest"
+    #     # initial_cond="ncfile",
+    #     # initpath="./spinup_files/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+    #     )
 
-        S_inner = ShallowWaters.model_setup(P3)
-        S_inner.Diag.NNVars.model_diag[1][1][1,2] += s
-        # S_inner.parameters.Fx0 += s
+    #     S_inner = ShallowWaters.model_setup(P3)
+    #     S_inner.Diag.NNVars.model_diag[1][1][1,2] += s
+    #     # S_inner.parameters.Fx0 += s
 
-        chkp_inner = Chkp{T, T}(S_inner,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0.0
-        )
+    #     chkp_inner = Chkp{T, T}(S_inner,
+    #     data,
+    #     data_steps,
+    #     0.0,
+    #     1,
+    #     1,
+    #     0.0
+    #     )
 
-        J_inner = integration(chkp_inner, steps)
+    #     J_inner = integration(chkp_inner, steps)
 
-        push!(diffs, (J_inner - J) / s)
+    #     push!(diffs, (J_inner - J) / s)
 
-    end
+    # end
 
-    @show diffs
+    # @show diffs
 
     return nothing
 
