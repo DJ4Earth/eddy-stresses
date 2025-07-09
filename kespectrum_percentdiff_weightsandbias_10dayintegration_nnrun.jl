@@ -1,9 +1,9 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multiks_Chkp{T1,T2}
+mutable struct kespec3_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Float32, 2}, 1}       # computed data
+    data::Vector{Array{T1, 3}}                   # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -12,7 +12,7 @@ mutable struct multiks_Chkp{T1,T2}
 end
 
 # for running with checkpointing
-function multiks_checkpointed_integration(chkp, scheme)
+function kespec3_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -186,12 +186,12 @@ function multiks_checkpointed_integration(chkp, scheme)
 
     if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-        chkp.S.Prog.u,
-        chkp.S.Prog.v,
-        chkp.S.Prog.η,
-        chkp.S.Prog.sst,
-        chkp.S
+         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+            chkp.S.Prog.u,
+            chkp.S.Prog.v,
+            chkp.S.Prog.η,
+            chkp.S.Prog.sst,
+            chkp.S
         )...)
 
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
@@ -224,7 +224,7 @@ function multiks_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function multiks_integration(chkp)
+function kespec3_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -396,15 +396,14 @@ function multiks_integration(chkp)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
     if chkp.i in chkp.data_steps
 
         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-            chkp.S.Prog.u,
-            chkp.S.Prog.v,
-            chkp.S.Prog.η,
-            chkp.S.Prog.sst,
-            chkp.S
+        chkp.S.Prog.u,
+        chkp.S.Prog.v,
+        chkp.S.Prog.η,
+        chkp.S.Prog.sst,
+        chkp.S
         )...)
 
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
@@ -413,10 +412,7 @@ function multiks_integration(chkp)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
-
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum( (ke_u_hr[1:65]- ke_u_lr[1:65]).^2 ./ ke_u_hr[1:65].^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2 ./ ke_v_hr[1:65].^2 )
 
         chkp.j += 1
 
@@ -436,66 +432,7 @@ function multiks_integration(chkp)
 
 end
 
-function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
-
-     # Type precision
-    T = Float32
-
-    S = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        handwritten=false,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
-
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
-
-    current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
-    end
-
-    chkp = multiks_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0
-    )
-
-    J = multiks_integration(chkp)
-
-    return J
-
-end
-
-function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+function kespec3_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
     # Type precision
     T = Float32
@@ -517,7 +454,64 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    )
+
+    S.Prog.u .= initial_cond[1]
+    S.Prog.v .= initial_cond[2]
+    S.Prog.η .= initial_cond[3]
+
+    current = 1
+    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
+
+    chkp = kespec3_Chkp{T, T}(S,
+    data,
+    data_steps,
+    0.0,
+    1,
+    1,
+    0
+    )
+
+    J = kespec3_integration(chkp)
+
+    return J
+
+end
+
+function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+
+    # Type precision
+    T = Float32
+
+    S = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
@@ -549,7 +543,7 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         write_checkpoints_period = 224
     )
 
-    chkp = multiks_Chkp{T, T}(S,
+    chkp = kespec3_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -561,7 +555,7 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        multiks_checkpointed_integration,
+        kespec3_checkpointed_integration,
         Active,
         Duplicated(chkp, dchkp),
         Const(revolve)
@@ -582,16 +576,16 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
 end
 
-function multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+function kespec3_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
 
-    G === nothing || multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
-    F === nothing || return multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+    G === nothing || kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+    F === nothing || return kespec3_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
 end
 
-function run_multiks()
+function run_kespec3()
 
-    Ndays = 1
+    Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -607,58 +601,33 @@ function run_multiks()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
-        handwritten=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays
     )
 
-    Shr = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays
-    )
-
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
-
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+
+    uhr_data = uhr[:, :, (Ndays-7):Ndays]
+    vhr_data = vhr[:, :, (Ndays-7):Ndays]
+    data = [uhr_data, vhr_data]
+
+    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+
+    initial_cond = [u0, v0, eta0]
 
     param_guess = 1e-2 .* randn(241 + 202)
 
-    for k = 4:2:10
-
-        uhr_data = uhr[:, :, 2]
-        vhr_data = vhr[:, :, 2]
-        data = [uhr_data, vhr_data]
-
-        ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,k], vhr[:,:,k], etahr[:,:,k], Shr.grid.nx, Slr)
-        uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
-
-        initial_cond = [uinit, vinit, etainit]
-        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
-        obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
-
-        param_guess = result.minimizer
-
-    end
+    fg!_closure(F, G, param_guess) = kespec3_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+    obj_fg = Optim.only_fg!(fg!_closure)
+    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=10))
 
     return result
 
@@ -672,3 +641,34 @@ end
 #     eta = reshape(result.minimizer[34585:end-1], 130, 130),
 #     Fx0 = result.minimizer[end]
 # )
+
+
+# S_before = ShallowWaters.model_setup(output=true,
+#     L_ratio=1,
+#     g=9.81,
+#     H=500,
+#     wind_forcing_x="double_gyre",
+#     Lx=3840e3,
+#     seasonal_wind_x=false,
+#     topography="flat",
+#     bc="nonperiodic",
+#     bottom_drag="quadratic",
+#     tracer_advection=false,
+#     tracer_relaxation=false,
+#     zb_forcing_momentum=true,
+#     zb_forcing_dissipation=false,
+#     zb_filtered=true,
+#     nn_forcing_momentum=false,
+#     nn_forcing_dissipation=false,
+#     handwritten=false,
+#     N=1,
+#     α=2,
+#     nx=128,
+#     Ndays=30
+# )
+
+# S_before.Prog.u .= initial_cond[1]
+# S_before.Prog.v .= initial_cond[2]
+# S_before.Prog.η .= initial_cond[3]
+
+# ShallowWaters.time_integration(S_before)
