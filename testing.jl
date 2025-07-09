@@ -601,8 +601,6 @@ function testing_integration(chkp)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
-
     if chkp.i in chkp.data_steps
 
         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
@@ -695,7 +693,7 @@ function testing_compute_loss(Ndays, param_guess, data_steps, initial_cond, data
 
     J = testing_integration(chkp)
 
-    return J, chkp
+    return J
 
 end
 

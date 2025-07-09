@@ -11,190 +11,6 @@ mutable struct multiks_Chkp{T1,T2}
     t::Int64                                # model time
 end
 
-function save_states(S)
-
-    states = []
-    energy = []
-
-     # setup that happens prior to the actual integration
-    Diag = S.Diag
-    Prog = S.Prog
-
-    @unpack u,v,η,sst = Prog
-    @unpack u0,v0,η0 = Diag.RungeKutta
-    @unpack u1,v1,η1 = Diag.RungeKutta
-    @unpack du,dv,dη = Diag.Tendencies
-    @unpack du_sum,dv_sum,dη_sum = Diag.Tendencies
-    @unpack du_comp,dv_comp,dη_comp = Diag.Tendencies
-
-    @unpack um,vm = Diag.SemiLagrange
-
-    @unpack dynamics,RKo,RKs,tracer_advection = S.parameters
-    @unpack time_scheme,compensated = S.parameters
-    @unpack RKaΔt,RKbΔt = S.constants
-    @unpack Δt_Δ,Δt_Δs = S.constants
-
-    @unpack nt,dtint = S.grid
-    @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
-
-    freqpoweru = []
-    freqpowerv = []
-
-    # calculate layer thicknesses for initial conditions
-    ShallowWaters.thickness!(Diag.VolumeFluxes.h,η,S.forcing.H)
-    ShallowWaters.Ix!(Diag.VolumeFluxes.h_u,Diag.VolumeFluxes.h)
-    ShallowWaters.Iy!(Diag.VolumeFluxes.h_v,Diag.VolumeFluxes.h)
-    ShallowWaters.Ixy!(Diag.Vorticity.h_q,Diag.VolumeFluxes.h)
-
-    # calculate PV terms for initial conditions
-
-    urhs = Diag.PrognosticVarsRHS.u .= u
-    vrhs = Diag.PrognosticVarsRHS.v .= v
-    ηrhs = Diag.PrognosticVarsRHS.η .= η
-
-    ShallowWaters.advection_coriolis!(urhs,vrhs,ηrhs,Diag,S)
-    ShallowWaters.PVadvection!(Diag,S)
-
-    # propagate initial conditions
-    copyto!(u0,u)
-    copyto!(v0,v)
-    copyto!(η0,η)
-
-    # store initial conditions of sst for relaxation
-    copyto!(Diag.SemiLagrange.sst_ref,sst)
-    j = 1
-
-    for t = 1:S.grid.nt
-
-        i = t
-
-        Diag = S.Diag
-        Prog = S.Prog
-
-        @unpack u,v,η,sst = Prog
-        @unpack u0,v0,η0 = Diag.RungeKutta
-        @unpack u1,v1,η1 = Diag.RungeKutta
-        @unpack du,dv,dη = Diag.Tendencies
-        @unpack du_sum,dv_sum,dη_sum = Diag.Tendencies
-        @unpack du_comp,dv_comp,dη_comp = Diag.Tendencies
-
-        @unpack um,vm = Diag.SemiLagrange
-
-        @unpack dynamics,RKo,RKs,tracer_advection = S.parameters
-        @unpack time_scheme,compensated = S.parameters
-        @unpack RKaΔt,RKbΔt = S.constants
-        @unpack Δt_Δ,Δt_Δs = S.constants
-
-        @unpack nt,dtint = S.grid
-        @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
-
-        # ghost point copy for boundary conditions
-        ShallowWaters.ghost_points!(u,v,η,S)
-        copyto!(u1,u)
-        copyto!(v1,v)
-        copyto!(η1,η)
-
-        if compensated
-            fill!(du_sum,zero(Tprog))
-            fill!(dv_sum,zero(Tprog))
-            fill!(dη_sum,zero(Tprog))
-        end
-
-        for rki = 1:RKo
-            if rki > 1
-                ShallowWaters.ghost_points!(u1,v1,η1,S)
-            end
-
-            # type conversion for mixed precision
-            u1rhs = Diag.PrognosticVarsRHS.u .= u1
-            v1rhs = Diag.PrognosticVarsRHS.v .= v1
-            η1rhs = Diag.PrognosticVarsRHS.η .= η1
-
-            ShallowWaters.rhs!(u1rhs,v1rhs,η1rhs,Diag,S,t)          # momentum only
-            ShallowWaters.continuity!(u1rhs,v1rhs,η1rhs,Diag,S,t)   # continuity equation
-
-            if rki < RKo
-                ShallowWaters.caxb!(u1,u,RKbΔt[rki],du)   #u1 .= u .+ RKb[rki]*Δt*du
-                ShallowWaters.caxb!(v1,v,RKbΔt[rki],dv)   #v1 .= v .+ RKb[rki]*Δt*dv
-                ShallowWaters.caxb!(η1,η,RKbΔt[rki],dη)   #η1 .= η .+ RKb[rki]*Δt*dη
-            end
-
-            if compensated      # accumulate tendencies
-                ShallowWaters.axb!(du_sum,RKaΔt[rki],du)
-                ShallowWaters.axb!(dv_sum,RKaΔt[rki],dv)
-                ShallowWaters.axb!(dη_sum,RKaΔt[rki],dη)
-            else    # sum RK-substeps on the go
-                ShallowWaters.axb!(u0,RKaΔt[rki],du)          #u0 .+= RKa[rki]*Δt*du
-                ShallowWaters.axb!(v0,RKaΔt[rki],dv)          #v0 .+= RKa[rki]*Δt*dv
-                ShallowWaters.axb!(η0,RKaΔt[rki],dη)          #η0 .+= RKa[rki]*Δt*dη
-            end
-        end
-
-        if compensated
-            # add compensation term to total tendency
-            ShallowWaters.axb!(du_sum,-1,du_comp)
-            ShallowWaters.axb!(dv_sum,-1,dv_comp)
-            ShallowWaters.axb!(dη_sum,-1,dη_comp)
-
-            ShallowWaters.axb!(u0,1,du_sum)   # update prognostic variable with total tendency
-            ShallowWaters.axb!(v0,1,dv_sum)
-            ShallowWaters.axb!(η0,1,dη_sum)
-
-            ShallowWaters.dambmc!(du_comp,u0,u,du_sum)    # compute new compensation
-            ShallowWaters.dambmc!(dv_comp,v0,v,dv_sum)
-            ShallowWaters.dambmc!(dη_comp,η0,η,dη_sum)
-        end
-
-        ShallowWaters.ghost_points!(u0,v0,η0,S)
-
-        # type conversion for mixed precision
-        u0rhs = Diag.PrognosticVarsRHS.u .= u0
-        v0rhs = Diag.PrognosticVarsRHS.v .= v0
-        η0rhs = Diag.PrognosticVarsRHS.η .= η0
-
-        # ADVECTION and CORIOLIS TERMS
-        # although included in the tendency of every RK substep,
-        # only update every nstep_advcor steps if nstep_advcor > 0
-        if dynamics == "nonlinear" && nstep_advcor > 0 && (i % nstep_advcor) == 0
-            ShallowWaters.UVfluxes!(u0rhs,v0rhs,η0rhs,Diag,S)
-            ShallowWaters.advection_coriolis!(u0rhs,v0rhs,η0rhs,Diag,S)
-        end
-
-        # DIFFUSIVE TERMS - SEMI-IMPLICIT EULER
-        # use u0 = u^(n+1) to evaluate tendencies, add to u0 = u^n + rhs
-        # evaluate only every nstep_diff time steps
-        if (i % nstep_diff) == 0
-            ShallowWaters.bottom_drag!(u0rhs,v0rhs,η0rhs,Diag,S)
-            ShallowWaters.diffusion!(u0rhs,v0rhs,Diag,S)
-            ShallowWaters.add_drag_diff_tendencies!(u0,v0,Diag,S)
-            ShallowWaters.ghost_points_uv!(u0,v0,S)
-        end
-
-        # TRACER ADVECTION
-        u0rhs = Diag.PrognosticVarsRHS.u .= u0
-        v0rhs = Diag.PrognosticVarsRHS.v .= v0
-        ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
-
-        # storing daily states for the "true" values
-        if t ∈ 10:10:S.grid.nt
-            temp1 = ShallowWaters.PrognosticVars{S.parameters.Tprog}(
-                ShallowWaters.remove_halo(u,v,η,sst,S)...)
-            push!(states, temp1)
-        end
-
-        # Copy back from substeps
-        copyto!(u,u0)
-        copyto!(v,v0)
-        copyto!(η,η0)
-
-        t += dtint
-
-    end
-
-    return states
-
-end
-
 # for running with checkpointing
 function multiks_checkpointed_integration(chkp, scheme)
 
@@ -654,10 +470,16 @@ function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+    current = 1
+    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
 
     chkp = multiks_Chkp{T, T}(S,
         data,
@@ -702,14 +524,21 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         nx=128,
         Ndays=Ndays
     )
+
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+    current = 1
+    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
 
     snaps = Int(floor(sqrt(S.grid.nt)))
     revolve = Revolve(
