@@ -570,10 +570,14 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
     println("Cost with AD: $J")
 
     # Get gradient
-    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2])]
+    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);
+          vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
+          vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
+          vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
+          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
+          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
+          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
+          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])]
 
     return nothing
 
@@ -604,8 +608,8 @@ function run_multiks()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
+        nn_forcing_momentum=true,
+        nn_forcing_dissipation=false,
         handwritten=false,
         N=1,
         α=2,
@@ -636,11 +640,10 @@ function run_multiks()
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
-    grid_scale = 8
-   
-    param_guess = 1e-2 .* randn(22 + 34 + 2 + 1)
 
-    for k = 1:3
+    param_guess = 1e-2 .* randn(241 + 202)
+
+    for k = 4:2:10
 
         uhr_data = uhr[:, :, 2]
         vhr_data = vhr[:, :, 2]
