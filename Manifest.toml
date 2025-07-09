@@ -2,7 +2,7 @@
 
 julia_version = "1.10.8"
 manifest_format = "2.0"
-project_hash = "37691ef5f6fe915ea44b584008c28196f9fe2fdf"
+project_hash = "e4a9457cab3656e9d820c69fe86d141a2a3db586"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "e2478490447631aedba0823d4d7a80b2cc8cdb32"
@@ -2086,15 +2086,6 @@ deps = ["ColorTypes", "FixedPointNumbers", "GeometryBasics", "LinearAlgebra", "O
 git-tree-sha1 = "818554664a2e01fc3784becb2eb3a82326a604b6"
 uuid = "65257c39-d410-5151-9873-9b3e5be5013e"
 version = "0.5.0"
-
-[[deps.ShallowWaters]]
-deps = ["Dates", "Enzyme", "Interpolations", "Lux", "NetCDF", "Parameters", "Printf", "Random", "Reactant"]
-git-tree-sha1 = "aa99d4db53f6c32fb88a11178b28137fe201c706"
-repo-rev = "forwardfix"
-repo-url = "https://github.com/swilliamson7/ShallowWaters.jl.git"
-uuid = "56019723-2d87-4a65-81ff-59d5d8913e3c"
-version = "0.5.3"
-weakdeps = ["Checkpointing"]
 
 [[deps.SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
