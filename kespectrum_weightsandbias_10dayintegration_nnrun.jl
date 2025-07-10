@@ -452,8 +452,8 @@ function kespec2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
@@ -510,8 +510,8 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
@@ -555,10 +555,10 @@ function kespec2_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec2_checkpointed_integration,
+        kespec2_integration,
         Active,
-        Duplicated(chkp, dchkp),
-        Const(revolve)
+        Duplicated(chkp, dchkp)
+        # Const(revolve)
     )[2]
     println("Cost with AD: $J")
 
@@ -601,8 +601,8 @@ function run_kespec2()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
@@ -627,7 +627,7 @@ function run_kespec2()
 
     fg!_closure(F, G, param_guess) = kespec2_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
     obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=2))
+    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
 
     return result
 
