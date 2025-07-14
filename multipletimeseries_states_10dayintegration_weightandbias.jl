@@ -577,7 +577,7 @@ end
 
 function run_multistate()
 
-    Ndays = 4
+    Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -623,7 +623,7 @@ function run_multistate()
     hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
     data_steps = 225:225:Slr.grid.nt
 
-    data = hrstates[1:4]
+    data = hrstates[1:Ndays]
 
     u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
@@ -635,11 +635,11 @@ function run_multistate()
 
     result = nothing
 
-    for Ndays = 1:2:4
+    for ndays = 1:2:10
 
-        fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+        fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
+        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
 
         param_guess = result.minimizer
 

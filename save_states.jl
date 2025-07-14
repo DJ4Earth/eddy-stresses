@@ -24,9 +24,6 @@ function save_states(S)
     @unpack nt,dtint = S.grid
     @unpack nstep_advcor,nstep_diff,nadvstep,nadvstep_half = S.grid
 
-    freqpoweru = []
-    freqpowerv = []
-
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(Diag.VolumeFluxes.h,η,S.forcing.H)
     ShallowWaters.Ix!(Diag.VolumeFluxes.h_u,Diag.VolumeFluxes.h)
