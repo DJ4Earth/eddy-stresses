@@ -409,10 +409,10 @@ function kespec2_integration(chkp)
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
         ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+        ke_u_hr = power(periodogram(chkp.data[chkp.j][1]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[chkp.j][2]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
+        chkp.J += sum( (ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
 
         chkp.j += 1
 
@@ -585,7 +585,7 @@ end
 
 function run_kespec2()
 
-    Ndays = 10
+    Ndays = 20
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -611,7 +611,7 @@ function run_kespec2()
 
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+    data_steps = 225:225:Slr.grid.nt
 
     uhr_data = uhr[:, :, (Ndays-7):Ndays]
     vhr_data = vhr[:, :, (Ndays-7):Ndays]
@@ -623,7 +623,8 @@ function run_kespec2()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = 1e-2 .* randn(241 + 202)
+    init = load_object("./tuned_weights/tunedweights_stateloss_1:2:10daysintegration_5iterationsLBFGS_dailydata_071425.jld2")
+    param_guess = init.minimizer
 
     fg!_closure(F, G, param_guess) = kespec2_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
     obj_fg = Optim.only_fg!(fg!_closure)

@@ -634,25 +634,25 @@ function run_multiks()
         Ndays=Ndays
     )
 
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+    data_steps = 225:225:Slr.grid.nt
+    hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
+    data = hrstates[1:10]
+
+    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+
+    initial_cond = [u0, v0, eta0]
 
     uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
 
-    param_guess = 1e-2 .* randn(241 + 202)
+    param_guess = load_object("./tuned_weights/minimizer_134days_statelossfunction_3iterationsLBFGS_dailydata_071125.jld2")
 
-    for k = 4:2:10
+    for ndays = 2:2:10
 
-        uhr_data = uhr[:, :, 2]
-        vhr_data = vhr[:, :, 2]
-        data = [uhr_data, vhr_data]
-
-        ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,k], vhr[:,:,k], etahr[:,:,k], Shr.grid.nx, Slr)
-        uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
-
-        initial_cond = [uinit, vinit, etainit]
-        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
         result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
 
