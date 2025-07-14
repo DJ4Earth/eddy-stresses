@@ -21,7 +21,7 @@ Shr = ShallowWaters.model_setup(output=false,
         α=2,
         nx=1024,
         Ndays=30,
-        init_cond="ncfile"
+        init_cond="ncfile",
         initpath="./"
 )
 
