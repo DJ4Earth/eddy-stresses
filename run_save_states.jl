@@ -20,5 +20,9 @@ Shr = ShallowWaters.model_setup(output=false,
         N=1,
         α=2,
         nx=1024,
-        Ndays=30
+        Ndays=30,
+        init_cond="ncfile"
+        initpath="./"
 )
+
+hrstates = save_states(Shr)
