@@ -3,7 +3,7 @@
 # are all constant, nothing changes in time
 mutable struct multistate_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Float32, 2}, 1}              # computed data
+    data::Array{Array{Array{T1,2}, 1}, 1}       # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -400,7 +400,7 @@ function multistate_integration(chkp)
             chkp.S
         )...)
 
-        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2 + (temp.v .- chkp.data[2][:,:,j]).^2)
+        chkp.J += sum((temp.u - chkp.data[chkp.j][1]).^2) + sum((temp.v - chkp.data[chkp.j][2]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -425,7 +425,7 @@ end
 
 function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
-     # Type precision
+    # Type precision
     T = Float32
 
     S = ShallowWaters.model_setup(output=false,
@@ -445,7 +445,6 @@ function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_c
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
@@ -456,10 +455,16 @@ function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_c
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+    current = 1
+    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
 
     chkp = multistate_Chkp{T, T}(S,
         data,
@@ -498,7 +503,6 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
@@ -508,20 +512,27 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
 
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve(
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "",
-        write_checkpoints_period = 224
-    )
+    current = 1
+    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
+
+    # snaps = Int(floor(sqrt(S.grid.nt)))
+    # revolve = Revolve(
+    #     snaps;
+    #     verbose=1,
+    #     gc=true,
+    #     write_checkpoints=false,
+    #     write_checkpoints_filename = "",
+    #     write_checkpoints_period = 224
+    # )
 
     chkp = multistate_Chkp{T, T}(S,
         data,
@@ -535,7 +546,7 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec_integration,
+        multistate_integration,
         Active,
         Duplicated(chkp, dchkp)
         # Const(revolve)
@@ -543,10 +554,15 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
     println("Cost with AD: $J")
 
     # Get gradient
-    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2])]
+    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])
+    ]
 
     return nothing
 
@@ -561,7 +577,7 @@ end
 
 function run_multistate()
 
-    Ndays = 10
+    Ndays = 4
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -579,7 +595,6 @@ function run_multistate()
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
@@ -604,25 +619,24 @@ function run_multistate()
         Ndays=Ndays
     )
 
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+    # daily information
+    hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
+    data_steps = 225:225:Slr.grid.nt
 
-    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
-    grid_scale = 8
-   
-    param_guess = 1e-2 .* randn(22 + 34 + 2 + 1)
+    data = hrstates[1:4]
 
-    for k = 1:2:10
+    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
 
-        uhr_data = uhr[:, :, 2]
-        vhr_data = vhr[:, :, 2]
-        data = [uhr_data, vhr_data]
+    initial_cond = [u0, v0, eta0]
 
-        ucg,vcg,etacg = ShallowWaters.coarse_grain(uhr[:,:,k], vhr[:,:,k], etahr[:,:,k], Shr.grid.nx, Slr)
-        uinit,vinit,etainit = ShallowWaters.add_halo(Float32.(ucg), Float32.(vcg), Float32.(etacg), Slr)
+    param_guess = load_object("initialweights_standarddeviation1_justrandomnumbers.jld2")
 
-        initial_cond = [uinit, vinit, etainit]
+    result = nothing
+
+    for Ndays = 1:2:4
+
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
         result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))

@@ -3,7 +3,8 @@
 # are all constant, nothing changes in time
 mutable struct kespec3_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Vector{Array{T1, 3}}                   # computed data
+    # data::Vector{Array{T1, 3}}            # computed data, hr only
+    data::Array{Array{Array{T1,2}, 1}, 1}   # computed data, pulling from coarse grained hr
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -197,8 +198,8 @@ function kespec3_checkpointed_integration(chkp, scheme)
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
         ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+        ke_u_hr = power(periodogram(chkp.data[chkp.j][1]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[chkp.j][2]; radialavg=true))
 
         chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
 
@@ -409,8 +410,8 @@ function kespec3_integration(chkp)
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
         ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+        ke_u_hr = power(periodogram(chkp.data[chkp.j][1]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[chkp.j][2]; radialavg=true))
 
         chkp.J += sum( (ke_u_hr[1:65]- ke_u_lr[1:65]).^2 ./ ke_u_hr[1:65].^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2 ./ ke_v_hr[1:65].^2 )
 
@@ -533,15 +534,15 @@ function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         end
     end
 
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve(
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "",
-        write_checkpoints_period = 224
-    )
+    # snaps = Int(floor(sqrt(S.grid.nt)))
+    # revolve = Revolve(
+    #     snaps;
+    #     verbose=1,
+    #     gc=true,
+    #     write_checkpoints=false,
+    #     write_checkpoints_filename = "",
+    #     write_checkpoints_period = 224
+    # )
 
     chkp = kespec3_Chkp{T, T}(S,
         data,
@@ -555,10 +556,10 @@ function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec3_checkpointed_integration,
+        kespec3_integration,
         Active,
-        Duplicated(chkp, dchkp),
-        Const(revolve)
+        Duplicated(chkp, dchkp)
+        # Const(revolve)
     )[2]
     println("Cost with AD: $J")
 
@@ -609,13 +610,16 @@ function run_kespec3()
         Ndays=Ndays
     )
 
-    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    data_steps = (Slr.grid.nt - 7*224):224:Slr.grid.nt
+    data_steps = 225:225:Slr.grid.nt
 
-    uhr_data = uhr[:, :, (Ndays-7):Ndays]
-    vhr_data = vhr[:, :, (Ndays-7):Ndays]
-    data = [uhr_data, vhr_data]
+    hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
+    data = hrstates[1:10]
+
+    # uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    # vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    # uhr_data = uhr[:, :, 1:Ndays]
+    # vhr_data = vhr[:, :, 1:Ndays]
+    # data = [uhr_data, vhr_data]
 
     u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
@@ -623,11 +627,11 @@ function run_kespec3()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = 1e-2 .* randn(241 + 202)
+    param_guess = load_object("./tuned_weights/minimizer_134days_statelossfunction_3iterationsLBFGS_dailydata_071125.jld2")
 
     fg!_closure(F, G, param_guess) = kespec3_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
     obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=10))
+    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
 
     return result
 

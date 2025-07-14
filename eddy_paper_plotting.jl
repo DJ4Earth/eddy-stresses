@@ -11,6 +11,12 @@ function plots()
 
     Ndays = 10
 
+    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+
+    initial_cond = [u0, v0, eta0]
+
     Snn = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -28,20 +34,26 @@ function plots()
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        Ndays=Ndays
     )
+    Snn.Prog.u .= initial_cond[1]
+    Snn.Prog.v .= initial_cond[2]
+    Snn.Prog.η .= initial_cond[3]
 
-    Snn_kespec = deepcopy(S)
-    Snn_energy = deepcopy(S)
-
-    result_kespec = 
-    Snn_kespec.Diag.NNVars.model_diag[1][1] .= reshape(result.minimizer[1:34], 2, 17)
-    Snn_kespec.Diag.NNVars.model_offdiag[1][1] .= reshape(result.minimizer[35:end], 1, 22)
+    param_guess = result.minimizer
+    current = 1
+    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
 
     Szb = ShallowWaters.model_setup(output=false,
     L_ratio=1,
@@ -60,13 +72,14 @@ function plots()
     zb_filtered=true,
     nn_forcing_momentum=false,
     nn_forcing_dissipation=false,
-    handwritten=false,
     N=1,
     α=2,
     nx=128,
-    Ndays=Ndays,
-    initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+    Ndays=Ndays
     )
+    Szb.Prog.u .= initial_cond[1]
+    Szb.Prog.v .= initial_cond[2]
+    Szb.Prog.η .= initial_cond[3]
 
     states_zb = save_states(Szb)
     states_nn = save_states(Snn)
@@ -83,7 +96,7 @@ function plots()
     );
     Colorbar(fig1[1,2], hm1)
 
-    t = 673
+    t = 224
     fig1 = Figure(size=(800, 700));
     ax1, hm1 = heatmap(fig1[1,1], states_zb[t].u[:, 1:end-1].^2 .+ states_zb[t].v[1:end-1, :].^2,
     colormap=:amp,
@@ -182,13 +195,15 @@ function plots()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays
     )
+
+    S2 = deepcopy(S)
 
     initial_cond = [u0, v0, eta0]
 
@@ -196,16 +211,41 @@ function plots()
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
+    S2.Prog.u .= initial_cond[1]
+    S2.Prog.v .= initial_cond[2]
+    S2.Prog.η .= initial_cond[3]
+
     current = 1
     for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
         for layers in model[1]
             for array in layers
                 sz = prod(size(array))
-                array .= reshape(param_guess.minimizer[current:(current + sz - 1)], size(array)...)
+                array .= reshape(result.minimizer[current:(current + sz - 1)], size(array)...)
                 current += sz
             end
         end
     end
+
+    weights = load_object("./tuned_weights/minimizer_134days_statelossfunction_3iterationsLBFGS_dailydata_071125.jld2")
+    current = 1
+    for model in (S2.Diag.NNVars.model_diag, S2.Diag.NNVars.model_offdiag)
+        for layers in model[1]
+            for array in layers
+                sz = prod(size(array))
+                array .= reshape(weights[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
+
+    ShallowWaters.time_integration(S2)
+    temp2 = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+    S2.Prog.u,
+    S2.Prog.v,
+    S2.Prog.η,
+    S2.Prog.sst,
+    S2
+    )...)
 
     ShallowWaters.time_integration(S)
     temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
@@ -219,6 +259,9 @@ function plots()
     up_nn = zeros(65)
     vp_nn = zeros(65)
 
+    up2_nn = zeros(65)
+    vp2_nn = zeros(65)
+
     up_zb = zeros(65)
     vp_zb = zeros(65)
 
@@ -227,6 +270,9 @@ function plots()
     t = 10
     up_nn[:] = power(periodogram(temp.u; radialavg=true, radialsum=false)) ./ 128^2
     vp_nn[:] = power(periodogram(temp.v; radialavg=true, radialsum=false)) ./ 128^2
+
+    up2_nn[:] = power(periodogram(temp2.u; radialavg=true, radialsum=false)) ./ 128^2
+    vp2_nn[:] = power(periodogram(temp2.u; radialavg=true, radialsum=false)) ./ 128^2
 
     up_zb[:] = power(periodogram(u_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
     vp_zb[:] = power(periodogram(v_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
@@ -251,6 +297,7 @@ function plots()
     )
     lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end] + vp_zb[2:end], label="ZB")
     lines!(fig2[1,1], true_wl[2:end], up_true[2:end] + vp_true[2:end], label="HR")
+    lines!(fig2[1,1], nn_wl[2:end], up2_nn[2:end] + vp2_nn[2:end], label="NN states")
     axislegend()
 
 end
@@ -319,7 +366,7 @@ function longer_integration_kespec()
     S_before.Prog.v .= initial_cond[2]
     S_before.Prog.η .= initial_cond[3]
 
-    S_after = ShallowWaters.model_setup(output=false,
+    S_after = ShallowWaters.model_setup(output=true,
         L_ratio=1,
         g=9.81,
         H=500,
