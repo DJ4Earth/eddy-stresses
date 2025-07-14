@@ -12,17 +12,13 @@ Shr = ShallowWaters.model_setup(output=false,
         bottom_drag="quadratic",
         tracer_advection=false,
         tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
         α=2,
         nx=1024,
         Ndays=30,
-        init_cond="ncfile",
-        initpath="./"
+        initial_cond="ncfile",
+        initpath="/scratch/swilliamson/eddy-stresses/spinup_files/1024_spinup_noslip_10years_050624"
 )
 
 hrstates = save_states(Shr)
+
+jldsave("1024_postspinup_thirtydays_hourly_071425.jld2", hrstates=hrstates)
