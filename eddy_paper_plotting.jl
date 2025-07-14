@@ -9,13 +9,39 @@ end
 
 function plots()
 
-    Ndays = 10
+    Ndays = 30
 
     u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
 
     initial_cond = [u0, v0, eta0]
+
+    Snoparam = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    )
+    Snparam.Prog.u .= initial_cond[1]
+    Snoparam.Prog.v .= initial_cond[2]
+    Snoparam.Prog.η .= initial_cond[3]
 
     Snn = ShallowWaters.model_setup(output=false,
         L_ratio=1,
