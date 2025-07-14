@@ -22,7 +22,9 @@ Shr = ShallowWaters.model_setup(output=false,
         nx=1024,
         Ndays=30,
         init_cond="ncfile",
-        initpath="./"
+        initpath="eddy-stresses/spinup_files/1024_spinup_noslip_10years_050624"
 )
 
 hrstates = save_states(Shr)
+
+jldsave("1024_postspinup_thirtydays_hourly_071425.jld2", hrstates=hrstates)
