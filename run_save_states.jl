@@ -23,9 +23,9 @@ include("eddy_paper.jl")
 
 # jldsave("1024_postspinup_thirtydays_hourly_071425.jld2", hrstates=hrstates)
 
-u_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-v_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-eta_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+u_hr = ncread("./run_0001/u.nc", "u")
+v_hr = ncread("./run_0001/v.nc", "v")
+eta_hr = ncread("./run_0001/eta.nc", "eta")
 
 Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -49,4 +49,19 @@ Slr = ShallowWaters.model_setup(output=false,
         nx=128,
         Ndays=1
 )
-coarse_grain(u_hr[:,:,1], v_hr[:,:,1], η_hr[:,:,1], 1024, S_lr)
+
+u = []
+v = []
+eta = []
+for j = 1:30
+
+        push!(u, ShallowWaters.coarse_grain_u(u_hr[:,:,j], 1024, Slr))
+        push!(v, ShallowWaters.coarse_grain_v(v_hr[:,:,j], 1024, Slr))
+        push!(eta, ShallowWaters.coarse_grain_eta(eta_hr[:,:,j], 1024, Slr))
+
+end
+
+jldsave("hru_coarsegrained_30days_dailysaves.jld2", u=u)
+jldsave("hrv_coarsegrained_30days_dailysaves.jld2", v=v)
+jldsave("hreta_coarsegrained_30days_dailysaves.jld2", eta=eta)
+

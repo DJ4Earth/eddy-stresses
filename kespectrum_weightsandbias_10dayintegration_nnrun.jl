@@ -613,8 +613,8 @@ function run_kespec2()
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     data_steps = 225:225:Slr.grid.nt
 
-    uhr_data = uhr[:, :, (Ndays-7):Ndays]
-    vhr_data = vhr[:, :, (Ndays-7):Ndays]
+    uhr_data = uhr[:, :, 1:Ndays]
+    vhr_data = vhr[:, :, 1:Ndays]
     data = [uhr_data, vhr_data]
 
     u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
