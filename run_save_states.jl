@@ -39,21 +39,16 @@ Slr = ShallowWaters.model_setup(output=false,
         bottom_drag="quadratic",
         tracer_advection=false,
         tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
         α=2,
         nx=128,
-        Ndays=1
+        Ndays=20
 )
 
 u = []
 v = []
 eta = []
-for j = 1:30
+
+for j = 1:20
 
         push!(u, ShallowWaters.coarse_grain_u(u_hr[:,:,j], 1024, Slr))
         push!(v, ShallowWaters.coarse_grain_v(v_hr[:,:,j], 1024, Slr))
@@ -61,7 +56,6 @@ for j = 1:30
 
 end
 
-jldsave("hru_coarsegrained_30days_dailysaves.jld2", u=u)
-jldsave("hrv_coarsegrained_30days_dailysaves.jld2", v=v)
-jldsave("hreta_coarsegrained_30days_dailysaves.jld2", eta=eta)
-
+jldsave("1024_coarsegrainedu_20days_hourlysaves_071525.jld2" u=u)
+jldsave("1024_coarsegrainedv_20days_hourlysaves_071525.jld2" v=v)
+jldsave("1024_coarsegrainedeta_20days_hourlysaves_071525.jld2" eta=eta)
