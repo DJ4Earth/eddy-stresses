@@ -326,6 +326,107 @@ function plots()
     lines!(fig2[1,1], nn_wl[2:end], up2_nn[2:end] + vp2_nn[2:end], label="NN states")
     axislegend()
 
+
+    # comparing cg energy spectra to energy spectra of the cg
+
+    u_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    v_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    eta_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+
+    ucg2_hr = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    vcg2_hr = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    etacg2_hr = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
+
+    Slr = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    )
+
+    temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+            ucg2_hr,
+            vcg2_hr,
+            etacg2_hr,
+            Slr.Prog.sst,
+            Slr
+        )...)
+
+    up_hr= zeros(513)
+    vp_hr = zeros(513)
+    etap_hr = zeros(513)
+    upcg2 = zeros(65)
+    vpcg2 = zeros(65)
+    etapcg2 = zeros(65)
+    upcg = zeros(65)
+    vpcg = zeros(65)
+    etapcg = zeros(65)
+
+    up_hr[:] = power(periodogram(u_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
+    vp_hr[:] = power(periodogram(v_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
+    etap_hr[:] = power(periodogram(eta_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
+
+    upcg[:] = power(periodogram(ucg; radialavg=true, radialsum=false)) ./ 128^2
+    vpcg[:] = power(periodogram(vcg; radialavg=true, radialsum=false)) ./ 128^2
+    etapcg[:] = power(periodogram(etacg; radialavg = true, radialsum=false)) ./128^2
+
+    upcg2[:] = power(periodogram(temp.u; radialavg=true, radialsum=false)) ./ 128^2
+    vpcg2[:] = power(periodogram(temp.v; radialavg=true, radialsum=false)) ./ 128^2
+    etapcg2[:] = power(periodogram(temp.η; radialavg = true, radialsum=false)) ./128^2
+
+    true_wl = 1 ./ freq(periodogram(u_hr[:,:,1]; radialavg=true)) * 3.75;
+    true_wl[1] = 1100
+    cg_wl = (1 ./ freq(periodogram(temp.u; radialavg=true, radialsum=false))) * 30;
+    cg_wl[1] = 1100
+
+    fig = Figure();
+    lines(fig[1,1], true_wl[2:end], up_hr[2:end] + vp_hr[2:end], label="HR", axis=(
+            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2], title="HR energy spectrum")
+    )
+    lines!(fig[1,1], cg_wl[2:end], upcg[2:end] + vpcg[2:end], label="Coarse-grained HR spectrum")
+    axislegend()
+
+    figu = Figure();
+    lines(figu[1,1], true_wl[2:65], up_hr[2:65], label="HR", axis=(
+            xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
+    )
+    lines!(figu[1,1], cg_wl[2:end], upcg[2:end], label="Coarse-grained HR recomputed")
+    lines!(figu[1,1], cg_wl[2:end], upcg2[2:end], label="Coarse-grained HR saved")
+    axislegend()
+
+    figv = Figure();
+        lines(figv[1,1], true_wl[2:65], vp_hr[2:65], label="HR", axis=(
+            xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
+    )
+    lines!(figv[1,1], cg_wl[2:end], vpcg[2:end], label="Coarse-grained HR")
+    lines!(figv[1,1], cg_wl[2:end], vpcg2[2:end], label="Coarse-grained HR")
+    axislegend()
+
+    figeta = Figure();
+        lines(figeta[1,1], true_wl[2:65], etap_hr[2:65], label="HR", axis=(
+            xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
+    )
+    lines!(figeta[1,1], cg_wl[2:end], etapcg[2:end], label="Coarse-grained HR")
+    lines!(figeta[1,1], cg_wl[2:end], etapcg2[2:end], label="Coarse-grained HR")
+    axislegend()
+
+
 end
 
 function longer_integration_kespec()
