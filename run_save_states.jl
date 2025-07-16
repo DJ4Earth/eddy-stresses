@@ -1,6 +1,6 @@
 include("eddy_paper.jl")
 
-Shr = ShallowWaters.model_setup(output=false,
+Shr = ShallowWaters.model_setup(output=true,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -16,7 +16,7 @@ Shr = ShallowWaters.model_setup(output=false,
         nx=1024,
         Ndays=30,
         initial_cond="ncfile",
-        initpath="/scratch/swilliamson/eddy-stresses/spinup_files/1024_spinup_noslip_10years_050624"
+        initpath="./spinup_files/1024_spinup_noslip_10years_050624"
 )
 
 hrstates = save_states(Shr)
@@ -56,6 +56,6 @@ for j = 1:20
 
 end
 
-jldsave("1024_coarsegrainedu_20days_hourlysaves_071525.jld2" u=u)
-jldsave("1024_coarsegrainedv_20days_hourlysaves_071525.jld2" v=v)
-jldsave("1024_coarsegrainedeta_20days_hourlysaves_071525.jld2" eta=eta)
+jldsave("1024_coarsegrainedu_20days_hourlysaves_071525.jld2", u=u)
+jldsave("1024_coarsegrainedv_20days_hourlysaves_071525.jld2", v=v)
+jldsave("1024_coarsegrainedeta_20days_hourlysaves_071525.jld2", eta=eta)

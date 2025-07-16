@@ -517,7 +517,6 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
