@@ -369,6 +369,8 @@ function plots()
         )...)
 
     up_hr= zeros(513)
+    ufp_hr= zeros(513)
+
     vp_hr = zeros(513)
     etap_hr = zeros(513)
     upcg2 = zeros(65)
@@ -378,9 +380,11 @@ function plots()
     vpcg = zeros(65)
     etapcg = zeros(65)
 
-    up_hr[:] = power(periodogram(u_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
+    up_hr[:] = power(periodogram(u_hr[:,:,2]; radialavg=true, radialsum=false)) ./ 1024^2
     vp_hr[:] = power(periodogram(v_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
     etap_hr[:] = power(periodogram(eta_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
+
+    ufp_hr[:] = power(periodogram(newu; radialavg=true, radialsum=false)) ./ 1024^2
 
     upcg[:] = power(periodogram(ucg; radialavg=true, radialsum=false)) ./ 128^2
     vpcg[:] = power(periodogram(vcg; radialavg=true, radialsum=false)) ./ 128^2
@@ -390,7 +394,7 @@ function plots()
     vpcg2[:] = power(periodogram(temp.v; radialavg=true, radialsum=false)) ./ 128^2
     etapcg2[:] = power(periodogram(temp.η; radialavg = true, radialsum=false)) ./128^2
 
-    true_wl = 1 ./ freq(periodogram(u_hr[:,:,1]; radialavg=true)) * 3.75;
+    true_wl = 1 ./ freq(periodogram(u[:,:,1]; radialavg=true)) * 3.75;
     true_wl[1] = 1100
     cg_wl = (1 ./ freq(periodogram(temp.u; radialavg=true, radialsum=false))) * 30;
     cg_wl[1] = 1100
