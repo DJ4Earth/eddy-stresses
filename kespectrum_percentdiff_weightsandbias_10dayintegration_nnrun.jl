@@ -3,8 +3,8 @@
 # are all constant, nothing changes in time
 mutable struct kespec3_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    # data::Vector{Array{T1, 3}}            # computed data, hr only
-    data::Array{Array{Array{T1,2}, 1}, 1}   # computed data, pulling from coarse grained hr
+    data::Vector{Array{T1, 3}}            # computed data, hr only
+    # data::Array{Array{Array{T1,2}, 1}, 1}   # computed data, pulling from coarse grained hr
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -187,7 +187,7 @@ function kespec3_checkpointed_integration(chkp, scheme)
 
     if chkp.i in chkp.data_steps
 
-         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
             chkp.S.Prog.v,
             chkp.S.Prog.η,
@@ -198,8 +198,8 @@ function kespec3_checkpointed_integration(chkp, scheme)
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
         ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-        ke_u_hr = power(periodogram(chkp.data[chkp.j][1]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[chkp.j][2]; radialavg=true))
+        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
         chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
 
@@ -410,8 +410,8 @@ function kespec3_integration(chkp)
         ke_u_lr = power(periodogram(temp.u; radialavg=true))
         ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-        ke_u_hr = power(periodogram(chkp.data[chkp.j][1]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[chkp.j][2]; radialavg=true))
+        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
         chkp.J += sum( (ke_u_hr[1:65]- ke_u_lr[1:65]).^2 ./ ke_u_hr[1:65].^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2 ./ ke_v_hr[1:65].^2 )
 
@@ -612,8 +612,22 @@ function run_kespec3()
 
     data_steps = 225:225:Slr.grid.nt
 
-    hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
-    data = hrstates[1:10]
+    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
+    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+
+    ufiltered = zeros(size(hru))
+    vfiltered = zeros(size(hrv))
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    for j = 2:31
+
+        ufiltered[:,:,j] = imfilter(hru[:,:,j], reflect(ker))
+        vfiltered[:,:,j] = imfilter(hrv[:,:,j], reflect(ker))
+
+    end
+
+    data = [ufiltered[:, :, 2:31], vfiltered[:, :, 2:31]]
 
     # uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     # vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
@@ -621,17 +635,17 @@ function run_kespec3()
     # vhr_data = vhr[:, :, 1:Ndays]
     # data = [uhr_data, vhr_data]
 
-    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("./tuned_weights/minimizer_134days_statelossfunction_3iterationsLBFGS_dailydata_071125.jld2")
+    param_guess = load_object("./tuned_weights/tunedweights_stateloss_1:2:10daysintegration_5iterationsLBFGS_dailydata_071425.jld2").minimizer
 
     fg!_closure(F, G, param_guess) = kespec3_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
     obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
+    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
 
     return result
 

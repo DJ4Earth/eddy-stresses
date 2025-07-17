@@ -1,8 +1,7 @@
 using Enzyme
-using Checkpointing, HDF5, Serialization
+using Checkpointing, ImageFiltering
 using NetCDF, JLD2, CairoMakie
 using Lux, Random
-using Reactant
 using DSP, FFTW, AbstractFFTs
 using ChainRules, LinearAlgebra
 Enzyme.EnzymeRules.inactive(::typeof(plan_fft), args...; kwargs...) = true

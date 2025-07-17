@@ -620,18 +620,18 @@ function run_multistate()
     )
 
     # daily information
-    hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
+    hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves__includesinitcond_062425.jld2")
     data_steps = 225:225:Slr.grid.nt
 
-    data = hrstates[1:Ndays]
+    data = hrstates[2:end]
 
-    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("initialweights_standarddeviation1_justrandomnumbers.jld2")
+    param_guess = load_object("./tuned_weights/tunedweights_stateloss_1:2:10daysintegration_5iterationsLBFGS_dailydata_071425.jld2").minimizer
 
     result = nothing
 
