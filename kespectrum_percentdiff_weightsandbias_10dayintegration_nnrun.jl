@@ -225,7 +225,7 @@ function kespec3_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function kespec3_integration(chkp)
+function kespec3_integration(chkp, truncate)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -413,7 +413,7 @@ function kespec3_integration(chkp)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum( (ke_u_hr[1:65]- ke_u_lr[1:65]).^2 ./ ke_u_hr[1:65].^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2 ./ ke_v_hr[1:65].^2 )
+        chkp.J += sum( (ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 ./ ke_u_hr[1:truncate].^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2 ./ ke_v_hr[1:truncate].^2 )
 
         chkp.j += 1
 
@@ -485,7 +485,9 @@ function kespec3_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
     0
     )
 
-    J = kespec3_integration(chkp)
+    truncate = 40
+
+    J = kespec3_integration(chkp, truncate)
 
     return J
 
@@ -554,11 +556,13 @@ function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
     )
     dchkp = Enzyme.make_zero(chkp)
 
+    truncate = 40
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
         kespec3_integration,
         Active,
-        Duplicated(chkp, dchkp)
+        Duplicated(chkp, dchkp),
+        Const(truncate)
         # Const(revolve)
     )[2]
     println("Cost with AD: $J")
@@ -586,7 +590,8 @@ end
 
 function run_kespec3()
 
-    Ndays = 10
+    Ndays = 20
+    truncate = 40
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -620,14 +625,14 @@ function run_kespec3()
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    for j = 2:31
+    for j = 2:Ndays+1
 
         ufiltered[:,:,j] = imfilter(hru[:,:,j], reflect(ker))
         vfiltered[:,:,j] = imfilter(hrv[:,:,j], reflect(ker))
 
     end
 
-    data = [ufiltered[:, :, 2:31], vfiltered[:, :, 2:31]]
+    data = [ufiltered[:, :, 2:Ndays+1], vfiltered[:, :, 2:Ndays+1]]
 
     # uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     # vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
@@ -641,11 +646,11 @@ function run_kespec3()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("./tuned_weights/tunedweights_stateloss_1:2:10daysintegration_5iterationsLBFGS_dailydata_071425.jld2").minimizer
+    param_guess = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
 
     fg!_closure(F, G, param_guess) = kespec3_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
     obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
+    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=10))
 
     return result
 
