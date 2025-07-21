@@ -410,7 +410,7 @@ function kespec2_integration(chkp, truncate)
         ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
         chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
 
@@ -590,7 +590,7 @@ end
 function run_kespec2()
 
     Ndays = 10
-    truncate = 40
+    truncate = 65
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -614,11 +614,11 @@ function run_kespec2()
         Ndays=Ndays
     )
 
-    # hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
-    # hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
+    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
 
-    hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     data_steps = 225:225:Slr.grid.nt
 
     ufiltered = zeros(size(hru))

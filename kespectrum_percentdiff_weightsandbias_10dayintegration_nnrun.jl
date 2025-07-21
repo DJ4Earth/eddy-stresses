@@ -485,7 +485,7 @@ function kespec3_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
     0
     )
 
-    truncate = 40
+    truncate = 65
 
     J = kespec3_integration(chkp, truncate)
 
@@ -556,7 +556,7 @@ function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
     )
     dchkp = Enzyme.make_zero(chkp)
 
-    truncate = 40
+    truncate = 65
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
         kespec3_integration,
@@ -590,8 +590,8 @@ end
 
 function run_kespec3()
 
-    Ndays = 20
-    truncate = 40
+    Ndays = 10
+    truncate = 65
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -652,7 +652,7 @@ function run_kespec3()
     obj_fg = Optim.only_fg!(fg!_closure)
     result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=10))
 
-    return result
+    return result, Slr
 
 end
 
