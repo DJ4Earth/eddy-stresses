@@ -195,17 +195,20 @@ function plots()
 
     # after training
 
+    lowres_u = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/u.nc", "u")
+    lowres_v = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
+
     u_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     v_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
 
-    u_zb = ncread("./spinup_files/128_zbforcingmomentum_withcginitcond_30days_070925/u.nc", "u")
-    v_zb = ncread("./spinup_files/128_zbforcingmomentum_withcginitcond_30days_070925/v.nc", "v")
+    u_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/u.nc", "u")
+    v_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/v.nc", "v")
 
-    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
-    Ndays = 10
+    Ndays = 60
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -242,17 +245,19 @@ function plots()
     S2.Prog.η .= initial_cond[3]
 
     current = 1
+    initial_weights = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
     for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
         for layers in model[1]
             for array in layers
                 sz = prod(size(array))
-                array .= reshape(result.minimizer[current:(current + sz - 1)], size(array)...)
+                array .= reshape(initial_weights[current:(current + sz - 1)], size(array)...)
                 current += sz
             end
         end
     end
 
-    weights = load_object("./tuned_weights/minimizer_134days_statelossfunction_3iterationsLBFGS_dailydata_071125.jld2")
+    weights = load_object("./tuned_weights/result_percentdiff_10days_imagefiltering_dailydata_071825.jld2").minimizer
+    # weights = result.minimizer
     current = 1
     for model in (S2.Diag.NNVars.model_diag, S2.Diag.NNVars.model_offdiag)
         for layers in model[1]
@@ -293,9 +298,16 @@ function plots()
 
     up_true = zeros(513)
     vp_true = zeros(513)
-    t = 10
+
+    up_noforcing = zeros(65)
+    vp_noforcing = zeros(65)
+
+    t = Ndays
     up_nn[:] = power(periodogram(temp.u; radialavg=true, radialsum=false)) ./ 128^2
     vp_nn[:] = power(periodogram(temp.v; radialavg=true, radialsum=false)) ./ 128^2
+
+    up_noforcing[:] = power(periodogram(lowres_u[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+    vp_noforcing[:] = power(periodogram(lowres_v[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
 
     up2_nn[:] = power(periodogram(temp2.u; radialavg=true, radialsum=false)) ./ 128^2
     vp2_nn[:] = power(periodogram(temp2.u; radialavg=true, radialsum=false)) ./ 128^2
@@ -303,8 +315,9 @@ function plots()
     up_zb[:] = power(periodogram(u_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
     vp_zb[:] = power(periodogram(v_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
 
-    up_true[:] = power(periodogram(u_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
-    vp_true[:] = power(periodogram(v_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+    # imfilter(hru[:,:,j], reflect(ker))
+    up_true[:] = power(periodogram(imfilter(u_hr[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
+    vp_true[:] = power(periodogram(imfilter(v_hr[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
 
     nn_wl = (1 ./ freq(periodogram(u_zb[:,:,t]; radialavg=true, radialsum=false))) * 30;
     nnu_freq = LinRange(0, 64, 65)
@@ -318,12 +331,14 @@ function plots()
 
     fig2 = Figure(size=(800, 500));
     t = 10
-    lines(fig2[1,1], nn_wl[2:end], up_nn[2:end] + vp_nn[2:end], label="NN", axis=(
-            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2], title="KE Spectrum after training")
+    lines(fig2[1,1], nn_wl[2:end], up_nn[2:end] + vp_nn[2:end], label="NN tuned with state and KE spectrum", axis=(
+            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)",
+            xreversed=true, xticks=[700, 100, 30, 10, 2], title="KE Spectrum after training")
     )
-    lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end] + vp_zb[2:end], label="ZB")
-    lines!(fig2[1,1], true_wl[2:end], up_true[2:end] + vp_true[2:end], label="HR")
-    lines!(fig2[1,1], nn_wl[2:end], up2_nn[2:end] + vp2_nn[2:end], label="NN states")
+    lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end] + vp_zb[2:end], label="Zanna-Bolton parameterization")
+    lines!(fig2[1,1], true_wl[2:end], up_true[2:end] + vp_true[2:end], label="High-resolution")
+    # lines!(fig2[1,1], nn_wl[2:end], up2_nn[2:end] + vp2_nn[2:end], label="NN tuned with state optimization")
+    lines!(fig2[1,1], nn_wl[2:end], up_noforcing[2:end] + vp_noforcing[2:end], label="Low-resolution")
     axislegend()
 
 

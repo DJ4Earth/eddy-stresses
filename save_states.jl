@@ -160,7 +160,8 @@ function save_states(S)
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S)
 
         # storing daily states for the "true" values
-        if t ∈ 75:75:S.grid.nt
+        # 10 is hourly for 128, 75 is hourly for 1024
+        if t ∈ 10:10:S.grid.nt
             temp1 = ShallowWaters.PrognosticVars{S.parameters.Tprog}(
                 ShallowWaters.remove_halo(u,v,η,sst,S)...)
             push!(states, temp1)
