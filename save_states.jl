@@ -161,7 +161,8 @@ function save_states(S)
 
         # storing daily states for the "true" values
         # 10 is hourly for 128, 75 is hourly for 1024
-        if t ∈ 10:10:S.grid.nt
+        step = S.grid.nt / S.parameters.Ndays   # daily saves
+        if t ∈ 225:225:S.grid.nt
             temp1 = ShallowWaters.PrognosticVars{S.parameters.Tprog}(
                 ShallowWaters.remove_halo(u,v,η,sst,S)...)
             push!(states, temp1)
