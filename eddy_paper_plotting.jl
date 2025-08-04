@@ -476,8 +476,8 @@ function plots()
         up_nnpd[:,t] = power(periodogram(states_trainednn_pd[t].u; radialavg=true, radialsum=false)) ./ 128^2
         vp_nnpd[:,t] = power(periodogram(states_trainednn_pd[t].v; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].v; radialavg=true, radialsum=false)) ./ 128^2
+        # up_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].u; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].v; radialavg=true, radialsum=false)) ./ 128^2
     end
 
     lr_wl = (1 ./ freq(periodogram(u_zb[:,:,10]; radialavg=true, radialsum=false))) * 30;
@@ -491,13 +491,20 @@ function plots()
     hr_wl[1] = 1100
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    t = 364
-    lines(fig[1,1], lr_wl[2:end], up_nn[2:end,t] + vp_nn[2:end,t], label="Untrained NN closure", axis=(
-            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2], title="KE spectrum, 30 day integration")
+    t = 90
+    lines(fig[1,1], hr_wl[2:65], up_cghr[2:65,t] + vp_cghr[2:65,t], label="Coarse-grained 3.75km resolution", axis=(
+            xscale=log10,
+            yscale=log10,
+            xlabel="Wavelength (km)",
+            ylabel="KE(k)",
+            xreversed=true,
+            xticks=[700, 100, 30, 10, 2],
+            title="KE spectrum, 30 day integration")
+    )
+    lines!(fig[1,1], lr_wl[2:end], up_nn[2:end,t] + vp_nn[2:end,t], label="Untrained NN closure"
     )
     lines!(fig[1,1], lr_wl[2:end], up_noparam[2:end,t] + vp_noparam[2:end,t], label="30km resolution, no closure")
     lines!(fig[1,1], lr_wl[2:end], up_zb[2:end,t] + vp_zb[2:end,t], label="ZB closure")
-    lines!(fig[1,1], hr_wl[2:65], up_cghr[2:65,t] + vp_cghr[2:65,t], label="Coarse-grained 3.75km resolution")
     lines!(fig[1,1], lr_wl[2:end], up_nnstates[2:end,t] + vp_nnstates[2:end,t], label="NN closure, state loss")
     lines!(fig[1,1], lr_wl[2:end], up_nnkesp[2:end,t] + vp_nnkesp[2:end,t], label="NN closure, KE spectra loss")
     lines!(fig[1,1], lr_wl[2:end], up_nnpd[2:end,t] + vp_nnpd[2:end,t], label="NN closure, KE spectra percent diff loss")
@@ -532,7 +539,8 @@ function plots()
     up_nnpd65_avg = zeros(65)
     vp_nnpd65_avg = zeros(65)
 
-    for t = 1:totalstates
+    daystoaverage = 10
+    for t = 1:daystoaverage
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
@@ -555,7 +563,7 @@ function plots()
 
     end
 
-    for t = 1:366
+    for t = 1:(daystoaverage+1)
 
         up_zb_avg += up_zb[:,t]
         vp_zb_avg += vp_zb[:,t]
