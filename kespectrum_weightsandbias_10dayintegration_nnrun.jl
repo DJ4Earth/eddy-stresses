@@ -590,7 +590,7 @@ end
 function run_kespec2()
 
     Ndays = 10
-    truncate = 65
+    truncate = 45
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,

@@ -635,7 +635,7 @@ function run_multistate()
 
     result = nothing
 
-    for ndays = 2:2:10
+    for ndays = 1:2:10
 
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
