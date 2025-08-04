@@ -631,11 +631,11 @@ function run_multistate()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("./tuned_weights/tunedweights_stateloss_1:2:10daysintegration_5iterationsLBFGS_dailydata_071425.jld2").minimizer
+    param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
 
     result = nothing
 
-    for ndays = 1:2:10
+    for ndays = 2:2:10
 
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
