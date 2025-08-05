@@ -3,7 +3,7 @@
 # are all constant, nothing changes in time
 mutable struct multiks_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Float32, 2}, 1}       # computed data
+    data::Array{Array{Float32, 3}, 1}       # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -12,7 +12,7 @@ mutable struct multiks_Chkp{T1,T2}
 end
 
 # for running with checkpointing
-function multiks_checkpointed_integration(chkp, scheme)
+function multiks_checkpointed_integration(chkp, scheme, truncate)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -200,7 +200,7 @@ function multiks_checkpointed_integration(chkp, scheme)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
+        chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -224,7 +224,7 @@ function multiks_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function multiks_integration(chkp)
+function multiks_integration(chkp, truncate)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -413,7 +413,7 @@ function multiks_integration(chkp)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:65]- ke_u_lr[1:65]).^2 + (ke_v_hr[1:65] - ke_v_lr[1:65]).^2)
+        chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -436,9 +436,9 @@ function multiks_integration(chkp)
 
 end
 
-function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond, truncate)
 
-     # Type precision
+    # Type precision
     T = Float32
 
     S = ShallowWaters.model_setup(output=false,
@@ -458,7 +458,6 @@ function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
@@ -489,13 +488,13 @@ function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         0
     )
 
-    J = multiks_integration(chkp)
+    J = multiks_integration(chkp, truncate)
 
     return J
 
 end
 
-function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
 
     # Type precision
     T = Float32
@@ -563,7 +562,8 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         multiks_checkpointed_integration,
         Active,
         Duplicated(chkp, dchkp),
-        Const(revolve)
+        Const(revolve),
+        Const(truncate)
     )[2]
     println("Cost with AD: $J")
 
@@ -581,16 +581,16 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
 
 end
 
-function multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+function multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
 
-    G === nothing || multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
-    F === nothing || return multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+    G === nothing || multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
+    F === nothing || return multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond, truncate)
 
 end
 
 function run_multiks()
 
-    Ndays = 1
+    Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -606,54 +606,52 @@ function run_multiks()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
-        handwritten=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
         Ndays=Ndays
     )
 
-    Shr = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays
-    )
+    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
+    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
 
+    # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     data_steps = 225:225:Slr.grid.nt
-    hrstates = load_object("./1024_coarsegrained_tendays_062425.jld2")
-    data = hrstates[1:10]
 
-    u0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("coarsegrained_1024_10yearstate_061925.jld2")[3]
+    ufiltered = zeros(size(hru))
+    vfiltered = zeros(size(hrv))
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    for j = 2:(Ndays+1)
+
+        ufiltered[:,:,j] = imfilter(hru[:,:,j], reflect(ker))
+        vfiltered[:,:,j] = imfilter(hrv[:,:,j], reflect(ker))
+
+    end
+
+    data = [ufiltered[:, :, 2:(Ndays+1)], vfiltered[:, :, 2:(Ndays+1)]]
+
+    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
     initial_cond = [u0, v0, eta0]
 
-    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+    init = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
+    param_guess = init
 
-    param_guess = load_object("./tuned_weights/minimizer_134days_statelossfunction_3iterationsLBFGS_dailydata_071125.jld2")
+    truncate = 45
 
-    for ndays = 2:2:10
+    result = nothing
+    for ndays = 1:2:10
 
-        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
+        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, ndays, initial_cond, truncate)
         obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=3))
+        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
 
         param_guess = result.minimizer
 
