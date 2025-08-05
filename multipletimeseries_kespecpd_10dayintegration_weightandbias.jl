@@ -200,7 +200,7 @@ function multikspd_checkpointed_integration(chkp, scheme, truncate)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
+        chkp.J += sum( (ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 ./ ke_u_hr[1:truncate].^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2 ./ ke_v_hr[1:truncate].^2 )
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -413,7 +413,7 @@ function multikspd_integration(chkp, truncate)
         ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
         ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-        chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
+        chkp.J += sum( (ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 ./ ke_u_hr[1:truncate].^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2 ./ ke_v_hr[1:truncate].^2 )
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
