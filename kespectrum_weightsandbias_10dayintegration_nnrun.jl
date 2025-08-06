@@ -3,7 +3,7 @@
 # are all constant, nothing changes in time
 mutable struct kespec2_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Vector{Array{T1, 3}}                   # computed data
+    data::Array{Array{T1, 3}, 1}                   # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -590,7 +590,7 @@ end
 function run_kespec2()
 
     Ndays = 10
-    truncate = 45
+    truncate = 40
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -614,11 +614,14 @@ function run_kespec2()
         Ndays=Ndays
     )
 
-    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
-    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+    # hydra
+    # hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
+    # hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
 
-    # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    # laptop
+    hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+
     data_steps = 225:225:Slr.grid.nt
 
     ufiltered = zeros(size(hru))
