@@ -591,7 +591,7 @@ end
 function run_kespec3()
 
     Ndays = 10
-    truncate = 65
+    truncate = 40
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -617,8 +617,8 @@ function run_kespec3()
 
     data_steps = 225:225:Slr.grid.nt
 
-    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
-    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+    hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824", "u")
+    hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824", "v")
 
     ufiltered = zeros(size(hru))
     vfiltered = zeros(size(hrv))

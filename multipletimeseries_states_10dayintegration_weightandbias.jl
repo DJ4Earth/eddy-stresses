@@ -620,7 +620,7 @@ function run_multistate()
     )
 
     # daily information
-    hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves__includesinitcond_062425.jld2")
+    hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves_062425.jld2")
     data_steps = 225:225:Slr.grid.nt
 
     data = hrstates[2:end]
