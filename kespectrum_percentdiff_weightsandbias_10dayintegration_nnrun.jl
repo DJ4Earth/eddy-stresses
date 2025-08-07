@@ -614,8 +614,13 @@ function run_kespec3()
 
     data_steps = 225:225:Slr.grid.nt
 
-    hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824", "u")
-    hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824", "v")
+    # hydra
+    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
+    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+
+    # laptop
+    # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
 
     ufiltered = zeros(size(hru))
     vfiltered = zeros(size(hrv))
@@ -644,6 +649,7 @@ function run_kespec3()
     initial_cond = [u0, v0, eta0]
 
     init = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
+    param_guess = init
 
     fg!_closure(F, G, param_guess) = kespec3_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
     obj_fg = Optim.only_fg!(fg!_closure)

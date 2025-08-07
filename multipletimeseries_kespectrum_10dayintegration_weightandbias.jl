@@ -614,9 +614,11 @@ function run_multiks()
         Ndays=Ndays
     )
 
+    # hydra
     hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
     hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
 
+    # my laptop
     # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
     # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     data_steps = 225:225:Slr.grid.nt
@@ -644,7 +646,7 @@ function run_multiks()
     init = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
     param_guess = init
 
-    truncate = 45
+    truncate = 40
 
     result = nothing
     for ndays = 1:2:10
