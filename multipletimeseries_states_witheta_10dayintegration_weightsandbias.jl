@@ -1,9 +1,9 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multikspd_Chkp{T1,T2}
+mutable struct multistate2_Chkp{T1,T2}
     S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Float32, 3}, 1}       # computed data
+    data::Array{Array{Array{T1,2}, 1}, 1}       # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -12,7 +12,7 @@ mutable struct multikspd_Chkp{T1,T2}
 end
 
 # for running with checkpointing
-function multikspd_checkpointed_integration(chkp, scheme, truncate)
+function multistate2_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -186,21 +186,15 @@ function multikspd_checkpointed_integration(chkp, scheme, truncate)
 
     if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-        chkp.S.Prog.u,
-        chkp.S.Prog.v,
-        chkp.S.Prog.η,
-        chkp.S.Prog.sst,
-        chkp.S
+         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+            chkp.S.Prog.u,
+            chkp.S.Prog.v,
+            chkp.S.Prog.η,
+            chkp.S.Prog.sst,
+            chkp.S
         )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
-
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
-
-        chkp.J += sum( (ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 ./ ke_u_hr[1:truncate].^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2 ./ ke_v_hr[1:truncate].^2 )
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2) + sum((temp.η .- chkp.data[3][chkp.j]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -224,7 +218,7 @@ function multikspd_checkpointed_integration(chkp, scheme, truncate)
 end
 
 # for running without checkpointing
-function multikspd_integration(chkp, truncate)
+function multistate2_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -396,10 +390,9 @@ function multikspd_integration(chkp, truncate)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
     if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
             chkp.S.Prog.v,
             chkp.S.Prog.η,
@@ -407,13 +400,7 @@ function multikspd_integration(chkp, truncate)
             chkp.S
         )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
-
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
-
-        chkp.J += sum( (ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 ./ ke_u_hr[1:truncate].^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2 ./ ke_v_hr[1:truncate].^2 )
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2) + sum((temp.η .- chkp.data[3][chkp.j]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -436,7 +423,7 @@ function multikspd_integration(chkp, truncate)
 
 end
 
-function multikspd_compute_loss(Ndays, param_guess, data, data_steps, initial_cond, truncate)
+function multistate2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
     # Type precision
     T = Float32
@@ -479,7 +466,7 @@ function multikspd_compute_loss(Ndays, param_guess, data, data_steps, initial_co
         end
     end
 
-    chkp = multikspd_Chkp{T, T}(S,
+    chkp = multistate2_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -488,13 +475,13 @@ function multikspd_compute_loss(Ndays, param_guess, data, data_steps, initial_co
         0
     )
 
-    J = multikspd_integration(chkp, truncate)
+    J = multistate2_integration(chkp)
 
     return J
 
 end
 
-function multikspd_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
+function multistate2_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
 
     # Type precision
     T = Float32
@@ -521,10 +508,10 @@ function multikspd_compute_gradient(G, param_guess, data, data_steps, Ndays, ini
         nx=128,
         Ndays=Ndays
     )
-
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
+
 
     current = 1
     for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
@@ -537,17 +524,17 @@ function multikspd_compute_gradient(G, param_guess, data, data_steps, Ndays, ini
         end
     end
 
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve(
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "",
-        write_checkpoints_period = 224
-    )
+    # snaps = Int(floor(sqrt(S.grid.nt)))
+    # revolve = Revolve(
+    #     snaps;
+    #     verbose=1,
+    #     gc=true,
+    #     write_checkpoints=false,
+    #     write_checkpoints_filename = "",
+    #     write_checkpoints_period = 224
+    # )
 
-    chkp = multikspd_Chkp{T, T}(S,
+    chkp = multistate2_Chkp{T, T}(S,
         data,
         data_steps,
         0.0,
@@ -559,36 +546,36 @@ function multikspd_compute_gradient(G, param_guess, data, data_steps, Ndays, ini
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        multikspd_checkpointed_integration,
+        multistate2_integration,
         Active,
-        Duplicated(chkp, dchkp),
-        Const(revolve),
-        Const(truncate)
+        Duplicated(chkp, dchkp)
+        # Const(revolve)
     )[2]
     println("Cost with AD: $J")
 
     # Get gradient
     G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])]
+        vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])
+    ]
 
     return nothing
 
 end
 
-function multikspd_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
+function multistate2_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
 
-    G === nothing || multikspd_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
-    F === nothing || return multikspd_compute_loss(Ndays, param_guess, data, data_steps, initial_cond, truncate)
+    G === nothing || multistate2_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+    F === nothing || return multistate2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
 end
 
-function run_multikspd()
+function run_multistate2()
 
     Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
@@ -614,42 +601,48 @@ function run_multikspd()
         Ndays=Ndays
     )
 
-    # hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
-    # hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+    Shr = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=Ndays
+    )
 
-    hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    # daily information
+    # hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves_062425.jld2")
+    # data = hrstates[2:end]
+
+    uhrcg = load_object("./spinup_files/coarsegrainedu_30days_dailysaves_071525.jld2")
+    vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
+    etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
+
     data_steps = 225:225:Slr.grid.nt
 
-    ufiltered = zeros(size(hru))
-    vfiltered = zeros(size(hrv))
-
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
-
-    for j = 2:(Ndays+1)
-
-        ufiltered[:,:,j] = imfilter(hru[:,:,j], reflect(ker))
-        vfiltered[:,:,j] = imfilter(hrv[:,:,j], reflect(ker))
-
-    end
-
-    data = [ufiltered[:, :, 2:(Ndays+1)], vfiltered[:, :, 2:(Ndays+1)]]
-
+    data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
     initial_cond = [u0, v0, eta0]
 
-    init = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
-    param_guess = init
-
-    truncate = 40
+    param_guess = 1000 .* load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
 
     result = nothing
-    for ndays in [1, 2, 3, 4]
 
-        fg!_closure(F, G, param_guess) = multikspd_FG(F, G, param_guess, data, data_steps, ndays, initial_cond, truncate)
+    for ndays = [1, 2, 4, 6, 10]
+
+        fg!_closure(F, G, param_guess) = multistate2_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
         result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
 

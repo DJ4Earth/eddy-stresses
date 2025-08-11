@@ -194,7 +194,7 @@ function multistate_checkpointed_integration(chkp, scheme)
             chkp.S
         )...)
 
-        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2 + (temp.v .- chkp.data[2][:,:,j]).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2 + (temp.v .- chkp.data[2][chkp.j]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -400,7 +400,7 @@ function multistate_integration(chkp)
             chkp.S
         )...)
 
-        chkp.J += sum((temp.u - chkp.data[chkp.j][1]).^2) + sum((temp.v - chkp.data[chkp.j][2]).^2)
+        chkp.J += sum((temp.u - chkp.data[1][chkp.j]).^2) + sum((temp.v - chkp.data[2][chkp.j]).^2)
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -620,22 +620,26 @@ function run_multistate()
     )
 
     # daily information
-    hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves_062425.jld2")
+    # hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves_062425.jld2")
+    # data = hrstates[2:end]
+
+    uhrcg = load_object("./spinup_files/coarsegrainedu_30days_dailysaves_071525.jld2")
+    vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
+    etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
+
     data_steps = 225:225:Slr.grid.nt
 
-    data = hrstates[2:end]
-
+    data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
+    param_guess = 1000 .* load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
 
     result = nothing
-
-    for ndays = 1:2:10
+    for ndays = [1, 2, 4, 6, 8, 10]
 
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)

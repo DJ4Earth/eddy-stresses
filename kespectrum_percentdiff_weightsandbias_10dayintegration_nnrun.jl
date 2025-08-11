@@ -533,15 +533,15 @@ function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         end
     end
 
-    # snaps = Int(floor(sqrt(S.grid.nt)))
-    # revolve = Revolve(
-    #     snaps;
-    #     verbose=1,
-    #     gc=true,
-    #     write_checkpoints=false,
-    #     write_checkpoints_filename = "",
-    #     write_checkpoints_period = 224
-    # )
+    snaps = Int(floor(sqrt(S.grid.nt)))
+    revolve = Revolve(
+        snaps;
+        verbose=1,
+        gc=true,
+        write_checkpoints=false,
+        write_checkpoints_filename = "",
+        write_checkpoints_period = 224
+    )
 
     chkp = kespec3_Chkp{T, T}(S,
         data,
@@ -559,8 +559,8 @@ function kespec3_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         kespec3_integration,
         Active,
         Duplicated(chkp, dchkp),
+        # Const(revolve),
         Const(truncate)
-        # Const(revolve)
     )[2]
     println("Cost with AD: $J")
 
@@ -587,7 +587,7 @@ end
 
 function run_kespec3()
 
-    Ndays = 10
+    Ndays = 2
     truncate = 40
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -615,12 +615,12 @@ function run_kespec3()
     data_steps = 225:225:Slr.grid.nt
 
     # hydra
-    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
-    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+    # hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
+    # hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
 
     # laptop
-    # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
+    hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
 
     ufiltered = zeros(size(hru))
     vfiltered = zeros(size(hrv))
