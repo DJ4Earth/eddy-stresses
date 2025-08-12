@@ -400,7 +400,7 @@ function multistate2_integration(chkp)
             chkp.S
         )...)
 
-        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2) + sum((temp.η .- chkp.data[3][chkp.j]).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2 ./ (128*127)) + sum((temp.v .- chkp.data[2][chkp.j]).^2 ./ (128*127)) + sum((temp.η .- chkp.data[3][chkp.j]).^2 ./ (128*128))
 
         # storing the objective function over time
         # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
@@ -558,10 +558,18 @@ function multistate2_compute_gradient(G, param_guess, data, data_steps, Ndays, i
         vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
         vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
         vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][3][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][3][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][4][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][4][2]);
         vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
         vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
         vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][2])
     ]
 
     return nothing
@@ -636,7 +644,7 @@ function run_multistate2()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = 1000 .* load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
+    param_guess = 1000 .* randn(883)
 
     result = nothing
 
@@ -644,7 +652,7 @@ function run_multistate2()
 
         fg!_closure(F, G, param_guess) = multistate2_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
+        result = Optim.optimize(obj_fg, param_guess, Optim.Options(show_trace=true, store_trace=true, iterations=5))
 
         param_guess = result.minimizer
 
