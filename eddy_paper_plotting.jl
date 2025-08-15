@@ -9,6 +9,8 @@ end
 
 function load_and_create_models()
 
+    offlineweights
+
     # load once
     u_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/u.nc", "u")
     v_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/v.nc", "v")
@@ -77,8 +79,8 @@ function load_and_create_models()
     Snn.Prog.v .= copy(initial_cond[2])
     Snn.Prog.η .= copy(initial_cond[3])
 
-    # param_guess = result.minimizer
-    param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
+    param_guess = result.minimizer
+    # param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
     current = 1
     for model in (Snn.Diag.NNVars.model_diag, Snn.Diag.NNVars.model_offdiag)
         for layers in model[1]
@@ -302,10 +304,10 @@ function plots()
     Colorbar(fig[1,4], hm1)
 
     # cg, zb, nn, no param
-    fig = Figure(size=(900, 900), fontsize=15);
+    fig = Figure(size=(900, 1000), fontsize=15);
+    t = 31
     uhrcg = imfilter(uhr[:,:,t], reflect(ker))
     vhrcg = imfilter(vhr[:,:,t], reflect(ker))
-    t = 366
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
     LinRange(0, 3840, 1024),
     (uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2),
@@ -318,7 +320,7 @@ function plots()
 
     ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_noparam[end].u[:,1:end-1].^2 .+ states_noparam[end].v[1:end-1,:].^2),
+    (states_noparam[30].u[:,1:end-1].^2 .+ states_noparam[30].v[1:end-1,:].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E, no closure"),
     colorrange=(0,
@@ -326,7 +328,6 @@ function plots()
     ));
     Colorbar(fig[1,4], hm1)
 
-    t = 31
     ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (u_zb[:,1:end-1,t].^2 .+ v_zb[1:end-1,:,t].^2),
@@ -339,13 +340,33 @@ function plots()
 
     ax1, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_nn[end].u[:,1:end-1].^2 .+ states_nn[end].v[1:end-1,:].^2),
+    (states_nn[t-1].u[:,1:end-1].^2 .+ states_nn[t-1].v[1:end-1,:].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E with untrained NN closure"),
     colorrange=(0,
     maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
     ));
     Colorbar(fig[2,4], hm1)
+
+    ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (states_offline[t-1].u[:,1:end-1].^2 .+ states_offline[t-1].v[1:end-1,:].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="30km resolution E with ''offline`` NN closure"),
+    colorrange=(0,
+    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
+    ));
+    Colorbar(fig[3,2], hm1)
+
+    ax1, hm6 = heatmap(fig[3,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (states_trainednn_states[t-1].u[:,1:end-1].^2 .+ states_trainednn_states[t-1].v[1:end-1,:].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="30km resolution E with state tuned NN"),
+    colorrange=(0,
+    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
+    ));
+    Colorbar(fig[3,4], hm1)
 
     # comparing trained NN results
 
@@ -363,9 +384,10 @@ function plots()
     # imfilter(hru[:,:,j], reflect(ker))
 
     fig = Figure(size=(900, 900), fontsize=15);
+    t = 31
     ax1, hm = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_trainednn_states[end].u[:,1:end-1].^2 .+ states_trainednn_states[end].v[1:end-1,:].^2),
+    (states_trainednn_states[t].u[:,1:end-1].^2 .+ states_trainednn_states[t].v[1:end-1,:].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="Trained closure, states"),
     colorrange=(0,
@@ -375,7 +397,7 @@ function plots()
 
     ax1, hm = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_trainednn_kespec[end].u[:,1:end-1].^2 .+ states_trainednn_kespec[end].v[1:end-1,:].^2),
+    (states_trainednn_kespec[t].u[:,1:end-1].^2 .+ states_trainednn_kespec[t].v[1:end-1,:].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="Trained closure, KE spectrum"),
     colorrange=(0,
@@ -385,7 +407,7 @@ function plots()
 
     ax1, hm = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_trainednn_pd[end].u[:,1:end-1].^2 .+ states_trainednn_pd[end].v[1:end-1,:].^2),
+    (states_trainednn_pd[t].u[:,1:end-1].^2 .+ states_trainednn_pd[t].v[1:end-1,:].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="Trained closure, KE spectrum percent-diff"),
     colorrange=(0,
@@ -395,7 +417,7 @@ function plots()
 
     ax1, hm = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_trainednn_pd65[end].u[:,1:end-1].^2 .+ states_trainednn_pd65[end].v[1:end-1,:].^2),
+    (states_trainednn_pd65[t].u[:,1:end-1].^2 .+ states_trainednn_pd65[t].v[1:end-1,:].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="Trained closure, KE spectrum percent-diff 65"),
     colorrange=(0,
@@ -441,8 +463,8 @@ function plots()
     up_nnpd = zeros(65,totalstates)
     vp_nnpd = zeros(65,totalstates)
 
-    up_nnpd65 = zeros(65,totalstates)
-    vp_nnpd65 = zeros(65,totalstates)
+    up_offline = zeros(65, totalstates)
+    vp_offline = zeros(65, totalstates)
 
     for t = 1:366
 
@@ -476,6 +498,9 @@ function plots()
         up_nnpd[:,t] = power(periodogram(states_trainednn_pd[t].u; radialavg=true, radialsum=false)) ./ 128^2
         vp_nnpd[:,t] = power(periodogram(states_trainednn_pd[t].v; radialavg=true, radialsum=false)) ./ 128^2
 
+        up_offline[:,t] = power(periodogram(states_offline[t].u; radialavg=true, radialsum=false)) ./ 128^2
+        vp_offline[:,t] = power(periodogram(states_offline[t].v; radialavg=true, radialsum=false)) ./ 128^2
+
         # up_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].u; radialavg=true, radialsum=false)) ./ 128^2
         # vp_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].v; radialavg=true, radialsum=false)) ./ 128^2
     end
@@ -508,6 +533,7 @@ function plots()
     lines!(fig[1,1], lr_wl[2:end], up_nnstates[2:end,t] + vp_nnstates[2:end,t], label="NN closure, state loss")
     lines!(fig[1,1], lr_wl[2:end], up_nnkesp[2:end,t] + vp_nnkesp[2:end,t], label="NN closure, KE spectra loss")
     lines!(fig[1,1], lr_wl[2:end], up_nnpd[2:end,t] + vp_nnpd[2:end,t], label="NN closure, KE spectra percent diff loss")
+    lines!(fig[1,1], lr_wl[2:end], up_offline[2:end,t] + vp_offline[2:end,t], label="NN closure, offline trained")
     axislegend(position = (0,0))
 
     #### comparing time-averaged ke spectra
@@ -536,10 +562,10 @@ function plots()
     up_nnpd_avg = zeros(65)
     vp_nnpd_avg = zeros(65)
 
-    up_nnpd65_avg = zeros(65)
-    vp_nnpd65_avg = zeros(65)
+    up_offline_avg = zeros(65)
+    vp_offline_avg = zeros(65)
 
-    daystoaverage = 10
+    daystoaverage = 364
     for t = 1:daystoaverage
 
         up_noparam_avg += up_noparam[:,t]
@@ -558,8 +584,8 @@ function plots()
         up_nnpd_avg += up_nnpd[:,t]
         vp_nnpd_avg += vp_nnpd[:,t]
 
-        up_nnpd65_avg += up_nnpd65[:,t]
-        vp_nnpd65_avg += vp_nnpd65[:,t]
+        up_offline_avg += up_offline[:,t]
+        vp_offline_avg += vp_offline[:,t]
 
     end
 
@@ -588,9 +614,10 @@ function plots()
     lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/31, label="ZB closure")
     lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30km resolution, no closure")
     lines!(fig[1,1], lr_wl[2:end], (up_nn_avg[2:end] + vp_nn_avg[2:end])/totalstates, label="Untrained NN closure")
-    lines!(fig[1,1], lr_wl[2:end], (up_nnstates_avg[2:end] + vp_nnstates_avg[2:end])/totalstates, label="NN closure, state loss")
-    lines!(fig[1,1], lr_wl[2:end], (up_nnkesp_avg[2:end] + vp_nnkesp_avg[2:end])/totalstates, label="NN closure, KE spectra loss")
-    lines!(fig[1,1], lr_wl[2:end], (up_nnpd_avg[2:end] + vp_nnpd_avg[2:end])/totalstates, label="NN closure, KE spectra percent diff loss")
+    # lines!(fig[1,1], lr_wl[2:end], (up_nnstates_avg[2:end] + vp_nnstates_avg[2:end])/totalstates, label="NN closure, state loss")
+    # lines!(fig[1,1], lr_wl[2:end], (up_nnkesp_avg[2:end] + vp_nnkesp_avg[2:end])/totalstates, label="NN closure, KE spectra loss")
+    # lines!(fig[1,1], lr_wl[2:end], (up_nnpd_avg[2:end] + vp_nnpd_avg[2:end])/totalstates, label="NN closure, KE spectra percent diff loss")
+    lines!(fig[1,1], lr_wl[2:end], (up_offline_avg[2:end] + vp_offline_avg[2:end])/totalstates, label="NN closure, offline loss")
     axislegend(position = (0,0))
 
     #############################################################################################

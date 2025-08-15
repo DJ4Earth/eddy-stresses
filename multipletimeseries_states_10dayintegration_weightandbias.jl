@@ -512,7 +512,6 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-
     current = 1
     for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
         for layers in model[1]
@@ -558,10 +557,30 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
         vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
         vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
         vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][3][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][3][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][4][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][4][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][5][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][5][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][6][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][6][2]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][7][1]);
+        vec(dchkp.S.Diag.NNVars.model_diag[1][7][2]);
         vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
         vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
         vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][5][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][5][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][6][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][6][2]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][7][1]);
+        vec(dchkp.S.Diag.NNVars.model_offdiag[1][7][2]);
     ]
 
     return nothing
@@ -636,7 +655,7 @@ function run_multistate()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = 1000 .* load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
+    param_guess = 1000 .* randn(1543)
 
     result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]
