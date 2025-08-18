@@ -17,9 +17,9 @@ function for_enzyme(param_guess, state, SNN, SZB)
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.NN_momentum(state[1], state[2], SNN)
 
-    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.NNVars.S_u).^2) ./ (128*127) #+ sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.NNVars.S_v).^2) ./ (128*127)
+    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.NNVars.S_u).^2) ./ (128*127) #+ sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.NNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[50:52,50] - SNN.Diag.NNVars.S_u[50:52,50]).^2)
-
+    return (SZB.Diag.ZBVars.S_u[50,50] - SNN.Diag.NNVars.T11[50,50]).^2
 end
 
 function initweights_compute_loss(param_guess, state)
@@ -82,8 +82,9 @@ function initweights_compute_loss(param_guess, state)
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.NN_momentum(state[1], state[2], SNN)
 
-    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.NNVars.S_u).^2) ./ (128*127) #+ sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.NNVars.S_v).^2) ./ (128*127)
+    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.NNVars.S_u).^2) ./ (128*127) #+ sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.NNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[50:52,50] - SNN.Diag.NNVars.S_u[50:52,50]).^2)
+    return (SZB.Diag.ZBVars.S_u[50,50] - SNN.Diag.NNVars.T11[50,50]).^2
 
 end
 
@@ -188,7 +189,7 @@ function compute_init_weights()
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    param_guess = 100 .* randn(5831 + 4051)
+    param_guess = 1000 .* randn(1357+1691)
 
     result = nothing
     for j in [10]
@@ -196,7 +197,7 @@ function compute_init_weights()
         u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], S)
         fg!_closure(F, G, param_guess) = initweights_FG(F, G, param_guess, [u, v])
         obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.MomentumGradientDescent(), Optim.Options(show_trace=true, store_trace=true))
+        result = Optim.optimize(obj_fg, param_guess, Optim.Options(show_trace=true, store_trace=true))
         param_guess = result.minimizer
 
     end
