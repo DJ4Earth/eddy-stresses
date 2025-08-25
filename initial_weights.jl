@@ -15,18 +15,20 @@ function for_enzyme(param_guess, state, SNN, SZB)
     # end
 
     current = 1
-    for layers in SNN.Diag.CNNVars.model_offdiag[1]
-        for array in layers
+    for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
                     sz = prod(size(array))
                     array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
                     current += sz
+            end
         end
     end
 
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
-    ShallowWaters.conv_NN_momentum(state[1], state[2], SNN)
+    ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
-    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) #+ sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.NNVars.S_v).^2) ./ (128*127)
+    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[50:52,50] - SNN.Diag.CNNVars.S_u[50:52,50]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
@@ -90,16 +92,18 @@ function initweights_compute_loss(param_guess, state)
     # end
 
     current = 1
-    for layers in SNN.Diag.CNNVars.model_offdiag[1]
-        for array in layers
+    for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
                     sz = prod(size(array))
                     array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
                     current += sz
+            end
         end
     end
 
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
-    ShallowWaters.conv_NN_momentum(state[1], state[2], SNN)
+    ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
     return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[50:52,50] - SNN.Diag.CNNVars.S_u[50:52,50]).^2)
@@ -211,13 +215,15 @@ function compute_init_weights()
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    param_guess = zeros(Lux.parameterlength(S.Diag.CNNVars.model_offdiag))
+    param_guess = zeros(Lux.parameterlength(S.Diag.CNNVars.model_Su) + Lux.parameterlength(S.Diag.CNNVars.model_Sv))
     current = 1
-    for layers in S.Diag.CNNVars.model_offdiag[1]
-        for array in layers
+    for model in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
                     sz = prod(size(array))
                     param_guess[current:(current + sz - 1)] .= vec(array)
                     current += sz
+            end
         end
     end
     # n = Lux.parameterlength(S.Diag.CNNVars.model_offdiag)
@@ -306,16 +312,18 @@ function ignore(result)
     # end
 
     current = 1
-    for layers in SNN.Diag.CNNVars.model_offdiag[1]
-        for array in layers
+    for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
                     sz = prod(size(array))
                     array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
                     current += sz
+            end
         end
     end
 
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
-    ShallowWaters.conv_NN_momentum(state[1], state[2], SNN)
+    ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
     return SZB, SNN
 
