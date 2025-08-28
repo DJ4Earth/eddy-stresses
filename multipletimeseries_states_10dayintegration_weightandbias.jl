@@ -426,7 +426,7 @@ end
 function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
     # Type precision
-    T = Float32
+    T = Float64
 
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -492,7 +492,7 @@ end
 function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
 
     # Type precision
-    T = Float32
+    T = Float64
 
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
