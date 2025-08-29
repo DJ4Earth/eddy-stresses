@@ -73,14 +73,11 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
 
     result = nothing
     j = 10
-    # for j in [10]
 
-        u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
-        snapshot = [u,v]
-        meta = NLPModelMeta(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv); ncon=0, nnzh=0,x0=param_guess)
-        counters = Counters()
-
-    # end
+    u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
+    snapshot = [u,v]
+    meta = NLPModelMeta(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv); ncon=0, nnzh=0,x0=param_guess)
+    counters = Counters()
 
     return InitWeightsModel{T, typeof(param_guess)}(meta, Counters(), SZB, SNN, snapshot, 0.0)
 

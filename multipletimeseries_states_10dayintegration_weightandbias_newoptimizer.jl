@@ -1,9 +1,12 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multistate_Chkp{T1,T2}
-    S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Array{T1,2}, 1}, 1}       # computed data
+mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
+    meta::NLPModelMeta{T,S}
+    counters::Counters
+    S::ShallowWaters.ModelSetup{T,T}        # model structure
+    initial_cond::Array{Array{T,2}, 1}
+    data::Array{Array{Array{T,2}, 1}, 1}    # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -423,48 +426,20 @@ function multistate_integration(chkp)
 
 end
 
-function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
+function NLPModels.obj(model, param_guess)
 
     # Type precision
     T = Float64
 
-    S = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
+    S = model.S
+    data = model.data
+    data_steps = model.data_steps
+    initial_cond = model.initial_cond
 
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
-    # current = 1
-    # for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
     current = 1
     for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -476,62 +451,25 @@ function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_c
         end
     end
 
-    chkp = multistate_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0
-    )
+    model.J = multistate_integration(model)
 
-    J = multistate_integration(chkp)
-
-    return J
+    return model.J
 
 end
 
-function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
+function NLPModels.grad!(model, param_guess, G)
 
     # Type precision
     T = Float64
 
-    S = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
+    S = model.S
+    data = model.data
+    data_steps = model.data_steps
+    initial_cond = model.initial_cond
+
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
-
-    # current = 1
-    # for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
 
     current = 1
     for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
@@ -544,44 +482,24 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
         end
     end
 
-    # snaps = Int(floor(sqrt(S.grid.nt)))
-    # revolve = Revolve(
-    #     snaps;
-    #     verbose=1,
-    #     gc=true,
-    #     write_checkpoints=false,
-    #     write_checkpoints_filename = "",
-    #     write_checkpoints_period = 224
-    # )
-
-    chkp = multistate_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0.0
-    )
-    dchkp = Enzyme.make_zero(chkp)
+    dmodel = Enzyme.make_zero(model)
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
         multistate_integration,
         Active,
-        Duplicated(chkp, dchkp)
-        # Const(revolve)
+        Duplicated(model, dmodel)
     )[2]
-    println("Cost with AD: $J")
 
     # Get gradient
-    G = zeros(Lux.parameterlength(S.Diag.CNNVars.model_Su ) + Lux.parameterlength(S.Diag.CNNVars.model_Sv))
+    G = zeros(Lux.parameterlength(S.Diag.CNNVars.model_Su) + Lux.parameterlength(S.Diag.CNNVars.model_Sv))
     current = 1
-    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+    for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
             for array in layers
-                    sz = prod(size(array))
-                    G[current:(current + sz - 1)] .= vec(array)
-                    current += sz
+                        sz = prod(size(array))
+                        G[current:(current + sz - 1)] .= vec(array)
+                        current += sz
             end
         end
     end
@@ -590,16 +508,8 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
 
 end
 
-function multistate_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond)
+function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
 
-    G === nothing || multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
-    F === nothing || return multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
-
-end
-
-function run_multistate()
-
-    Ndays = 10
     Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
@@ -658,16 +568,34 @@ function run_multistate()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("./result_offline_newoptimizer_onesnapshot_zhangetalmodel_082825.jld2").solution
+    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess
+    )
+    counters = Counters()
+
+    return multistatenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0)
+
+end
+
+function run_multistate()
 
     result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]
 
-        fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
-        obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=20))
-
-        param_guess = result.minimizer
+        if ndays === 1
+            param_guess = load_object("./result_offline_newoptimizer_onesnapshot_zhangetalmodel_082825.jld2").solution
+        else
+            param_guess = result.solution
+        end
+        nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
+        qn_options = MadNLP.QuasiNewtonOptions(;max_history=20)
+        result = madnlp(nlp;
+            hessian_approximation=MadNLP.CompactLBFGS,
+            quasi_newton_options=qn_options,
+            tol=1e-3
+        )
 
     end
 
