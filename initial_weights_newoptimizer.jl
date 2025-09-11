@@ -86,7 +86,7 @@ end
 function compute_init_weights_newoptimizer()
 
     nlp = InitWeightsModel{Float64}()
-    qn_options = MadNLP.QuasiNewtonOptions(; max_history=20)
+    qn_options = MadNLP.QuasiNewtonOptions(; max_history=50)
     results = madnlp(
         nlp;
         # linear_solver=LapackCPUSolver,
@@ -198,6 +198,7 @@ function NLPModels.grad!(model, param_guess, G)
     )[2]
 
     G .= dparam
+    @show norm(G)
 
     return G
 

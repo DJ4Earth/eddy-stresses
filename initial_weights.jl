@@ -250,7 +250,7 @@ function ignore(result)
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    param_guess = result.minimizer
+    param_guess = result.solution
     j = 10
 
     SZB = ShallowWaters.model_setup(output=false,

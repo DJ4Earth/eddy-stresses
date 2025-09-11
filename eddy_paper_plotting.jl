@@ -24,7 +24,7 @@ function load_and_create_models()
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
-    Ndays = 365
+    Ndays = 10
     initial_cond = [u0, v0, eta0]
 
     Snoparam = ShallowWaters.model_setup(output=false,
@@ -131,13 +131,15 @@ function load_and_create_models()
     #     end
     # end
 
-    param_guess = load_object("./result_offline_onesnapshot.jld2").minimizer
+    param_guess = load_object("./result_offline_onesnapshot_muchsmallernn_newoptimizer_082925.jld2").solution
     current = 1
-    for layers in Strainednn_states.Diag.CNNVars.model_offdiag[1]
-        for array in layers
+    for model in (Strainednn_states.Diag.CNNVars.model_Su, Strainednn_states.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
                     sz = prod(size(array))
                     array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
                     current += sz
+            end
         end
     end
 
