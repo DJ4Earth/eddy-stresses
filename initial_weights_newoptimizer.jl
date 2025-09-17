@@ -59,7 +59,8 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    # param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    param_guess = load_object("./result_workedupto11by11_newoptimizer_091525.jld2").solution
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -86,7 +87,7 @@ end
 function compute_init_weights_newoptimizer()
 
     nlp = InitWeightsModel{Float64}()
-    qn_options = MadNLP.QuasiNewtonOptions(; max_history=50)
+    qn_options = MadNLP.QuasiNewtonOptions(; max_history=200)
     results = madnlp(
         nlp;
         # linear_solver=LapackCPUSolver,
@@ -125,8 +126,8 @@ function for_enzyme(param_guess, state, SNN, SZB)
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
-    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
-    # return sum((SZB.Diag.ZBVars.S_u[50:52,50] - SNN.Diag.CNNVars.S_u[50:52,50]).^2)
+    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    return sum((SZB.Diag.ZBVars.S_u[40:60,40:60] - SNN.Diag.CNNVars.S_u[40:60,40:60]).^2 + (SZB.Diag.ZBVars.S_v[40:60,40:60] - SNN.Diag.CNNVars.S_v[40:60,40:60]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 end
@@ -166,10 +167,10 @@ function NLPModels.obj(model, param_guess)
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
-    model.J = sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
 
-    return model.J
-    # return sum((SZB.Diag.ZBVars.S_u[50:52,50] - SNN.Diag.CNNVars.S_u[50:52,50]).^2)
+    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
+    return sum((SZB.Diag.ZBVars.S_u[40:60,40:60] - SNN.Diag.CNNVars.S_u[40:60,40:60]).^2 + (SZB.Diag.ZBVars.S_v[40:60,40:60] - SNN.Diag.CNNVars.S_v[40:60,40:60]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 
@@ -204,13 +205,49 @@ function NLPModels.grad!(model, param_guess, G)
 
 end
 
+# function compute_hessian(model, param_guess)
+
+#     SZB = model.SZB
+#     SNN = model.SNN
+#     state = model.snapshot
+
+#     dparam = Enzyme.make_zero(param_guess)
+#     dSZB = Enzyme.make_zero(SZB)
+#     dSNN = Enzyme.make_zero(SNN)
+
+#     y = [0.0]
+#     x = [2.0, 2.0]
+
+#     dy = [0.0]
+#     dx = [1.0, 0.0]
+
+#     bx = [0.0, 0.0]
+#     by = [1.0]
+#     dbx = [0.0, 0.0]
+#     dby = [0.0]
+
+#     autodiff(
+#         Forward,
+#         (x,y) -> Enzyme.autodiff(Reverse, for_enzyme, x, y),
+#         Duplicated(Duplicated(x, bx), Duplicated(dx, dbx)),
+#         Duplicated(Duplicated(y, by), Duplicated(dy, dby)),
+#         DuplicatedNoNeed(Duplicated(SZB, dSZB)),
+#         DuplicatedNoNeed(Duplicated(SNN, dSNN))
+#         # Duplicated(param_guess, dparam),
+#         # Const(state),
+#         # Duplicated(SZB, dSZB),
+#         # Duplicated(SNN, dSNN)
+#     )
+
+# end
+
 function ignore(result)
 
     ulr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/u.nc", "u")
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    param_guess = result.minimizer
+    param_guess = result.solution
     j = 10
 
     SZB = ShallowWaters.model_setup(output=false,
