@@ -59,18 +59,18 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    # param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
-    param_guess = load_object("./result_workedupto11by11_newoptimizer_091525.jld2").solution
-    current = 1
-    for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
-        for layers in model[1]
-            for array in layers
-                    sz = prod(size(array))
-                    param_guess[current:(current + sz - 1)] .= vec(array)
-                    current += sz
-            end
-        end
-    end
+    param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    # param_guess = load_object("./result_workedupto21by21_32-32-32-4CNN_091825.jld2").solution
+    # current = 1
+    # for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+    #     for layers in model[1]
+    #         for array in layers
+    #                 sz = prod(size(array))
+    #                 param_guess[current:(current + sz - 1)] .= vec(array)
+    #                 current += sz
+    #         end
+    #     end
+    # end
 
     result = nothing
     j = 10
@@ -127,7 +127,7 @@ function for_enzyme(param_guess, state, SNN, SZB)
     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
     # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
-    return sum((SZB.Diag.ZBVars.S_u[40:60,40:60] - SNN.Diag.CNNVars.S_u[40:60,40:60]).^2 + (SZB.Diag.ZBVars.S_v[40:60,40:60] - SNN.Diag.CNNVars.S_v[40:60,40:60]).^2)
+    return sum((SZB.Diag.ZBVars.S_u[25:85,25:85] - SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (SZB.Diag.ZBVars.S_v[25:85,25:85] - SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 end
@@ -170,7 +170,7 @@ function NLPModels.obj(model, param_guess)
 
     # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
-    return sum((SZB.Diag.ZBVars.S_u[40:60,40:60] - SNN.Diag.CNNVars.S_u[40:60,40:60]).^2 + (SZB.Diag.ZBVars.S_v[40:60,40:60] - SNN.Diag.CNNVars.S_v[40:60,40:60]).^2)
+    return sum((SZB.Diag.ZBVars.S_u[25:85,25:85] - SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (SZB.Diag.ZBVars.S_v[25:85,25:85] - SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 
