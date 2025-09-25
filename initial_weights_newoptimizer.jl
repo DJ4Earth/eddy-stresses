@@ -134,7 +134,8 @@ end
 
 function NLPModels.obj(model, param_guess)
 
-    PZB = ShallowWaters.parameters(output=false,
+    PZB = ShallowWaters.Parameter(T = Float64;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -156,7 +157,8 @@ function NLPModels.obj(model, param_guess)
         nx=128
     )
 
-    PNN = ShallowWaters.parameters(output=false,
+    PNN = ShallowWaters.Parameter(T = Float64;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -204,12 +206,12 @@ function NLPModels.obj(model, param_guess)
         end
     end
 
-    ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
-    ShallowWaters.CNN_momentum(state[1], state[2], SNN)
+    ShallowWaters.ZB_momentum(model.snapshot[1], model.snapshot[2], model.SZB, model.SZB.Diag)
+    ShallowWaters.CNN_momentum(model.snapshot[1], model.snapshot[2], model.SNN)
 
     # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
-    return sum((SZB.Diag.ZBVars.S_u[25:85,25:85] - SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (SZB.Diag.ZBVars.S_v[25:85,25:85] - SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
+    return sum((model.SZB.Diag.ZBVars.S_u[25:85,25:85] - model.SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (model.SZB.Diag.ZBVars.S_v[25:85,25:85] - model.SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 
@@ -219,7 +221,8 @@ end
 
 function NLPModels.grad!(model, param_guess, G)
 
-    PZB = ShallowWaters.parameters(output=false,
+    PZB = ShallowWaters.Parameter(T=Float64;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -241,7 +244,8 @@ function NLPModels.grad!(model, param_guess, G)
         nx=128
     )
 
-    PNN = ShallowWaters.parameters(output=false,
+    PNN = ShallowWaters.Parameter(T = Float64;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -410,6 +414,32 @@ function error()
         Const([Slr.Prog.u, Slr.Prog.v])
     )
 
+
+
+end
+
+function checking()
+
+    nlp = InitWeightsModel{Float64}()
+
+    current = 1
+    l = 0
+    for model in (nlp.SNN.Diag.CNNVars.model_Su, nlp.SNN.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
+                    sz = prod(size(array))
+                    l += sz
+            end
+        end
+    end
+    G = zeros(l)
+    NLPModels.grad!(nlp, nlp.meta.x0, G)
+
+    println("norm of initial gradient ", norm(G))
+
+    G = zeros(l)
+    NLPModels.grad!(nlp, nlp.meta.x0, G)
+    println("should be the same norm ", norm(G))
 
 
 end
