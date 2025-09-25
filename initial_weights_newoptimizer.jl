@@ -134,13 +134,53 @@ end
 
 function NLPModels.obj(model, param_guess)
 
-    state = model.snapshot
+    PZB = ShallowWaters.parameters(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128
+    )
 
-    SZB = model.SZB
-    SZB.parameters.zb_forcing_dissipation=true
+    PNN = ShallowWaters.parameters(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128
+    )
 
-    SNN = model.SNN
-    SNN.parameters.nn_forcing_dissipation=true
+    model.SZB = ShallowWaters.model_setup(PZB)
+    model.SNN = ShallowWaters.model_setup(PNN)
+    model.J = 0
 
     # current = 1
     # for model in (SNN.Diag.NNVars.model_diag, SNN.Diag.NNVars.model_offdiag)
@@ -154,7 +194,7 @@ function NLPModels.obj(model, param_guess)
     # end
 
     current = 1
-    for m in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+    for m in (model.SNN.Diag.CNNVars.model_Su, model.SNN.Diag.CNNVars.model_Sv)
         for layers in m[1]
             for array in layers
                     sz = prod(size(array))
@@ -166,7 +206,6 @@ function NLPModels.obj(model, param_guess)
 
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
-
 
     # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
@@ -180,66 +219,73 @@ end
 
 function NLPModels.grad!(model, param_guess, G)
 
-    SZB = model.SZB
-    SNN = model.SNN
-    state = model.snapshot
+    PZB = ShallowWaters.parameters(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128
+    )
+
+    PNN = ShallowWaters.parameters(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128
+    )
+
+    model.SZB = ShallowWaters.model_setup(PZB)
+    model.SNN = ShallowWaters.model_setup(PNN)
+    model.J = 0
 
     dparam = Enzyme.make_zero(param_guess)
-    dSZB = Enzyme.make_zero(SZB)
-    dSNN = Enzyme.make_zero(SNN)
+    dSZB = Enzyme.make_zero(model.SZB)
+    dSNN = Enzyme.make_zero(model.SNN)
 
     J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
         for_enzyme,
         Active,
         Duplicated(param_guess, dparam),
-        Const(state),
-        Duplicated(SZB, dSZB),
-        Duplicated(SNN, dSNN)
+        Const(model.snapshot),
+        Duplicated(model.SZB, dSZB),
+        Duplicated(model.SNN, dSNN)
     )[2]
 
     G .= dparam
-    @show norm(G)
 
     return G
 
 end
-
-# function compute_hessian(model, param_guess)
-
-#     SZB = model.SZB
-#     SNN = model.SNN
-#     state = model.snapshot
-
-#     dparam = Enzyme.make_zero(param_guess)
-#     dSZB = Enzyme.make_zero(SZB)
-#     dSNN = Enzyme.make_zero(SNN)
-
-#     y = [0.0]
-#     x = [2.0, 2.0]
-
-#     dy = [0.0]
-#     dx = [1.0, 0.0]
-
-#     bx = [0.0, 0.0]
-#     by = [1.0]
-#     dbx = [0.0, 0.0]
-#     dby = [0.0]
-
-#     autodiff(
-#         Forward,
-#         (x,y) -> Enzyme.autodiff(Reverse, for_enzyme, x, y),
-#         Duplicated(Duplicated(x, bx), Duplicated(dx, dbx)),
-#         Duplicated(Duplicated(y, by), Duplicated(dy, dby)),
-#         DuplicatedNoNeed(Duplicated(SZB, dSZB)),
-#         DuplicatedNoNeed(Duplicated(SNN, dSNN))
-#         # Duplicated(param_guess, dparam),
-#         # Const(state),
-#         # Duplicated(SZB, dSZB),
-#         # Duplicated(SNN, dSNN)
-#     )
-
-# end
 
 function ignore(result)
 
