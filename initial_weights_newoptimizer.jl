@@ -73,7 +73,7 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     # end
 
     result = nothing
-    j = 10
+    j = 1
 
     u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
     snapshot = [u,v]
@@ -126,8 +126,8 @@ function for_enzyme(param_guess, state, SNN, SZB)
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
-    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
-    return sum((SZB.Diag.ZBVars.S_u[25:85,25:85] - SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (SZB.Diag.ZBVars.S_v[25:85,25:85] - SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
+    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    # return sum((SZB.Diag.ZBVars.S_u[25:85,25:85] - SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (SZB.Diag.ZBVars.S_v[25:85,25:85] - SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 end
@@ -209,9 +209,9 @@ function NLPModels.obj(model, param_guess)
     ShallowWaters.ZB_momentum(model.snapshot[1], model.snapshot[2], model.SZB, model.SZB.Diag)
     ShallowWaters.CNN_momentum(model.snapshot[1], model.snapshot[2], model.SNN)
 
-    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
-    return sum((model.SZB.Diag.ZBVars.S_u[25:85,25:85] - model.SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (model.SZB.Diag.ZBVars.S_v[25:85,25:85] - model.SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
+    # return sum((model.SZB.Diag.ZBVars.S_u[25:85,25:85] - model.SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (model.SZB.Diag.ZBVars.S_v[25:85,25:85] - model.SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 
