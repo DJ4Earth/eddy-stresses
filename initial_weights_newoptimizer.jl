@@ -209,7 +209,7 @@ function NLPModels.obj(model, param_guess)
     ShallowWaters.ZB_momentum(model.snapshot[1], model.snapshot[2], model.SZB, model.SZB.Diag)
     ShallowWaters.CNN_momentum(model.snapshot[1], model.snapshot[2], model.SNN)
 
-    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    return sum((model.SZB.Diag.ZBVars.S_u .- model.SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((model.SZB.Diag.ZBVars.S_v .- model.SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
     # return sum((model.SZB.Diag.ZBVars.S_u[25:85,25:85] - model.SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (model.SZB.Diag.ZBVars.S_v[25:85,25:85] - model.SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
     # temp = reshape(collect(1:36), 6, 6)
