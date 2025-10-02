@@ -14,6 +14,8 @@ using Parameters
 using Optim
 using LaTeXStrings
 
+Random.seed!(8)
+
 if !Base.isdefined(@__MODULE__, :ShallowWaters)
     include("../ShallowWaters.jl/src/ShallowWaters.jl")
     using .ShallowWaters

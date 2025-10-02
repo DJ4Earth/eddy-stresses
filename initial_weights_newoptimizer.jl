@@ -11,7 +11,8 @@ end
 
 function InitWeightsModel{T}() where {T<:AbstractFloat}
 
-    SZB = ShallowWaters.model_setup(output=false,
+    PZB = ShallowWaters.Parameter(T=T;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -32,8 +33,10 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
         α=2,
         nx=128
     )
+    SZB = ShallowWaters.model_setup(PZB)
 
-    SNN = ShallowWaters.model_setup(output=false,
+    PNN = ShallowWaters.Parameter(T=T;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -52,8 +55,8 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
         nn_forcing_dissipation=true,
         N=1,
         α=2,
-        nx=128
-    )
+        nx=128)
+    SNN = ShallowWaters.model_setup(PNN)
 
     ulr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/u.nc", "u")
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
@@ -93,6 +96,7 @@ function compute_init_weights_newoptimizer()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
+        max_iter=1000
     )
 
     return results
@@ -126,19 +130,22 @@ function for_enzyme(param_guess, state, SNN, SZB)
     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
-    # # ZB T11 - CNN T11
-    # model.J += sum(model.SNN.Diag.CNNVars.T11 - (model.SZB.Diag.ZBVars.trace_filtered - model.SZB.Diag.ZBVars.ζD_filtered)).^2 / (128^2)
+    denom = SZB.grid.Δ^2 * SZB.grid.scale
 
-    # #ZB T22 - CNN T22
-    # model.J += sum(model.SNN.Diag.CNNVars.T22 - (model.SZB.Diag.ZBVars.trace_filtered + model.SZB.Diag.ZBVars.ζD_filtered)).^2 / (128^2)
+    # ZB T11 - CNN T11
+    J = 0.0
+    J += sum((SNN.Diag.CNNVars.T11 - (SZB.Diag.ZBVars.trace_filtered - SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
 
-    # #ZB T12 - CNN T22
-    # model.J += sum(model.SNN.Diag.CNNVars.T12 - model.SZB.Diag.ZBVars.ζDhat_filtered).^2 / (129^2)
+    #ZB T22 - CNN T22
+    J += sum((SNN.Diag.CNNVars.T22 - (SZB.Diag.ZBVars.trace_filtered + SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
 
-    # return model.J
+    #ZB T12 - CNN T22
+    J += sum((SNN.Diag.CNNVars.T12 - SZB.Diag.ZBVars.ζDhat_filtered./denom).^2) / (129^2)
 
-    return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
-    # return sum((SZB.Diag.ZBVars.S_u[25:85,25:85] - SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (SZB.Diag.ZBVars.S_v[25:85,25:85] - SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
+    return J
+
+    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    # return sum((SZB.Diag.ZBVars.S_u[25:30,25:30] - SNN.Diag.CNNVars.S_u[25:30,25:30]).^2 + (SZB.Diag.ZBVars.S_v[25:30,25:30] - SNN.Diag.CNNVars.S_v[25:30,25:30]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 end
@@ -220,20 +227,22 @@ function NLPModels.obj(model, param_guess)
     ShallowWaters.ZB_momentum(model.snapshot[1], model.snapshot[2], model.SZB, model.SZB.Diag)
     ShallowWaters.CNN_momentum(model.snapshot[1], model.snapshot[2], model.SNN)
 
-    # # ZB T11 - CNN T11
-    # model.J += sum(model.SNN.Diag.CNNVars.T11 - (model.SZB.Diag.ZBVars.trace_filtered - model.SZB.Diag.ZBVars.ζD_filtered)).^2 / (128^2)
+    denom = model.SZB.grid.Δ^2 * model.SZB.grid.scale
 
-    # #ZB T22 - CNN T22
-    # model.J += sum(model.SNN.Diag.CNNVars.T22 - (model.SZB.Diag.ZBVars.trace_filtered + model.SZB.Diag.ZBVars.ζD_filtered)).^2 / (128^2)
+    # ZB T11 - CNN T11
+    model.J += sum((model.SNN.Diag.CNNVars.T11 - (model.SZB.Diag.ZBVars.trace_filtered - model.SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
 
-    # #ZB T12 - CNN T22
-    # model.J += sum(model.SNN.Diag.CNNVars.T12 - model.SZB.Diag.ZBVars.ζDhat_filtered).^2 / (129^2)
+    #ZB T22 - CNN T22
+    model.J += sum((model.SNN.Diag.CNNVars.T22 - (model.SZB.Diag.ZBVars.trace_filtered + model.SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
 
-    # return model.J
+    #ZB T12 - CNN T12
+    model.J += sum((model.SNN.Diag.CNNVars.T12 - model.SZB.Diag.ZBVars.ζDhat_filtered./denom).^2) / (129^2)
 
-    return sum((model.SZB.Diag.ZBVars.S_u .- model.SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((model.SZB.Diag.ZBVars.S_v .- model.SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
+    return model.J
+
+    # return sum((model.SZB.Diag.ZBVars.S_u .- model.SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((model.SZB.Diag.ZBVars.S_v .- model.SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
     # return sum((SZB.Diag.ZBVars.S_u[45:55,45:55] - SNN.Diag.CNNVars.S_u[45:55,45:55]).^2)
-    # return sum((model.SZB.Diag.ZBVars.S_u[25:85,25:85] - model.SNN.Diag.CNNVars.S_u[25:85,25:85]).^2 + (model.SZB.Diag.ZBVars.S_v[25:85,25:85] - model.SNN.Diag.CNNVars.S_v[25:85,25:85]).^2)
+    # return sum((model.SZB.Diag.ZBVars.S_u[25:30,25:30] - model.SNN.Diag.CNNVars.S_u[25:30,25:30]).^2 + (model.SZB.Diag.ZBVars.S_v[25:30,25:30] - model.SNN.Diag.CNNVars.S_v[25:30,25:30]).^2)
     # temp = reshape(collect(1:36), 6, 6)
     # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 
@@ -320,7 +329,7 @@ function ignore(result)
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
     param_guess = result.solution
-    j = 10
+    j = 1
 
     SZB = ShallowWaters.model_setup(output=false,
         L_ratio=1,

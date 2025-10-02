@@ -186,7 +186,7 @@ function modelstates_checkpointed_integration(chkp, scheme)
 
      if chkp.i in chkp.data_steps
 
-         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
             chkp.S.Prog.v,
             chkp.S.Prog.η,
