@@ -62,20 +62,20 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
-    param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    # param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
     # param_guess = load_object("./result_workedupto21by21_32-32-32-4CNN_091825.jld2").solution
-    # current = 1
-    # for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
-    #     for layers in model[1]
-    #         for array in layers
-    #                 sz = prod(size(array))
-    #                 param_guess[current:(current + sz - 1)] .= vec(array)
-    #                 current += sz
-    #         end
-    #     end
-    # end
+    param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    current = 1
+    for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
+                    sz = prod(size(array))
+                    param_guess[current:(current + sz - 1)] .= vec(array)
+                    current += sz
+            end
+        end
+    end
 
-    result = nothing
     j = 1
 
     u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
@@ -95,8 +95,8 @@ function compute_init_weights_newoptimizer()
         nlp;
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
-        quasi_newton_options=qn_options,
-        max_iter=1000
+        quasi_newton_options=qn_options
+        # max_iter=1000
     )
 
     return results
@@ -144,10 +144,6 @@ function for_enzyme(param_guess, state, SNN, SZB)
 
     return J
 
-    # return sum((SZB.Diag.ZBVars.S_u .- SNN.Diag.CNNVars.S_u).^2) ./ (128*127) + sum((SZB.Diag.ZBVars.S_v .- SNN.Diag.CNNVars.S_v).^2) ./ (128*127)
-    # return sum((SZB.Diag.ZBVars.S_u[25:30,25:30] - SNN.Diag.CNNVars.S_u[25:30,25:30]).^2 + (SZB.Diag.ZBVars.S_v[25:30,25:30] - SNN.Diag.CNNVars.S_v[25:30,25:30]).^2)
-    # temp = reshape(collect(1:36), 6, 6)
-    # return sum((temp - SNN.Diag.CNNVars.S_u[40:45,40:45]).^2)
 end
 
 function NLPModels.obj(model, param_guess)
