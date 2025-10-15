@@ -41,6 +41,7 @@ function multistate_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
+    avg_eta = 0.0
     @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
         t = chkp.t
@@ -187,6 +188,7 @@ function multistate_checkpointed_integration(chkp, scheme)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
+    # portion of the loss function just doing state comparison
     if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
@@ -197,24 +199,23 @@ function multistate_checkpointed_integration(chkp, scheme)
             chkp.S
         )...)
 
-        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2 + (temp.v .- chkp.data[2][chkp.j]).^2)
+        # time-average eta
+        avg_eta += temp.η
 
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2 + (temp.v .- chkp.data[2][chkp.j]).^2) 
 
         chkp.j += 1
 
     end
-
-    ##### time-averaging the objective function #######
-    # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
-    ##########################################################
 
     copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
     copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
     copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
+
+    # add the time-averaged ssh to the loss function
+    chkp.J += ( sum(avg_eta) / chkp.S.parameters.ndays - sum(chkp.data[3][1:chkp.j]) / chkp.S.paramters.ndays ).^2
 
     return chkp.J
 
@@ -431,14 +432,44 @@ function NLPModels.obj(model, param_guess)
     # Type precision
     T = Float64
 
-    S = model.S
+    # ensure that the model is reset
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=model.S.parameters.Ndays
+    )
+
+    model.S = ShallowWaters.model_setup(P)
+    model.J = 0.
+    model.j = 1
+    model.i = 1
+    model.t = 0
+
     data = model.data
     data_steps = model.data_steps
     initial_cond = model.initial_cond
 
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
+    model.S.Prog.u .= initial_cond[1]
+    model.S.Prog.v .= initial_cond[2]
+    model.S.Prog.η .= initial_cond[3]
 
     current = 1
     for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
@@ -461,6 +492,36 @@ function NLPModels.grad!(model, param_guess, G)
 
     # Type precision
     T = Float64
+
+    # ensure that the model is reset
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=model.S.parameters.Ndays
+    )
+    model.S = ShallowWaters.model_setup(P)
+    model.J = 0.
+    model.j = 1
+    model.i = 1
+    model.t = 0
 
     S = model.S
     data = model.data
@@ -559,7 +620,7 @@ function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
     vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
     etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
 
-    data_steps = 225:225:Slr.grid.nt
+    data_steps = 225:224:Slr.grid.nt
 
     data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
@@ -585,16 +646,27 @@ function run_multistate()
     for ndays = [1, 2, 4, 6, 8, 10]
 
         if ndays === 1
-            param_guess = load_object("./result_offline_newoptimizer_onesnapshot_zhangetalmodel_082825.jld2").solution
+            # the initial guess for weights will just be whatever Lux.jl sets the initial weights
+            param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+            current = 1
+            for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+                for layers in model[1]
+                    for array in layers
+                            sz = prod(size(array))
+                            param_guess[current:(current + sz - 1)] .= vec(array)
+                            current += sz
+                    end
+                end
+            end
         else
             param_guess = result.solution
         end
         nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
-        qn_options = MadNLP.QuasiNewtonOptions(;max_history=20)
+        qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
         result = madnlp(nlp;
             hessian_approximation=MadNLP.CompactLBFGS,
             quasi_newton_options=qn_options,
-            tol=1e-3
+            tol=1e-4
         )
 
     end
