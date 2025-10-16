@@ -1,4 +1,7 @@
-S = ShallowWaters.model_setup(T=Float32;
+hru = ncread("./spinup_files/1024_postspinup_noslip_4days_073124/u.nc", "u")
+hrv = ncread("./spinup_files/1024_postspinup_noslip_4days_073124/v.nc", "v")
+
+SNN = ShallowWaters.model_setup(T=Float32;
     output=false,
     L_ratio=1,
     g=9.81,
@@ -25,41 +28,46 @@ S = ShallowWaters.model_setup(T=Float32;
     init_starti=1
 )
 
+ShallowWaters.CNN_momentum(SNN.Prog.u, SNN.Prog.v, SNN)
+
 T11 = SNN.Diag.CNNVars.T11
 T12 = SNN.Diag.CNNVars.T12
 T22 = SNN.Diag.CNNVars.T22
 
-fig = Figure(fontsize = 15);
-ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-LinRange(0, 3840, 128),
-T11,
-colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"T_{11}"),
-colorrange=(-maximum(T11),
-maximum(T11))
-);
-Colorbar(fig[1,2], hm1)
+SZB = ShallowWaters.model_setup(T=Float32;
+    output=false,
+    L_ratio=1,
+    g=9.81,
+    H=500,
+    wind_forcing_x="double_gyre",
+    Lx=3840e3,
+    seasonal_wind_x=false,
+    topography="flat",
+    bc="nonperiodic",
+    bottom_drag="quadratic",
+    tracer_advection=false,
+    tracer_relaxation=false,
+    zb_forcing_momentum=false,
+    zb_forcing_dissipation=true,
+    zb_filtered=true,
+    nn_forcing_momentum=false,
+    nn_forcing_dissipation=false,
+    N=1,
+    α=2,
+    nx=128,
+    Ndays=Ndays,
+    initial_cond="ncfile",
+    initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
+    init_starti=1
+)
+ShallowWaters.ZB_momentum(SZB.Prog.u, SZB.Prog.v, SZB, SZB.Diag)
 
-ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-LinRange(0, 3840, 128),
-T12,
-colormap=:balance,
-title="All inputs (derivaties + velocities)",
-axis=(xlabel="km", ylabel="km", title=L"T_{12}"),
-colorrange=(-maximum(T12),
-maximum(T12))
-);
-Colorbar(fig[1,4], hm2)
+# high-resolution T's
+ubar = ShallowWaters.coarse_grain_u(hru[:,:,1], 1024, SZB)
+vbar = ShallowWaters.coarse_grain_v(hrv[:,:,1], 1024, SZB)
 
-ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-LinRange(0, 3840, 128),
-T22,
-colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
-colorrange=(-maximum(T22),
-maximum(T22))
-);
-Colorbar(fig[2,2], hm3)
+ubarsq = ShallowWaters.coarse_grain_u(hru[:,:,1].^2, 1024, SZB)
+vbarsq = ShallowWaters.coarse_grain_v(hrv[:,:,1].^2, 1024, SZB)
 
 ζD_filtered = SZB.Diag.ZBVars.ζD_filtered
 ζDhat_filtered = SZB.Diag.ZBVars.ζDhat_filtered
@@ -71,36 +79,106 @@ trace_filtered = SZB.Diag.ZBVars.trace_filtered
 
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
+## NN
+
 fig = Figure(fontsize = 15);
 ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
-(ζsqT - ζDT)./denom,
+T11,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\zeta^2 - \zeta D"),
-colorrange=((-maximum((ζsqT - ζDT)./denom)),
-maximum((ζsqT - ζDT)./denom))
+axis=(xlabel="km", ylabel="km", title=L"T_{11}"),
+colorrange=(-maximum(abs.(T11)),
+maximum(abs.(T11)))
 );
 Colorbar(fig[1,2], hm1)
 
 ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
-ζDhat ./ denom,
+T12,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\zeta \hat{D}"),
-colorrange=(-maximum(ζDhat ./ denom),
-maximum(ζDhat ./ denom))
+axis=(xlabel="km", ylabel="km", title=L"T_{12}"),
+colorrange=(-maximum(abs.(T12)),
+maximum(abs.(T12)))
 );
 Colorbar(fig[1,4], hm2)
 
 ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
-(ζsqT + ζDT)./denom,
+T22,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\zeta^2 + \zeta D"),
-colorrange=(-maximum((ζsqT + ζDT)./denom),
-maximum((ζsqT + ζDT)./denom))
+axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
+colorrange=(-maximum(abs.(T22)),
+maximum(abs.(T22)))
 );
 Colorbar(fig[2,2], hm3)
+
+
+# ZB
+fig = Figure(fontsize = 15, size=(1500,400));
+ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+(trace_filtered - ζD_filtered)./denom,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"\zeta^2 - \zeta D"),
+colorrange=((-maximum(abs.((trace_filtered - ζD_filtered)./denom))),
+maximum(abs.((trace_filtered - ζD_filtered)./denom)))
+);
+Colorbar(fig[1,2], hm1)
+
+ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+ζDhat_filtered ./ denom,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"\zeta \hat{D}"),
+colorrange=(-maximum(abs.(ζDhat_filtered ./ denom)),
+maximum(abs.(ζDhat_filtered ./ denom)))
+);
+Colorbar(fig[1,4], hm2)
+
+ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+(trace_filtered + ζD_filtered)./denom,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"\zeta^2 + \zeta D"),
+colorrange=(-maximum(abs.((trace_filtered + ζD_filtered)./denom)),
+maximum(abs.((trace_filtered + ζD_filtered)./denom)))
+);
+Colorbar(fig[1,6], hm3)
+
+# true?
+
+model = InitWeightsModel{Float64}();
+
+fig = Figure(fontsize = 15, size=(1500,400));
+ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+model.T11,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"T_{11}"),
+colorrange=((-maximum(abs.(model.T11))),
+maximum(abs.(model.T11)))
+);
+Colorbar(fig[1,2], hm1)
+
+ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+(model.T22),
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
+colorrange=(-maximum(abs.((model.T22))),
+maximum(abs.((model.T22))))
+);
+Colorbar(fig[1,4], hm2)
+
+ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+(model.T12),
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
+colorrange=(-maximum(abs.((model.T12))),
+maximum(abs.((model.T12))))
+);
+Colorbar(fig[1,6], hm2)
 
 
 S_u = SZB.Diag.ZBVars.S_u
@@ -126,3 +204,22 @@ colorrange=(-maximum(S_v),
 maximum(S_v))
 );
 Colorbar(fig[1,4], hm2)
+
+
+# the following is to create the coarse grained uv term for computing the off-diagonal entries in T
+
+uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hru[:,:,1],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hrv[:,:,1],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+
+# moving to hr corner grid and cut off the halo
+
+uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
+vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
+
+uhrT = zeros(1024,1024)
+vhrT = zeros(1024,1024)
+
+ShallowWaters.Ixy!(uhrT,uhrq)
+ShallowWaters.Ixy!(vhrT,vhrq)
+
+uvbar = ShallowWaters.coarse_grain_eta(uhrT .* vhrT, 1024, SZB)
