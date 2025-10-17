@@ -132,8 +132,8 @@ function compute_init_weights_newoptimizer()
         nlp;
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
-        quasi_newton_options=qn_options
-        # max_iter=1000
+        quasi_newton_options=qn_options,
+        max_iter=500
     )
 
     return results
@@ -171,13 +171,16 @@ function for_enzyme(param_guess, state, SNN, SZB, T11, T22, T12)
 
     # ZB T11 - CNN T11
     J = 0.0
-    J += sum((SNN.Diag.CNNVars.T11 - T11).^2) + (sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2) - sum((T11 .- mean(T11)).^2))^2
+    denom1 = sqrt(sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2))
+    J += sum((SNN.Diag.CNNVars.T11 - T11).^2) / 128^2 + ((sqrt(sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((T11 .- mean(T11)).^2)))^2) / denom1
 
     #ZB T22 - CNN T22
-    J += sum((SNN.Diag.CNNVars.T22 - T22).^2) + (sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2) - sum((T22 .- mean(T22)).^2))^2
+    denom2 = sqrt(sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2))
+    J += sum((SNN.Diag.CNNVars.T22 - T22).^2) / 128^2 + ((sqrt(sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((T22 .- mean(T22)).^2)))^2) / denom2
 
     #ZB T12 - CNN T12
-    J += sum((SNN.Diag.CNNVars.T12 - T12).^2) + (sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2) - sum((T12 .- mean(T12)).^2))^2
+    denom3 = sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2))
+    J += sum((SNN.Diag.CNNVars.T12 - T12).^2) / 129^2 + ((sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((T12 .- mean(T12)).^2)))^2) / denom3
 
 
     # ZB T11 - CNN T11
@@ -282,13 +285,16 @@ function NLPModels.obj(model, param_guess)
     # trying with the "true" S tensors
     # ZB T11 - CNN T11
     model.J = 0.0
-    model.J += sum((model.SNN.Diag.CNNVars.T11 - model.T11).^2 ) + (sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2) - sum((model.T11 .- mean(model.T11)).^2))^2
+    denom1 = sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2))
+    model.J += sum((model.SNN.Diag.CNNVars.T11 - model.T11).^2 ) / 128^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((model.T11 .- mean(model.T11)).^2)))^2) / denom1
 
     #ZB T22 - CNN T22
-    model.J += sum((model.SNN.Diag.CNNVars.T22 - model.T22).^2)  + (sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2) - sum((model.T22 .- mean(model.T22)).^2))^2
+    denom2 = sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2))
+    model.J += sum((model.SNN.Diag.CNNVars.T22 - model.T22).^2) / 128^2  + ((sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((model.T22 .- mean(model.T22)).^2)))^2) / denom2
 
     #ZB T12 - CNN T12
-    model.J += sum((model.SNN.Diag.CNNVars.T12 - model.T12).^2)  + (sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2) - sum((model.T12 .- mean(model.T12)).^2))^2
+    denom3 = sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2))
+    model.J += sum((model.SNN.Diag.CNNVars.T12 - model.T12).^2) / 129^2  + ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((model.T12 .- mean(model.T12)).^2)))^2) / denom3
 
     # # ZB T11 - CNN T11
     # model.J += sum((model.SNN.Diag.CNNVars.T11 - (model.SZB.Diag.ZBVars.trace_filtered - model.SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
