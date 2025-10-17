@@ -1,9 +1,12 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct modelstates_Chkp{T1,T2}
-    S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Vector{Array{T1, 3}}                   # computed data
+mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
+    meta::NLPModelMeta{T,S}
+    counters::Counters
+    S::ShallowWaters.ModelSetup{T,T}        # model structure
+    initial_cond::Array{Array{T,2}, 1}
+    data::Array{Array{Array{T,2}, 1}, 1}    # computed data
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -12,7 +15,7 @@ mutable struct modelstates_Chkp{T1,T2}
 end
 
 # for running with checkpointing
-function modelstates_checkpointed_integration(chkp, scheme)
+function multistate_checkpointed_integration(chkp, scheme)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -38,6 +41,7 @@ function modelstates_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
+    avg_eta = 0.0
     @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
         t = chkp.t
@@ -184,9 +188,10 @@ function modelstates_checkpointed_integration(chkp, scheme)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-     if chkp.i in chkp.data_steps
+    # portion of the loss function just doing state comparison
+    if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
+         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
             chkp.S.Prog.v,
             chkp.S.Prog.η,
@@ -194,24 +199,14 @@ function modelstates_checkpointed_integration(chkp, scheme)
             chkp.S
         )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
+        # time-average eta
+        avg_eta += temp.η
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
-
-        chkp.J += sum(((ke_u_hr[1:65] + ke_v_hr[1:65]) - (ke_u_lr[1:65] + ke_v_lr[1:65])).^2)
-
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2 + (temp.v .- chkp.data[2][chkp.j]).^2) 
 
         chkp.j += 1
 
     end
-
-    ##### time-averaging the objective function #######
-    # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
-    ##########################################################
 
     copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
     copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
@@ -219,12 +214,15 @@ function modelstates_checkpointed_integration(chkp, scheme)
 
     end
 
+    # add the time-averaged ssh to the loss function
+    chkp.J += ( sum(avg_eta) / chkp.S.parameters.ndays - sum(chkp.data[3][1:chkp.j]) / chkp.S.paramters.ndays ).^2
+
     return chkp.J
 
 end
 
 # for running without checkpointing
-function modelstates_integration(chkp)
+function multistate_integration(chkp)
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -396,9 +394,7 @@ function modelstates_integration(chkp)
     v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
     ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
-
-     if chkp.i in chkp.data_steps
+    if chkp.i in chkp.data_steps
 
          temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
             chkp.S.Prog.u,
@@ -408,9 +404,10 @@ function modelstates_integration(chkp)
             chkp.S
         )...)
 
-        uhr_coarsegrained, vhr_coarsegrained = ShallowWaters.coarse_grain(chkp.data[1][:,:,chkp.j], chkp.data[2][:,:,chkp.j],1024,1024,chkp.S)
+        chkp.J += sum((temp.u - chkp.data[1][chkp.j]).^2) + sum((temp.v - chkp.data[2][chkp.j]).^2)
 
-        chkp.J += sum((temp.u .- uhr_coarsegrained).^2 + (temp.v .- vhr_coarsegrained).^2)
+        # storing the objective function over time
+        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
 
         chkp.j += 1
 
@@ -430,12 +427,14 @@ function modelstates_integration(chkp)
 
 end
 
-function modelstates_compute_loss(Ndays, param_guess, data, data_steps)
+function NLPModels.obj(model, param_guess)
 
-     # Type precision
-    T = Float32
+    # Type precision
+    T = Float64
 
-    S = ShallowWaters.model_setup(output=false,
+    # ensure that the model is reset
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -452,40 +451,51 @@ function modelstates_compute_loss(Ndays, param_guess, data, data_steps)
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        Ndays=model.S.parameters.Ndays
     )
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+    model.S = ShallowWaters.model_setup(P)
+    model.J = 0.
+    model.j = 1
+    model.i = 1
+    model.t = 0
 
-    chkp = modelstates_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0
-    )
+    data = model.data
+    data_steps = model.data_steps
+    initial_cond = model.initial_cond
 
-    J = modelstates_integration(chkp)
+    model.S.Prog.u .= initial_cond[1]
+    model.S.Prog.v .= initial_cond[2]
+    model.S.Prog.η .= initial_cond[3]
 
-    return J
+    current = 1
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
+    model.J = multistate_integration(model)
+
+    return model.J
 
 end
 
-function modelstates_compute_gradient(G, param_guess, data, data_steps, Ndays)
+function NLPModels.grad!(model, param_guess, G)
 
     # Type precision
-    T = Float32
+    T = Float64
 
-    S = ShallowWaters.model_setup(output=false,
+    # ensure that the model is reset
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -502,69 +512,66 @@ function modelstates_compute_gradient(G, param_guess, data, data_steps, Ndays)
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
-        handwritten=false,
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        Ndays=model.S.parameters.Ndays
     )
+    model.S = ShallowWaters.model_setup(P)
+    model.J = 0.
+    model.j = 1
+    model.i = 1
+    model.t = 0
 
-    S.Diag.NNVars.model_diag[1][1] .= reshape(param_guess[1:34], 2, 17)
-    S.Diag.NNVars.model_offdiag[1][1] .= reshape(param_guess[35:56], 1, 22)
-    S.Diag.NNVars.model_diag[1][2] .= reshape(param_guess[57:58], 2, 1)
-    S.Diag.NNVars.model_offdiag[1][2] .= param_guess[end]
+    S = model.S
+    data = model.data
+    data_steps = model.data_steps
+    initial_cond = model.initial_cond
 
-    snaps = Int(floor(sqrt(S.grid.nt)))
-    revolve = Revolve(
-        snaps;
-        verbose=1,
-        gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "",
-        write_checkpoints_period = 224
-    )
+    S.Prog.u .= initial_cond[1]
+    S.Prog.v .= initial_cond[2]
+    S.Prog.η .= initial_cond[3]
 
-    chkp = kespec_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0.0
-    )
-    dchkp = Enzyme.make_zero(chkp)
+    current = 1
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
+    dmodel = Enzyme.make_zero(model)
 
     J = @time autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        kespec_integration,
+        multistate_integration,
         Active,
-        Duplicated(chkp, dchkp)
-        # Const(revolve)
+        Duplicated(model, dmodel)
     )[2]
-    println("Cost with AD: $J")
 
     # Get gradient
-    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2])]
+    G = zeros(Lux.parameterlength(S.Diag.CNNVars.model_Su) + Lux.parameterlength(S.Diag.CNNVars.model_Sv))
+    current = 1
+    for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                        sz = prod(size(array))
+                        G[current:(current + sz - 1)] .= vec(array)
+                        current += sz
+            end
+        end
+    end
 
     return nothing
 
 end
 
-function modelstates_FG(F, G, param_guess, data, data_steps, Ndays)
+function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
 
-    G === nothing || modelstates_compute_gradient(G, param_guess, data, data_steps, Ndays)
-    F === nothing || return modelstates_compute_loss(Ndays, param_guess, data, data_steps)
-
-end
-
-function run_modelstates()
-
-    Ndays = 10
-    S_for_values = ShallowWaters.model_setup(output=false,
+    Slr = ShallowWaters.model_setup(output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -579,30 +586,90 @@ function run_modelstates()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=true,
-        nn_forcing_dissipation=false,
-        handwritten=false,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initpath="./data_files_gamma0.3/128_spinup_wforcing_dissipation_wfilter_1pass_noslipbc"
+        Ndays=Ndays
     )
 
-    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    grid_scale = 8
-    data_steps = (S_for_values.grid.nt - 7*224):224:S_for_values.grid.nt
+    Shr = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=Ndays
+    )
 
-    uhr_data = uhr[:, :, (Ndays-7):Ndays]
-    vhr_data = vhr[:, :, (Ndays-7):Ndays]
-    data = [uhr_data, vhr_data]
+    # daily information
+    # hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves_062425.jld2")
+    # data = hrstates[2:end]
 
-    param_guess = 1e-2 .* randn(22 + 34 + 2 + 1)
+    uhrcg = load_object("./spinup_files/coarsegrainedu_30days_dailysaves_071525.jld2")
+    vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
+    etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
 
-    fg!_closure(F, G, param_guess) = modelstates_FG(F, G, param_guess, data, data_steps, Ndays)
-    obj_fg = Optim.only_fg!(fg!_closure)
-    result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
+    data_steps = 225:224:Slr.grid.nt
+
+    data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
+    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
+
+    initial_cond = [u0, v0, eta0]
+
+    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess
+    )
+    counters = Counters()
+
+    return multistatenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0)
+
+end
+
+function run_multistate()
+
+    result = nothing
+    for ndays = [1, 2, 4, 6, 8, 10]
+
+        if ndays === 1
+            # the initial guess for weights will just be whatever Lux.jl sets the initial weights
+            param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+            current = 1
+            for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+                for layers in model[1]
+                    for array in layers
+                            sz = prod(size(array))
+                            param_guess[current:(current + sz - 1)] .= vec(array)
+                            current += sz
+                    end
+                end
+            end
+        else
+            param_guess = result.solution
+        end
+        nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
+        qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
+        result = madnlp(nlp;
+            hessian_approximation=MadNLP.CompactLBFGS,
+            quasi_newton_options=qn_options,
+            tol=1e-4
+        )
+
+    end
 
     return result
 

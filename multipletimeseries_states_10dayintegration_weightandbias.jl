@@ -426,7 +426,7 @@ end
 function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
     # Type precision
-    T = Float32
+    T = Float64
 
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -455,13 +455,23 @@ function multistate_compute_loss(Ndays, param_guess, data, data_steps, initial_c
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
+    # current = 1
+    # for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+    #     for layers in model[1]
+    #         for array in layers
+    #             sz = prod(size(array))
+    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+    #             current += sz
+    #         end
+    #     end
+    # end
     current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
             for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
+                    sz = prod(size(array))
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
             end
         end
     end
@@ -484,7 +494,7 @@ end
 function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond)
 
     # Type precision
-    T = Float32
+    T = Float64
 
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -512,13 +522,24 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
 
+    # current = 1
+    # for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
+    #     for layers in model[1]
+    #         for array in layers
+    #             sz = prod(size(array))
+    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+    #             current += sz
+    #         end
+    #     end
+    # end
+
     current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
             for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
+                    sz = prod(size(array))
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
             end
         end
     end
@@ -553,35 +574,17 @@ function multistate_compute_gradient(G, param_guess, data, data_steps, Ndays, in
     println("Cost with AD: $J")
 
     # Get gradient
-    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][3][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][3][2]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][4][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][4][2]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][5][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][5][2]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][6][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][6][2]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][7][1]);
-        vec(dchkp.S.Diag.NNVars.model_diag[1][7][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][3][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][4][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][5][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][5][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][6][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][6][2]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][7][1]);
-        vec(dchkp.S.Diag.NNVars.model_offdiag[1][7][2]);
-    ]
+    G = zeros(Lux.parameterlength(S.Diag.CNNVars.model_Su ) + Lux.parameterlength(S.Diag.CNNVars.model_Sv))
+    current = 1
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    G[current:(current + sz - 1)] .= vec(array)
+                    current += sz
+            end
+        end
+    end
 
     return nothing
 
@@ -655,14 +658,14 @@ function run_multistate()
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = 1000 .* randn(1543)
+    param_guess = load_object("./result_offline_newoptimizer_onesnapshot_zhangetalmodel_082825.jld2").solution
 
     result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]
 
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, data, data_steps, ndays, initial_cond)
         obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
+        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=20))
 
         param_guess = result.minimizer
 

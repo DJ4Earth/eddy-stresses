@@ -24,7 +24,7 @@ function load_and_create_models()
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
-    Ndays = 365
+    Ndays = 10
     initial_cond = [u0, v0, eta0]
 
     Snoparam = ShallowWaters.model_setup(output=false,
@@ -79,18 +79,18 @@ function load_and_create_models()
     Snn.Prog.v .= copy(initial_cond[2])
     Snn.Prog.η .= copy(initial_cond[3])
 
-    param_guess = result.minimizer
-    # param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
-    current = 1
-    for model in (Snn.Diag.NNVars.model_diag, Snn.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
-    end
+    # param_guess = result.minimizer
+    # # param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
+    # current = 1
+    # for model in (Snn.Diag.NNVars.model_diag, Snn.Diag.NNVars.model_offdiag)
+    #     for layers in model[1]
+    #         for array in layers
+    #             sz = prod(size(array))
+    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+    #             current += sz
+    #         end
+    #     end
+    # end
 
     Strainednn_states = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -119,14 +119,26 @@ function load_and_create_models()
     Strainednn_states.Prog.η .= copy(initial_cond[3])
 
     # param_guess = result.minimizer
-    param_guess = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
+    # param_guess = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
+    # current = 1
+    # for model in (Strainednn_states.Diag.NNVars.model_diag, Strainednn_states.Diag.NNVars.model_offdiag)
+    #     for layers in model[1]
+    #         for array in layers
+    #             sz = prod(size(array))
+    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+    #             current += sz
+    #         end
+    #     end
+    # end
+
+    param_guess = load_object("./result_offline_onesnapshot_muchsmallernn_newoptimizer_082925.jld2").solution
     current = 1
-    for model in (Strainednn_states.Diag.NNVars.model_diag, Strainednn_states.Diag.NNVars.model_offdiag)
+    for model in (Strainednn_states.Diag.CNNVars.model_Su, Strainednn_states.Diag.CNNVars.model_Sv)
         for layers in model[1]
             for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
+                    sz = prod(size(array))
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
             end
         end
     end
@@ -251,14 +263,14 @@ function load_and_create_models()
     # states_nn = save_states(Snn) # untrained
     # states_noparam = save_states(Snoparam)
     # states_trainednn_kespec = save_states(Strainednn_kespec)
-    # states_trainednn_states = save_states(Strainednn_states)
+    states_trainednn_states = save_states(Strainednn_states)
     # states_trainednn_pd = save_states(Strainednn_pd)
     # states_trainednn_pd65 = save_states(Strainednn_pd65)
 
     states_nn = load_object("./spinup_files/nnresult_nottrained_oneyearintegration_dailysaves_072325.jld2")
     states_noparam = load_object("./spinup_files/output_noparam_oneyearintegration_dailysaves_072325.jld2")
     states_trainednn_kespec = load_object("./spinup_files/nnresult_trained__kespec_oneyearintegration_dailysaves_072325.jld2")
-    states_trainednn_states = load_object("./spinup_files/nnresult_trained_stateloss_oneyearintegration_dailysaves_072325.jld2")
+    # states_trainednn_states = load_object("./spinup_files/nnresult_trained_stateloss_oneyearintegration_dailysaves_072325.jld2")
     states_trainednn_pd = load_object("./spinup_files/nnresult_trained_kespecpd_oneyearintegration_dailysaves_072325.jld2")
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
@@ -305,7 +317,7 @@ function plots()
 
     # cg, zb, nn, no param
     fig = Figure(size=(900, 1000), fontsize=15);
-    t = 31
+    t = 10
     uhrcg = imfilter(uhr[:,:,t], reflect(ker))
     vhrcg = imfilter(vhr[:,:,t], reflect(ker))
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
