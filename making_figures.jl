@@ -63,11 +63,11 @@ SZB = ShallowWaters.model_setup(T=Float32;
 ShallowWaters.ZB_momentum(SZB.Prog.u, SZB.Prog.v, SZB, SZB.Diag)
 
 # high-resolution T's
-ubar = ShallowWaters.coarse_grain_u(hru[:,:,1], 1024, SZB)
-vbar = ShallowWaters.coarse_grain_v(hrv[:,:,1], 1024, SZB)
+# ubar = ShallowWaters.coarse_grain_u(hru[:,:,1], 1024, SZB)
+# vbar = ShallowWaters.coarse_grain_v(hrv[:,:,1], 1024, SZB)
 
-ubarsq = ShallowWaters.coarse_grain_u(hru[:,:,1].^2, 1024, SZB)
-vbarsq = ShallowWaters.coarse_grain_v(hrv[:,:,1].^2, 1024, SZB)
+# ubarsq = ShallowWaters.coarse_grain_u(hru[:,:,1].^2, 1024, SZB)
+# vbarsq = ShallowWaters.coarse_grain_v(hrv[:,:,1].^2, 1024, SZB)
 
 ζD_filtered = SZB.Diag.ZBVars.ζD_filtered
 ζDhat_filtered = SZB.Diag.ZBVars.ζDhat_filtered
@@ -79,38 +79,71 @@ trace_filtered = SZB.Diag.ZBVars.trace_filtered
 
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
-## NN
+## "True"
 
-fig = Figure(fontsize = 15);
+fig = Figure(fontsize = 15,size=(900,450));
+
 ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
-T11,
+T11_true,
 colormap=:balance,
 axis=(xlabel="km", ylabel="km", title=L"T_{11}"),
-colorrange=(-maximum(abs.(T11)),
-maximum(abs.(T11)))
+colorrange=(-maximum(abs.(T11_true)),
+maximum(abs.(T11_true)))
 );
 Colorbar(fig[1,2], hm1)
 
 ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
-T12,
+T12_true,
 colormap=:balance,
 axis=(xlabel="km", ylabel="km", title=L"T_{12}"),
-colorrange=(-maximum(abs.(T12)),
-maximum(abs.(T12)))
+colorrange=(-maximum(abs.(T12_true)),
+maximum(abs.(T12_true)))
 );
 Colorbar(fig[1,4], hm2)
 
-ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+T22_true,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
+colorrange=(-maximum(abs.(T22_true)),
+maximum(abs.(T22_true)))
+);
+Colorbar(fig[1,6], hm3)
+
+## NN
+
+ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+T11,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{11}"),
+colorrange=(-maximum(abs.(T11)),
+maximum(abs.(T11)))
+);
+Colorbar(fig[2,2], hm1)
+
+ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+LinRange(0, 3840, 128),
+T12,
+colormap=:balance,
+axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{12}"),
+colorrange=(-maximum(abs.(T12)),
+maximum(abs.(T12)))
+);
+Colorbar(fig[2,4], hm2)
+
+ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T22,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
+axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{22}"),
 colorrange=(-maximum(abs.(T22)),
 maximum(abs.(T22)))
 );
-Colorbar(fig[2,2], hm3)
+Colorbar(fig[2,6], hm3)
 
 
 # ZB
