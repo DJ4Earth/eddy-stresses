@@ -12,6 +12,8 @@ mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
     j::Int                                  # for keeping track of location in data
     i::Int                                  # timestep iterator
     t::Int64                                # model time
+    avg_eta::Array{T,2}                     # time-averaged eta from integration
+    data_avg_eta::Array{T,2}                # time-averaged eta from data
 end
 
 # for running with checkpointing
@@ -41,8 +43,6 @@ function multistate_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
-    avg_eta = zeros(128,128)
-    data_avg_eta = zeros(128,128)
     @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
         t = chkp.t
@@ -201,8 +201,8 @@ function multistate_checkpointed_integration(chkp, scheme)
         )...)
 
         # time-average eta
-        avg_eta += temp.η
-        data_avg_eta += chkp.data[3][chkp.j]
+        chkp.avg_eta += temp.η
+        chkp.data_avg_eta += chkp.data[3][chkp.j]
 
         chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
 
@@ -228,7 +228,7 @@ function multistate_checkpointed_integration(chkp, scheme)
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += ( sum(avg_eta) / chkp.S.parameters.Ndays - sum(data_avg_eta) / chkp.S.parameters.Ndays ).^2
+    chkp.J += ( sum(chkp.avg_eta) / chkp.S.parameters.Ndays - sum(chkp.data_avg_eta) / chkp.S.parameters.Ndays ).^2
 
     return chkp.J
 
@@ -260,8 +260,8 @@ function multistate_integration(chkp)
     copyto!(chkp.S.Diag.SemiLagrange.sst_ref, chkp.S.Prog.sst)
 
     # run integration loop with checkpointing
-    avg_eta = zeros(128,128)
-    data_avg_eta = zeros(128,128)
+    avg_eta = chkp.avg_eta
+    data_avg_eta = chkp.data_avg_eta
     chkp.j = 1
     for chkp.i = 1:chkp.S.grid.nt
 
@@ -574,11 +574,20 @@ function NLPModels.grad!(model, param_guess, G)
 
     dmodel = Enzyme.make_zero(model)
 
+    snaps = Int(floor(sqrt(model.S.grid.nt)))
+    revolve = Revolve(
+        snaps;
+        verbose=0,
+        gc=true,
+        write_checkpoints=false
+    )
+
     J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        multistate_integration,
+        multistate_checkpointed_integration,
         Active,
-        Duplicated(model, dmodel)
+        Duplicated(model, dmodel),
+        Const(revolve)
     )[2]
 
     # Get gradient
@@ -669,7 +678,7 @@ function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
     )
     counters = Counters()
 
-    return multistatenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0)
+    return multistatenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
 end
 
@@ -691,7 +700,7 @@ function run_multistate()
             # linear_solver=LapackCPUSolver,
             hessian_approximation=MadNLP.CompactLBFGS,
             quasi_newton_options=qn_options,
-            max_iter=300
+            max_iter=100
         )
 
     end
