@@ -41,7 +41,8 @@ function multistate_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
-    avg_eta = 0.0
+    avg_eta = zeros(128,128)
+    data_avg_eta = zeros(128,128)
     @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
         t = chkp.t
@@ -201,8 +202,9 @@ function multistate_checkpointed_integration(chkp, scheme)
 
         # time-average eta
         avg_eta += temp.η
+        data_avg_eta += chkp.data[3][chkp.j]
 
-        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2 + (temp.v .- chkp.data[2][chkp.j]).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
 
         # denom1 = sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2))
         # chkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((chkp.T11 .- mean(chkp.T11)).^2)))^2) / denom1
@@ -226,7 +228,7 @@ function multistate_checkpointed_integration(chkp, scheme)
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += ( sum(avg_eta) / chkp.S.parameters.ndays - sum(chkp.data[3][1:chkp.j]) / chkp.S.paramters.ndays ).^2
+    chkp.J += ( sum(avg_eta) / chkp.S.parameters.Ndays - sum(data_avg_eta) / chkp.S.parameters.Ndays ).^2
 
     return chkp.J
 
@@ -258,6 +260,8 @@ function multistate_integration(chkp)
     copyto!(chkp.S.Diag.SemiLagrange.sst_ref, chkp.S.Prog.sst)
 
     # run integration loop with checkpointing
+    avg_eta = zeros(128,128)
+    data_avg_eta = zeros(128,128)
     chkp.j = 1
     for chkp.i = 1:chkp.S.grid.nt
 
@@ -415,10 +419,22 @@ function multistate_integration(chkp)
             chkp.S
         )...)
 
-        chkp.J += sum((temp.u - chkp.data[1][chkp.j]).^2) + sum((temp.v - chkp.data[2][chkp.j]).^2)
+        # time-average eta
+        avg_eta += temp.η
+        data_avg_eta += chkp.data[3][chkp.j]
 
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
+
+        # denom1 = sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2))
+        # chkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((chkp.T11 .- mean(chkp.T11)).^2)))^2) / denom1
+
+        # #ZB T22 - CNN T22
+        # denom2 = sqrt(sum((chkp.SNN.Diag.CNNVars.T22 .- mean(chkp.SNN.Diag.CNNVars.T22)).^2))
+        # shkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T22 .- mean(chkp.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((chkp.T22 .- mean(chkp.T22)).^2)))^2) / denom2
+
+        # #ZB T12 - CNN T12
+        # denom3 = sqrt(sum((chkp.SNN.Diag.CNNVars.T12 .- mean(chkp.SNN.Diag.CNNVars.T12)).^2))
+        # chkp.J += ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((model.T12 .- mean(model.T12)).^2)))^2) / denom3
 
         chkp.j += 1
 
@@ -433,6 +449,8 @@ function multistate_integration(chkp)
     copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
+
+    chkp.J += ( sum(avg_eta) / chkp.S.parameters.Ndays - sum(data_avg_eta) / chkp.S.parameters.Ndays ).^2
 
     return chkp.J
 
@@ -483,7 +501,7 @@ function NLPModels.obj(model, param_guess)
     model.S.Prog.η .= initial_cond[3]
 
     current = 1
-    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+    for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
             for array in layers
                     sz = prod(size(array))
@@ -556,7 +574,7 @@ function NLPModels.grad!(model, param_guess, G)
 
     dmodel = Enzyme.make_zero(model)
 
-    J = @time autodiff(
+    J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
         multistate_integration,
         Active,
@@ -564,7 +582,6 @@ function NLPModels.grad!(model, param_guess, G)
     )[2]
 
     # Get gradient
-    G = zeros(Lux.parameterlength(S.Diag.CNNVars.model_Su) + Lux.parameterlength(S.Diag.CNNVars.model_Sv))
     current = 1
     for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -663,30 +680,18 @@ function run_multistate()
 
         if ndays === 1
             # the initial guess for weights will be the result from the offline problem
-
-            # result = load_object("./offline_results_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2")
             param_guess = load_object("./offline_results_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
-            # current = 1
-            # for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
-            #     for layers in model[1]
-            #         for array in layers
-            #                 sz = prod(size(array))
-            #                 param_guess[current:(current + sz - 1)] .= vec(array)
-            #                 current += sz
-            #         end
-            #     end
-            # end
         else
             param_guess = result.solution
         end
         nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
-        qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
+        qn_options = MadNLP.QuasiNewtonOptions(;max_history=50)
         result = madnlp(
             nlp;
             # linear_solver=LapackCPUSolver,
             hessian_approximation=MadNLP.CompactLBFGS,
             quasi_newton_options=qn_options,
-            max_iter=1000
+            max_iter=500
         )
 
     end
