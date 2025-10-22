@@ -691,7 +691,7 @@ function run_multistate()
             # linear_solver=LapackCPUSolver,
             hessian_approximation=MadNLP.CompactLBFGS,
             quasi_newton_options=qn_options,
-            max_iter=500
+            max_iter=300
         )
 
     end
