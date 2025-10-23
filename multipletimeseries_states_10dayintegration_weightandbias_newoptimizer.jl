@@ -228,7 +228,7 @@ function multistate_checkpointed_integration(chkp, scheme)
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += ( sum(chkp.avg_eta) / chkp.S.parameters.Ndays - sum(chkp.data_avg_eta) / chkp.S.parameters.Ndays ).^2
+    chkp.J += sum((avg_eta .- data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
@@ -450,7 +450,7 @@ function multistate_integration(chkp)
 
     end
 
-    chkp.J += ( sum(avg_eta) / chkp.S.parameters.Ndays - sum(data_avg_eta) / chkp.S.parameters.Ndays ).^2
+    chkp.J += sum((avg_eta .- data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
