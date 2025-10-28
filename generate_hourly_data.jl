@@ -167,9 +167,9 @@ function hourly_save_run(S_true)
         if i ∈ 75:75:S_true.grid.nt
             temp = ShallowWaters.PrognosticVars{S_true.parameters.Tprog}(
                 ShallowWaters.remove_halo(u,v,η,sst,S_true)...)
-            ufiltered[:,:,j] = imfilter(temp.u, reflect(ker))
-            vfiltered[:,:,j] = imfilter(temp.v, reflect(ker))
-            etafiltered[:,:,j] = imfilter(temp.η, reflect(ker))
+            ufiltered[:,:,j] .= imfilter(temp.u, reflect(ker))
+            vfiltered[:,:,j] .= imfilter(temp.v, reflect(ker))
+            etafiltered[:,:,j] .= imfilter(temp.η, reflect(ker))
             j+=1
         end
 
@@ -185,6 +185,7 @@ function hourly_save_run(S_true)
     return [ufiltered, vfiltered, etafiltered]
 
 end
+
 
 function run()
 
@@ -210,11 +211,13 @@ function run()
         nn_forcing_momentum=false,
         nn_forcing_dissipation=false,
         N=1,
-        Ndays=1,
+        Ndays=10,
         α=2,
-        nx=1024
-        init
+        nx=1024,
+        initial_cond="ncfile",
+        initpath="./spinup_files/1024_spinup_noslip/"
     )
+
     S = ShallowWaters.model_setup(P)
 
     filtered_states = hourly_save_run(S)
