@@ -14,6 +14,9 @@ mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
     t::Int64                                # model time
     avg_eta::Array{T,2}                     # time-averaged eta from integration
     data_avg_eta::Array{T,2}                # time-averaged eta from data
+    T11::Array{T, 2}
+    T22::Array{T, 2}
+    T12::Array{T, 2}
 end
 
 # for running with checkpointing
@@ -206,17 +209,6 @@ function multistate_checkpointed_integration(chkp, scheme)
 
         chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
 
-        # denom1 = sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2))
-        # chkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((chkp.T11 .- mean(chkp.T11)).^2)))^2) / denom1
-
-        # #ZB T22 - CNN T22
-        # denom2 = sqrt(sum((chkp.SNN.Diag.CNNVars.T22 .- mean(chkp.SNN.Diag.CNNVars.T22)).^2))
-        # shkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T22 .- mean(chkp.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((chkp.T22 .- mean(chkp.T22)).^2)))^2) / denom2
-
-        # #ZB T12 - CNN T12
-        # denom3 = sqrt(sum((chkp.SNN.Diag.CNNVars.T12 .- mean(chkp.SNN.Diag.CNNVars.T12)).^2))
-        # chkp.J += ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((model.T12 .- mean(model.T12)).^2)))^2) / denom3
-
         chkp.j += 1
 
     end
@@ -228,7 +220,7 @@ function multistate_checkpointed_integration(chkp, scheme)
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += sum((avg_eta .- data_avg_eta).^2) / (chkp.j * 128^2)
+    chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
@@ -424,17 +416,6 @@ function multistate_integration(chkp)
         data_avg_eta += chkp.data[3][chkp.j]
 
         chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
-
-        # denom1 = sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2))
-        # chkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T11 .- mean(chkp.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((chkp.T11 .- mean(chkp.T11)).^2)))^2) / denom1
-
-        # #ZB T22 - CNN T22
-        # denom2 = sqrt(sum((chkp.SNN.Diag.CNNVars.T22 .- mean(chkp.SNN.Diag.CNNVars.T22)).^2))
-        # shkp.J += ((sqrt(sum((chkp.SNN.Diag.CNNVars.T22 .- mean(chkp.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((chkp.T22 .- mean(chkp.T22)).^2)))^2) / denom2
-
-        # #ZB T12 - CNN T12
-        # denom3 = sqrt(sum((chkp.SNN.Diag.CNNVars.T12 .- mean(chkp.SNN.Diag.CNNVars.T12)).^2))
-        # chkp.J += ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((model.T12 .- mean(model.T12)).^2)))^2) / denom3
 
         chkp.j += 1
 
@@ -655,16 +636,20 @@ function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
     Shr = ShallowWaters.model_setup(Phr)
 
     # daily information
-    # hrstates = load_object("./spinup_files/1024_coarsegrained_tendays_dailysaves_062425.jld2")
-    # data = hrstates[2:end]
+    # uhrcg = load_object("./spinup_files/coarsegrainedu_30days_dailysaves_071525.jld2")
+    # vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
+    # etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
+    # data_steps = 225:224:Slr.grid.nt
+    # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
-    uhrcg = load_object("./spinup_files/coarsegrainedu_30days_dailysaves_071525.jld2")
-    vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
-    etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
-
-    data_steps = 225:224:Slr.grid.nt
-
+    # hourly information
+    coarse_grained_hrstates = load_object("./coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
+    uhrcg = coarse_grained_hrstates[1]
+    vhrcg = coarse_grained_hrstates[2]
+    etahrcg = coarse_grained_hrstates[3]
+    data_steps = 9:9:Slr.grid.nt
     data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
+
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
@@ -684,28 +669,41 @@ end
 
 function run_multistate()
 
-    result = nothing
-    for ndays = [1, 2, 4, 6, 8, 10]
+    # result = nothing
+    # for ndays = [1, 2, 4, 6, 8, 10]
 
-        if ndays === 1
-            # the initial guess for weights will be the result from the offline problem
-            param_guess = load_object("./offline_results_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
-        else
-            param_guess = result.solution
-        end
-        nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
-        qn_options = MadNLP.QuasiNewtonOptions(;max_history=50)
-        result = madnlp(
-            nlp;
-            # linear_solver=LapackCPUSolver,
-            hessian_approximation=MadNLP.CompactLBFGS,
-            quasi_newton_options=qn_options,
-            max_iter=100
-        )
+    #     if ndays === 1
+    #         # the initial guess for weights will be the result from the offline problem
+    #         param_guess = load_object("./offline_workingresults_5-25-25NN_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
+    #     else
+    #         param_guess = result.solution
+    #     end
+    #     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
+    #     qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
+    #     result = madnlp(
+    #         nlp;
+    #         # linear_solver=LapackCPUSolver,
+    #         hessian_approximation=MadNLP.CompactLBFGS,
+    #         quasi_newton_options=qn_options,
+    #         max_iter=100
+    #     )
 
-    end
+    # end
 
-    return result
+    ndays = 1
+    param_guess = load_object("./offline_workingresults_5-25-25NN_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
+    nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
+    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
+    result = madnlp(
+        nlp;
+        # linear_solver=LapackCPUSolver,
+        hessian_approximation=MadNLP.CompactLBFGS,
+        quasi_newton_options=qn_options,
+        max_iter=100
+    )
+    jldsave("online_onedays_100iterations_result_200maxhistory.jld2", result=result)
+
+    return nothing
 
 end
 

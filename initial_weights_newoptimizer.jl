@@ -133,7 +133,7 @@ function compute_init_weights_newoptimizer()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=1000
+        max_iter=500
     )
 
     return results
