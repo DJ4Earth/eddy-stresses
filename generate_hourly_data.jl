@@ -227,3 +227,17 @@ function run()
     return nothing
 
 end
+
+function downsize()
+
+    cgstates = load_object("./coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
+
+    ucg = cgstates[1]
+    vcg = cgstates[2]
+    etacg = cgstates[3]
+
+    ucgdownsized = (ucg[8:8:end, 4:8:end, :] .+ ucg[8:8:end, 5:8:end, :]) ./ 2
+    vcgdownsize = (vcg[4:8:end, 8:8:end, :] .+ vcg[5:8:end, 8:8:end, :]) ./ 2
+    etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4
+
+end

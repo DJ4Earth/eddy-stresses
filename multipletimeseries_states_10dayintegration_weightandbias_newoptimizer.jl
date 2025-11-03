@@ -6,7 +6,8 @@ mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
     counters::Counters
     S::ShallowWaters.ModelSetup{T,T}        # model structure
     initial_cond::Array{Array{T,2}, 1}
-    data::Array{Array{Array{T,2}, 1}, 1}    # computed data
+    # data::Array{Array{Array{T,2}, 1}, 1}    # computed data
+    data::Array{Array{T, 3}, 1}
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
@@ -14,9 +15,6 @@ mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
     t::Int64                                # model time
     avg_eta::Array{T,2}                     # time-averaged eta from integration
     data_avg_eta::Array{T,2}                # time-averaged eta from data
-    T11::Array{T, 2}
-    T22::Array{T, 2}
-    T12::Array{T, 2}
 end
 
 # for running with checkpointing
@@ -46,10 +44,11 @@ function multistate_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
+
     @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
-        t = chkp.t
         i = chkp.i
+        t = chkp.t
 
         # ghost point copy for boundary conditions
         ShallowWaters.ghost_points!(chkp.S.Prog.u, chkp.S.Prog.v, chkp.S.Prog.η, chkp.S)
@@ -205,9 +204,9 @@ function multistate_checkpointed_integration(chkp, scheme)
 
         # time-average eta
         chkp.avg_eta += temp.η
-        chkp.data_avg_eta += chkp.data[3][chkp.j]
+        chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
 
         chkp.j += 1
 
@@ -255,9 +254,8 @@ function multistate_integration(chkp)
     avg_eta = chkp.avg_eta
     data_avg_eta = chkp.data_avg_eta
     chkp.j = 1
+    t = chkp.t
     for chkp.i = 1:chkp.S.grid.nt
-
-        t = chkp.t
         i = chkp.i
 
         # ghost point copy for boundary conditions
@@ -412,10 +410,10 @@ function multistate_integration(chkp)
         )...)
 
         # time-average eta
-        avg_eta += temp.η
-        data_avg_eta += chkp.data[3][chkp.j]
+        chkp.avg_eta += temp.η
+        chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-        chkp.J += sum((temp.u .- chkp.data[1][chkp.j]).^2) + sum((temp.v .- chkp.data[2][chkp.j]).^2)
+        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
 
         chkp.j += 1
 
@@ -643,12 +641,12 @@ function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
     # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
     # hourly information
-    coarse_grained_hrstates = load_object("./coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
+    coarse_grained_hrstates = load_object("./cgstates_downsized_hourly_tendays_uveta_102825.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 9:9:Slr.grid.nt
-    data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
+    data_steps = 75:75:Slr.grid.nt
+    data = [uhrcg[:,:,8:8:end], vhrcg[:,:,8:8:end], etahrcg[:,:,8:8:end]]
 
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
@@ -690,8 +688,8 @@ function run_multistate()
 
     # end
 
-    ndays = 1
-    param_guess = load_object("./offline_workingresults_5-25-25NN_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
+    ndays = 5
+    param_guess = load_object("./offlineresult_3-25-25_1e-3objective.jld2").solution
     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
     qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
@@ -701,9 +699,149 @@ function run_multistate()
         quasi_newton_options=qn_options,
         max_iter=100
     )
-    jldsave("online_onedays_100iterations_result_200maxhistory.jld2", result=result)
+    jldsave("online_fivedays_100iterations_8hourdata_result_200maxhistory.jld2", result=result)
 
     return nothing
+
+end
+
+
+function finite_difference_withnlp(Ndays, xcoord, ycoord)
+
+    # Type precision
+    T = Float64
+
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    )
+
+    S0 = ShallowWaters.model_setup(P)
+
+    snaps = Int(floor(sqrt(S0.grid.nt)))
+    revolve = Revolve(
+        snaps;
+        verbose=0,
+        gc=true,
+        write_checkpoints=false,
+        write_checkpoints_filename = "",
+        write_checkpoints_period = 2274
+    )
+
+    coarse_grained_hrstates = load_object("./cgstates_downsized_hourly_tendays_uveta_102825.jld2")
+    uhrcg = coarse_grained_hrstates[1]
+    vhrcg = coarse_grained_hrstates[2]
+    etahrcg = coarse_grained_hrstates[3]
+    data_steps = 75:75:S0.grid.nt
+    data = [uhrcg[:,:,8:8:end], vhrcg[:,:,8:8:end], etahrcg[:,:,8:8:end]]
+
+    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
+    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
+    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
+
+    initial_cond = [u0, v0, eta0]
+
+    param_guess = load_object("./offlineresult_3-25-25_1e-3objective.jld2").solution
+
+    meta = NLPModelMeta(Lux.parameterlength(S0.Diag.CNNVars.model_Su) + Lux.parameterlength(S0.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess
+    )
+
+    S1 = deepcopy(S0)
+    chkp1 = multistatenlp_Chkp{T, typeof(param_guess)}(meta,
+        Counters(),
+        S1,
+        initial_cond,
+        data,
+        data_steps,
+        0.0,
+        1,
+        1,
+        0.0,
+        zeros(128,128),
+        zeros(128,128)
+    )
+    dchkp1 = Enzyme.make_zero(chkp1)
+
+    # Enzyme deriv
+    J = autodiff(
+        set_runtime_activity(Enzyme.ReverseWithPrimal),
+        multistate_checkpointed_integration,
+        Active,
+        Duplicated(chkp1, dchkp1),
+        Const(revolve)
+    )[2]
+
+    enzyme_deriv = dchkp1.S.Diag.CNNVars.model_Su[1][1][1][3, 2, 2, 25] 
+    println("Loss when using Enzyme + Checkpointing: $J")
+    println("Enzyme derivative: $enzyme_deriv")
+
+    S2 = deepcopy(S0)
+    chkp2 = multistatenlp_Chkp{T, typeof(param_guess)}(meta,
+        Counters(),
+        S2,
+        initial_cond,
+        data,
+        data_steps,
+        0.0,
+        1,
+        1,
+        0.0,
+        zeros(128,128),
+        zeros(128,128)
+    )
+
+    @time unperturbed_loss = multistate_checkpointed_integration(chkp2, revolve)
+    println("Loss when not using Enzyme: $unperturbed_loss")
+
+    steps = [100, 50, 30, 20, 10, 1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    diffs = []
+    for s in steps
+
+        S3 = deepcopy(S0)
+        chkp3 = multistatenlp_Chkp{T, typeof(param_guess)}(meta,
+            Counters(),
+            S3,
+            initial_cond,
+            data,
+            data_steps,
+            0.0,
+            1,
+            1,
+            0.0,
+            zeros(128,128),
+            zeros(128,128)
+        )
+
+        chkp3.S.Diag.CNNVars.model_Su[1][1][1][3, 2, 2, 25] += s
+
+        J = multistate_checkpointed_integration(chkp3, revolve)
+        push!(diffs, (J - unperturbed_loss) / s)
+
+    end
+
+    println("Finite difference result: $diffs")
 
 end
 
