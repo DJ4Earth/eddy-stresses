@@ -68,8 +68,8 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
     # param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
-    # param_guess = load_object("./result_workedupto21by21_32-32-32-4CNN_091825.jld2").solution
-    param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
+    # param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -92,9 +92,9 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     halo = SZB.grid.halo
     haloη = SZB.grid.haloη
 
-    ucg = load_object("./coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
-    vcg = load_object("./coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
-    uvbar = load_object("./coarsegrained_hr_uvbar_t1_foroffline_101525.jld2")
+    ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
+    vcg = load_object("./offline_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
+    uvbar = load_object("./offline_files/coarsegrained_hr_uvbar_t1_foroffline_101525.jld2")
 
     ubar = ucg[1]
     ubarsq = ucg[2]
@@ -181,7 +181,6 @@ function for_enzyme(param_guess, state, SNN, SZB, T11, T22, T12)
     #ZB T12 - CNN T12
     denom3 = sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2))
     J += sum((SNN.Diag.CNNVars.T12 - T12).^2) / 129^2 + ((sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((T12 .- mean(T12)).^2)))^2) / denom3
-
 
     # ZB T11 - CNN T11
     # J = 0.0

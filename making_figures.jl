@@ -1,6 +1,3 @@
-hru = ncread("./spinup_files/1024_postspinup_noslip_4days_073124/u.nc", "u")
-hrv = ncread("./spinup_files/1024_postspinup_noslip_4days_073124/v.nc", "v")
-
 SNN = ShallowWaters.model_setup(T=Float32;
     output=false,
     L_ratio=1,
@@ -22,11 +19,24 @@ SNN = ShallowWaters.model_setup(T=Float32;
     N=1,
     α=2,
     nx=128,
-    Ndays=Ndays,
+    Ndays=1,
     initial_cond="ncfile",
     initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
     init_starti=1
 )
+
+param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
+# param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+current = 1
+for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+    for layers in model[1]
+        for array in layers
+                sz = prod(size(array))
+                param_guess[current:(current + sz - 1)] .= vec(array)
+                current += sz
+        end
+    end
+end
 
 ShallowWaters.CNN_momentum(SNN.Prog.u, SNN.Prog.v, SNN)
 
@@ -68,6 +78,38 @@ ShallowWaters.ZB_momentum(SZB.Prog.u, SZB.Prog.v, SZB, SZB.Diag)
 
 # ubarsq = ShallowWaters.coarse_grain_u(hru[:,:,1].^2, 1024, SZB)
 # vbarsq = ShallowWaters.coarse_grain_v(hrv[:,:,1].^2, 1024, SZB)
+
+nx = SZB.grid.nx
+ny = SZB.grid.ny
+nux = SZB.grid.nux
+nuy = SZB.grid.nuy
+nvx = SZB.grid.nvx
+nvy = SZB.grid.nvy
+halo = SZB.grid.halo
+haloη = SZB.grid.haloη
+
+ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
+vcg = load_object("./offline_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
+uvbar = load_object("./offline_files/coarsegrained_hr_uvbar_t1_foroffline_101525.jld2")
+
+ubar = ucg[1]
+ubarsq = ucg[2]
+
+vbar = vcg[1]
+vbarsq = vcg[2]
+
+ubarh = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubar,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2)
+ubarhsq = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubarsq,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2)
+
+vbarh = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbar,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2)
+vbarhsq = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbarsq,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2)
+
+uvbarh = cat(zeros(T,nx+2*haloη,haloη),cat(zeros(T,haloη,ny),uvbar,zeros(T,haloη,ny),dims=1),zeros(T,nx+2*haloη,haloη),dims=2)
+
+T12_true = ShallowWaters.Iy(ubarh)[2:end-1,2:end-1] .* ShallowWaters.Ix(vbarh)[2:end-1,2:end-1] - ShallowWaters.Ixy(uvbarh)
+
+T11_true = (ShallowWaters.Ixy(ShallowWaters.Iy(ubarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Iy(ubarhsq)[2:end-1,2:end-1])
+T22_true = ShallowWaters.Ixy((ShallowWaters.Ix(vbarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Ix(vbarhsq)[2:end-1,2:end-1])
 
 ζD_filtered = SZB.Diag.ZBVars.ζD_filtered
 ζDhat_filtered = SZB.Diag.ZBVars.ζDhat_filtered
