@@ -22,6 +22,7 @@ if !Base.isdefined(@__MODULE__, :ShallowWaters)
 end
 
 include("save_states.jl")
+include("making_tensorT_figures.jl")
 # include("initial_weights.jl")
 # include("timeavgenergy_10dayintegration_nnrun.jl")
 # include("kespectrum_weightsandbias_10dayintegration_nnrun.jl")
