@@ -714,7 +714,6 @@ function run_multistate()
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
     param_guess = zeros(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
     current = 1
     for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
@@ -727,19 +726,22 @@ function run_multistate()
         end
     end
 
+    # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
+    param_guess = load_object("./offline_files/offlineresult_geluactivation_1e-5obj_300iterations_110525.jld2").solution
+
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
     ndays = 1
-    lower_bound = -Inf
-    upper_bound = Inf
+    lower_bound = -10000
+    upper_bound = 10000
     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess,lower_bound,upper_bound)
 
-    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
+    # qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
         nlp;
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
-        quasi_newton_options=qn_options,
+        # quasi_newton_options=qn_options,
         max_iter=100
     )
 
