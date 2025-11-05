@@ -68,8 +68,8 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
 
     # param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
-    param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
-    # param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
+    # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
+    param_guess = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -115,9 +115,15 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     T11_true = (ShallowWaters.Ixy(ShallowWaters.Iy(ubarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Iy(ubarhsq)[2:end-1,2:end-1])
     T22_true = ShallowWaters.Ixy((ShallowWaters.Ix(vbarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Ix(vbarhsq)[2:end-1,2:end-1])
 
+    # lvar is by default -Inf * ones(Float64, nvar)
+    # uvar is by default Inf * ones(Float64, nvar)
     u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
     snapshot = [u,v]
-    meta = NLPModelMeta(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv); ncon=0, nnzh=0,x0=param_guess)
+    meta = NLPModelMeta(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess
+    )
     counters = Counters()
 
     return InitWeightsModel{T, typeof(param_guess)}(meta, Counters(), SZB, SNN, snapshot, 0.0, T11_true, T22_true, T12_true)
@@ -278,8 +284,8 @@ function NLPModels.obj(model, param_guess)
 
     denom = model.SZB.grid.Δ^2 * model.SZB.grid.scale
 
-    ucg = load_object("./coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
-    vcg = load_object("./coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
+    ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
+    vcg = load_object("./offlines_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
 
     # trying with the "true" S tensors
     # ZB T11 - CNN T11

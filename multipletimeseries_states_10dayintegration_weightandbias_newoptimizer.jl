@@ -18,7 +18,7 @@ mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
 end
 
 # for running with checkpointing
-function multistate_checkpointed_integration(chkp, scheme)
+function cpintegrate(chkp, scheme)::Float64
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -44,11 +44,10 @@ function multistate_checkpointed_integration(chkp, scheme)
 
     # run integration loop with checkpointing
     chkp.j = 1
-
     @ad_checkpoint scheme for chkp.i = 1:chkp.S.grid.nt
 
-        i = chkp.i
         t = chkp.t
+        i = chkp.i
 
         # ghost point copy for boundary conditions
         ShallowWaters.ghost_points!(chkp.S.Prog.u, chkp.S.Prog.v, chkp.S.Prog.η, chkp.S)
@@ -170,51 +169,50 @@ function multistate_checkpointed_integration(chkp, scheme)
         end
 
         if (chkp.i % chkp.S.grid.nstep_diff) == 0
-        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.add_drag_diff_tendencies!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S.Diag,
-            chkp.S
-        )
-        ShallowWaters.ghost_points_uv!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S
-        )
-    end
+            ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.add_drag_diff_tendencies!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S.Diag,
+                chkp.S
+            )
+            ShallowWaters.ghost_points_uv!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S
+            )
+        end
 
-    t += chkp.S.grid.dtint
+        t += chkp.S.grid.dtint
 
-    u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
-    v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
-    ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+        u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+        v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+        ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    # portion of the loss function just doing state comparison
-    if chkp.i in chkp.data_steps
+        if chkp.i in chkp.data_steps
 
-         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-            chkp.S.Prog.u,
-            chkp.S.Prog.v,
-            chkp.S.Prog.η,
-            chkp.S.Prog.sst,
-            chkp.S
-        )...)
+            temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+                chkp.S.Prog.u,
+                chkp.S.Prog.v,
+                chkp.S.Prog.η,
+                chkp.S.Prog.sst,
+                chkp.S
+            )...)
 
-        # time-average eta
-        chkp.avg_eta += temp.η
-        chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
+            # time-average eta
+            chkp.avg_eta += temp.η
+            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
 
-        chkp.j += 1
+            chkp.j += 1
 
-    end
+        end
 
-    copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
-    copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
-    copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
+        copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
+        copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
+        copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
 
@@ -226,7 +224,7 @@ function multistate_checkpointed_integration(chkp, scheme)
 end
 
 # for running without checkpointing
-function multistate_integration(chkp)
+function integrate(chkp)::Float64
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -251,11 +249,10 @@ function multistate_integration(chkp)
     copyto!(chkp.S.Diag.SemiLagrange.sst_ref, chkp.S.Prog.sst)
 
     # run integration loop with checkpointing
-    avg_eta = chkp.avg_eta
-    data_avg_eta = chkp.data_avg_eta
     chkp.j = 1
-    t = chkp.t
     for chkp.i = 1:chkp.S.grid.nt
+
+        t = chkp.t
         i = chkp.i
 
         # ghost point copy for boundary conditions
@@ -378,58 +375,55 @@ function multistate_integration(chkp)
         end
 
         if (chkp.i % chkp.S.grid.nstep_diff) == 0
-        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.add_drag_diff_tendencies!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S.Diag,
-            chkp.S
-        )
-        ShallowWaters.ghost_points_uv!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S
-        )
-    end
+            ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.add_drag_diff_tendencies!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S.Diag,
+                chkp.S
+            )
+            ShallowWaters.ghost_points_uv!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S
+            )
+        end
 
-    t += chkp.S.grid.dtint
+        t += chkp.S.grid.dtint
 
-    u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
-    v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
-    ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+        u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+        v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+        ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    if chkp.i in chkp.data_steps
+        if chkp.i in chkp.data_steps
 
-         temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-            chkp.S.Prog.u,
-            chkp.S.Prog.v,
-            chkp.S.Prog.η,
-            chkp.S.Prog.sst,
-            chkp.S
-        )...)
+            temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+                chkp.S.Prog.u,
+                chkp.S.Prog.v,
+                chkp.S.Prog.η,
+                chkp.S.Prog.sst,
+                chkp.S
+            )...)
 
-        # time-average eta
-        chkp.avg_eta += temp.η
-        chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
+            # time-average eta
+            chkp.avg_eta += temp.η
+            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-        chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
 
-        chkp.j += 1
+            chkp.j += 1
 
-    end
+        end
 
-    ##### time-averaging the objective function #######
-    # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
-    ##########################################################
-
-    copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
-    copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
-    copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
+        copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
+        copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
+        copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
 
-    chkp.J += sum((avg_eta .- data_avg_eta).^2) / (chkp.j * 128^2)
+    # add the time-averaged ssh to the loss function
+    chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
@@ -483,14 +477,15 @@ function NLPModels.obj(model, param_guess)
     for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
             for array in layers
-                    sz = prod(size(array))
-                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                    current += sz
+                sz = prod(size(array))
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
             end
         end
     end
 
-    model.J = multistate_integration(model)
+    model.J = integrate(model)
+    println("Norm when running integrate: ", model.J)
 
     return model.J
 
@@ -563,20 +558,21 @@ function NLPModels.grad!(model, param_guess, G)
 
     J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        multistate_checkpointed_integration,
+        cpintegrate,
         Active,
         Duplicated(model, dmodel),
         Const(revolve)
     )[2]
+    println("Norm when running cpintegrate: ", J)
 
     # Get gradient
     current = 1
     for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
             for array in layers
-                        sz = prod(size(array))
-                        G[current:(current + sz - 1)] .= vec(array)
-                        current += sz
+                sz = prod(size(array))
+                G[current:(current + sz - 1)] .= vec(array)
+                current += sz
             end
         end
     end
@@ -585,7 +581,7 @@ function NLPModels.grad!(model, param_guess, G)
 
 end
 
-function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
+function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
 
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
@@ -641,7 +637,7 @@ function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
     # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
     # hourly information
-    coarse_grained_hrstates = load_object("./cgstates_downsized_hourly_tendays_uveta_102825.jld2")
+    coarse_grained_hrstates = load_object("./offline_files/cgstates_downsized_hourly_tendays_uveta_102825.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
@@ -654,10 +650,14 @@ function multistatenlp_Chkp{T}(Ndays,param_guess) where {T<:AbstractFloat}
 
     initial_cond = [u0, v0, eta0]
 
+    lvar = lower_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
+    uvar = upper_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
         nnzh=0,
-        x0=param_guess
+        x0=param_guess,
+        lvar=lvar,
+        uvar=uvar
     )
     counters = Counters()
 
@@ -688,9 +688,52 @@ function run_multistate()
 
     # end
 
-    ndays = 5
-    param_guess = load_object("./offlineresult_3-25-25_1e-3objective.jld2").solution
-    nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    )
+
+    Slr = ShallowWaters.model_setup(Plr)
+
+    # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
+    param_guess = zeros(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
+    current = 1
+    for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
+                    sz = prod(size(array))
+                    param_guess[current:(current + sz - 1)] .= vec(array)
+                    current += sz
+            end
+        end
+    end
+
+    # lvar is by default -Inf * ones(Float64, nvar)
+    # uvar is by default Inf * ones(Float64, nvar)
+    ndays = 1
+    lower_bound = -Inf
+    upper_bound = Inf
+    nlp = multistatenlp_Chkp{Float64}(ndays,param_guess,lower_bound,upper_bound)
+
     qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
         nlp;
@@ -699,12 +742,15 @@ function run_multistate()
         quasi_newton_options=qn_options,
         max_iter=100
     )
+
+    # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
+
+
     jldsave("online_fivedays_100iterations_8hourdata_result_200maxhistory.jld2", result=result)
 
     return nothing
 
 end
-
 
 function finite_difference_withnlp(Ndays, xcoord, ycoord)
 
