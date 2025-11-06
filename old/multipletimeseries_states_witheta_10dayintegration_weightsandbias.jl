@@ -2,13 +2,17 @@
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
 mutable struct multistate2_Chkp{T1,T2}
-    S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Array{T1,2}, 1}, 1}       # computed data
+    S::ShallowWaters.ModelSetup{T,T}        # model structure
+    initial_cond::Array{Array{T,2}, 1}
+    # data::Array{Array{Array{T,2}, 1}, 1}    # computed data
+    data::Array{Array{T, 3}, 1}
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
     i::Int                                  # timestep iterator
     t::Int64                                # model time
+    avg_eta::Array{T,2}                     # time-averaged eta from integration
+    data_avg_eta::Array{T,2}                # time-averaged eta from data
 end
 
 # for running with checkpointing
@@ -426,7 +430,7 @@ end
 function multistate2_compute_loss(Ndays, param_guess, data, data_steps, initial_cond)
 
     # Type precision
-    T = Float32
+    T = Float64
 
     S = ShallowWaters.model_setup(output=false,
         L_ratio=1,
@@ -511,7 +515,6 @@ function multistate2_compute_gradient(G, param_guess, data, data_steps, Ndays, i
     S.Prog.u .= initial_cond[1]
     S.Prog.v .= initial_cond[2]
     S.Prog.η .= initial_cond[3]
-
 
     current = 1
     for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
