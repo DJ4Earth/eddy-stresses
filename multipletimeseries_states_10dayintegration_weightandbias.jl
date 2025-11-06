@@ -624,8 +624,7 @@ function run_multistate()
         nn_forcing_dissipation=true,
         N=1,
         α=2,
-        nx=128,
-        Ndays=Ndays
+        nx=128
     )
 
     Slr = ShallowWaters.model_setup(Plr)
@@ -645,8 +644,7 @@ function run_multistate()
         tracer_relaxation=false,
         N=1,
         α=2,
-        nx=1024,
-        Ndays=Ndays
+        nx=1024
     )
     Shr = ShallowWaters.model_setup(Phr)
 
@@ -657,7 +655,7 @@ function run_multistate()
     # data_steps = 225:224:Slr.grid.nt
     # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
-    # hourly information
+    # 8-hourly information
     coarse_grained_hrstates = load_object("./offline_files/cgstates_downsized_hourly_tendays_uveta_102825.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
@@ -675,11 +673,12 @@ function run_multistate()
 
     param_guess = load_object("./offline_files/offlineresult_geluactivation_1e-5obj_300iterations_110525.jld2").solution
 
+    result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]
 
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, model)
         obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=100))
+        result = Optim.optimize(obj_fg, param_guess, Optim.Options(show_trace=true, store_trace=true, iterations=100))
 
         param_guess = result.minimizer
 

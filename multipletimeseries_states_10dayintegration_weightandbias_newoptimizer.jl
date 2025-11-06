@@ -688,6 +688,8 @@ function run_multistate()
 
     # end
 
+    T = Float64
+
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -731,7 +733,7 @@ function run_multistate()
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
-    ndays = 1
+    ndays = 5
     lower_bound = -10000
     upper_bound = 10000
     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess,lower_bound,upper_bound)
