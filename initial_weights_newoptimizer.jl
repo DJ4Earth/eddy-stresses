@@ -63,9 +63,7 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
         nx=128)
     SNN = ShallowWaters.model_setup(PNN)
 
-    ulr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/u.nc", "u")
-    vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
-    etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
+    hrcgstates = load_object("./offline_files/cgstates_downsized_hourly_tendays_uveta_102825.jld2")
 
     # param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
     # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution

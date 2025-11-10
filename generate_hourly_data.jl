@@ -259,3 +259,22 @@ function downsize()
     uvbar = ShallowWaters.coarse_grain_eta(uhrT .* vhrT, 1024, SZB)
 
 end
+
+# computing and saving true tensors for hourly data
+function hourly_Ts()
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    T11filtered = zeros(1024, 1024, 240)
+    T22filtered = zeros(1024, 1024, 240)
+    T12filtered = zeros(1025, 1025, 240)
+
+    cgstates = load_object("./offline_files/coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
+    
+
+    ufiltered[:,:,j] .= imfilter(temp.u, reflect(ker))
+    vfiltered[:,:,j] .= imfilter(temp.v, reflect(ker))
+    etafiltered[:,:,j] .= imfilter(temp.η, reflect(ker))
+
+
+end
