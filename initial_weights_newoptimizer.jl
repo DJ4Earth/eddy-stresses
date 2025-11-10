@@ -282,9 +282,6 @@ function NLPModels.obj(model, param_guess)
 
     denom = model.SZB.grid.Δ^2 * model.SZB.grid.scale
 
-    ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
-    vcg = load_object("./offline_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
-
     # trying with the "true" S tensors
     # ZB T11 - CNN T11
     model.J = 0.0

@@ -5,6 +5,7 @@ include("eddy_paper.jl")
 
 function hourly_save_run(S_true)
 
+    hrstates = []
     ufiltered = zeros(1023, 1024, 240)
     vfiltered = zeros(1024, 1023, 240)
     etafiltered = zeros(1024, 1024, 240)
@@ -167,6 +168,7 @@ function hourly_save_run(S_true)
         if i ∈ 75:75:S_true.grid.nt
             temp = ShallowWaters.PrognosticVars{S_true.parameters.Tprog}(
                 ShallowWaters.remove_halo(u,v,η,sst,S_true)...)
+            # push!(hrstates, temp)
             ufiltered[:,:,j] .= imfilter(temp.u, reflect(ker))
             vfiltered[:,:,j] .= imfilter(temp.v, reflect(ker))
             etafiltered[:,:,j] .= imfilter(temp.η, reflect(ker))
@@ -182,6 +184,7 @@ function hourly_save_run(S_true)
 
     end
 
+    # return hrstates
     return [ufiltered, vfiltered, etafiltered]
 
 end
@@ -222,7 +225,7 @@ function run()
 
     filtered_states = hourly_save_run(S)
 
-    jldsave("coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2", filtered_states=filtered_states)
+    jldsave("coarsegrained_hrstates_uveta_10days_hourlysaves_imfilter_111025.jld2", filtered_states=filtered_states)
 
     return nothing
 
@@ -263,18 +266,65 @@ end
 # computing and saving true tensors for hourly data
 function hourly_Ts()
 
+    S_true = ShallowWaters.model_setup(output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        N=1,
+        α=2,
+        nx=1024,Ndays=10,
+        initial_cond="ncfile",
+        initpath="./spinup_files/1024_spinup_noslip/"
+    );
+    halo = S_true.grid.halo
+
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    T11filtered = zeros(1024, 1024, 240)
-    T22filtered = zeros(1024, 1024, 240)
-    T12filtered = zeros(1025, 1025, 240)
+    T11true = zeros(1024, 1024, 240)
+    T22true = zeros(1024, 1024, 240)
+    T12true = zeros(1025, 1025, 240)
 
-    cgstates = load_object("./offline_files/coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
-    
+    # cgstates = load_object("./offline_files/coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
+    hourlyhrstates = load_object("./spinup_files/1024_10days_postspinup_hourlysaves.jld2")
 
-    ufiltered[:,:,j] .= imfilter(temp.u, reflect(ker))
-    vfiltered[:,:,j] .= imfilter(temp.v, reflect(ker))
-    etafiltered[:,:,j] .= imfilter(temp.η, reflect(ker))
+    for j = 1:240
 
+        # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
+
+        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hourlyhrstates[j].u,zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hourlyhrstates[j].v,zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+
+        # moving to hr corner grid and cut off the halo
+
+        uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
+        vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
+
+        uhrT = zeros(1024,1024)
+        vhrT = zeros(1024,1024)
+
+        ShallowWaters.Ixy!(uhrT,uhrq)
+        ShallowWaters.Ixy!(vhrT,vhrq)
+
+        ubar = imfilter(uhrT, reflect(ker))
+        vbar = imfilter(vhrT, reflect(ker))
+
+        usqbar = imfilter(uhrT.^2, reflect(ker))
+        vsqbar = imfilter(vhrT.^2, reflect(ker))
+
+        uvbar = imfilter(uhrq .* vhrq, reflect(ker))
+        ubarvbar = imfilter(uhrq, reflect(ker)) .* imfilter(vhrq, reflect(ker))
+
+        T11true[:,:,j] .= ubar .* ubar - usqbar
+        T22true[:,:,j] .= vbar .* vbar - vsqbar
+        T12true[:,:,j] .= ubarvbar - uvbar
+    end
 
 end
