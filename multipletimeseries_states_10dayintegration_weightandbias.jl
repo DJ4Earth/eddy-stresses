@@ -413,7 +413,7 @@ function multistate_integration(chkp)
             chkp.avg_eta += temp.η
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / 127*128 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / 127*128
 
             chkp.j += 1
 
@@ -573,7 +573,6 @@ function multistate_compute_gradient(G, param_guess, model)
         Duplicated(model, dmodel),
         Const(revolve)
     )[2]
-    println("Cost with AD: $J")
 
     # Get gradient
     # G = zeros(Lux.parameterlength(model.S.Diag.CNNVars.model_Su) + Lux.parameterlength(model.S.Diag.CNNVars.model_Sv))
@@ -587,8 +586,6 @@ function multistate_compute_gradient(G, param_guess, model)
             end
         end
     end
-
-    println("Gradient norm: ", norm(G))
 
     return nothing
 
@@ -624,7 +621,8 @@ function run_multistate()
         nn_forcing_dissipation=true,
         N=1,
         α=2,
-        nx=128
+        nx=128,
+        Ndays=10
     )
 
     Slr = ShallowWaters.model_setup(Plr)
@@ -676,6 +674,7 @@ function run_multistate()
     result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]
 
+        model.S.parameters.Ndays = ndays
         fg!_closure(F, G, param_guess) = multistate_FG(F, G, param_guess, model)
         obj_fg = Optim.only_fg!(fg!_closure)
         result = Optim.optimize(obj_fg, param_guess, Optim.Options(show_trace=true, store_trace=true, iterations=100))

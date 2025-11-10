@@ -483,23 +483,4 @@ maximum(S_v))
 );
 Colorbar(fig[1,4], hm2)
 
-
-# the following is to create the coarse grained uv term for computing the off-diagonal entries in T
-
-uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hru[:,:,1],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hrv[:,:,1],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
-
-# moving to hr corner grid and cut off the halo
-
-uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
-vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
-
-uhrT = zeros(1024,1024)
-vhrT = zeros(1024,1024)
-
-ShallowWaters.Ixy!(uhrT,uhrq)
-ShallowWaters.Ixy!(vhrT,vhrq)
-
-uvbar = ShallowWaters.coarse_grain_eta(uhrT .* vhrT, 1024, SZB)
-
 end
