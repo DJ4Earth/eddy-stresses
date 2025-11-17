@@ -7,11 +7,11 @@ mutable struct InitWeightsModel{T, S} <: AbstractNLPModel{T, S}
     counters::Counters
     SZB::ShallowWaters.ModelSetup{T,T}      # model structure, ZB parameterization
     SNN::ShallowWaters.ModelSetup{T,T}      # model struct, NN parameterization
-    snapshot::Array{Array{T,2}, 1}          # snapshot being used for offline learning
+    snapshot::Array{Array{T,3}, 1}          # snapshot(s) being used for offline learning
     J::Float64                              # objective value
-    T11::Array{T, 2}
-    T22::Array{T, 2}
-    T12::Array{T, 2}
+    T11::Array{T, 3}                        # for storing T11 computed from *coarse-grained and filtered* hr states
+    T22::Array{T, 3}                        # same as above
+    T12::Array{T, 3}
 end
 
 function InitWeightsModel{T}() where {T<:AbstractFloat}
@@ -60,10 +60,8 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
         nn_forcing_dissipation=true,
         N=1,
         α=2,
-        nx=128)
+        nx=1024)
     SNN = ShallowWaters.model_setup(PNN)
-
-    hrcgstates = load_object("./offline_files/cgstates_downsized_hourly_tendays_uveta_102825.jld2")
 
     # param_guess = 1e-1.*randn(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
     # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
@@ -90,41 +88,23 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     halo = SZB.grid.halo
     haloη = SZB.grid.haloη
 
-    ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
-    vcg = load_object("./offline_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
-    uvbar = load_object("./offline_files/coarsegrained_hr_uvbar_t1_foroffline_101525.jld2")
-
-    ubar = ucg[1]
-    ubarsq = ucg[2]
-
-    vbar = vcg[1]
-    vbarsq = vcg[2]
-
-    ubarh = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubar,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2)
-    ubarhsq = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubarsq,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2)
-
-    vbarh = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbar,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2)
-    vbarhsq = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbarsq,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2)
-
-    uvbarh = cat(zeros(T,nx+2*haloη,haloη),cat(zeros(T,haloη,ny),uvbar,zeros(T,haloη,ny),dims=1),zeros(T,nx+2*haloη,haloη),dims=2)
-
-    T12_true = ShallowWaters.Iy(ubarh)[2:end-1,2:end-1] .* ShallowWaters.Ix(vbarh)[2:end-1,2:end-1] - ShallowWaters.Ixy(uvbarh)
-
-    T11_true = (ShallowWaters.Ixy(ShallowWaters.Iy(ubarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Iy(ubarhsq)[2:end-1,2:end-1])
-    T22_true = ShallowWaters.Ixy((ShallowWaters.Ix(vbarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Ix(vbarhsq)[2:end-1,2:end-1])
+    filteredstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825.jld2")
+    true_Ts = load_object("./offline_files/true_Ts_hourlysaves_filteredandcg_T11T22T12_beginsatonehour_111725.jld2")
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
-    u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
-    snapshot = [u,v]
+
+    # u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
+
     meta = NLPModelMeta(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv);
         ncon=0,
         nnzh=0,
         x0=param_guess
     )
+
     counters = Counters()
 
-    return InitWeightsModel{T, typeof(param_guess)}(meta, Counters(), SZB, SNN, snapshot, 0.0, T11_true, T22_true, T12_true)
+    return InitWeightsModel{T, typeof(param_guess)}(meta, Counters(), SZB, SNN, filteredstates, 0.0, true_Ts[1], true_Ts[2], true_Ts[3])
 
 end
 
@@ -137,96 +117,49 @@ function compute_init_weights_newoptimizer()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=300
+        max_iter=150
     )
 
     return results
 
 end
 
-function for_enzyme(param_guess, state, SNN, SZB, T11, T22, T12)
+# function for_enzyme(param_guess, state, SNN, T11, T22, T12)
 
-    # current = 1
-    # for model in (SNN.Diag.NNVars.model_diag, SNN.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
+#     current = 1
+#     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
+#         for layers in model[1]
+#             for array in layers
+#                     sz = prod(size(array))
+#                     array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+#                     current += sz
+#             end
+#         end
+#     end
 
-    current = 1
-    for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
-        for layers in model[1]
-            for array in layers
-                    sz = prod(size(array))
-                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                    current += sz
-            end
-        end
-    end
+#     ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
+#     ShallowWaters.CNN_momentum(state[1], state[2], SNN)
 
-    ShallowWaters.ZB_momentum(state[1], state[2], SZB, SZB.Diag)
-    ShallowWaters.CNN_momentum(state[1], state[2], SNN)
+#     denom = SZB.grid.Δ^2 * SZB.grid.scale
 
-    denom = SZB.grid.Δ^2 * SZB.grid.scale
+#     # True T11 - CNN T11
+#     J = 0.0
+#     denom1 = sqrt(sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2))
+#     J += sum((SNN.Diag.CNNVars.T11 - T11).^2) / 128^2 + ((sqrt(sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((T11 .- mean(T11)).^2)))^2) / denom1
 
-    # ZB T11 - CNN T11
-    J = 0.0
-    denom1 = sqrt(sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2))
-    J += sum((SNN.Diag.CNNVars.T11 - T11).^2) / 128^2 + ((sqrt(sum((SNN.Diag.CNNVars.T11 .- mean(SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((T11 .- mean(T11)).^2)))^2) / denom1
+#     # True T22 - CNN T22
+#     denom2 = sqrt(sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2))
+#     J += sum((SNN.Diag.CNNVars.T22 - T22).^2) / 128^2 + ((sqrt(sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((T22 .- mean(T22)).^2)))^2) / denom2
 
-    #ZB T22 - CNN T22
-    denom2 = sqrt(sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2))
-    J += sum((SNN.Diag.CNNVars.T22 - T22).^2) / 128^2 + ((sqrt(sum((SNN.Diag.CNNVars.T22 .- mean(SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((T22 .- mean(T22)).^2)))^2) / denom2
+#     # True T12 - CNN T12
+#     denom3 = sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2))
+#     J += sum((SNN.Diag.CNNVars.T12 - T12).^2) / 129^2 + ((sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((T12 .- mean(T12)).^2)))^2) / denom3
 
-    #ZB T12 - CNN T12
-    denom3 = sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2))
-    J += sum((SNN.Diag.CNNVars.T12 - T12).^2) / 129^2 + ((sqrt(sum((SNN.Diag.CNNVars.T12 .- mean(SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((T12 .- mean(T12)).^2)))^2) / denom3
+#     return J
 
-    # ZB T11 - CNN T11
-    # J = 0.0
-    # J += sum((SNN.Diag.CNNVars.T11 - (SZB.Diag.ZBVars.trace_filtered - SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
+# end
 
-    # #ZB T22 - CNN T22
-    # J += sum((SNN.Diag.CNNVars.T22 - (SZB.Diag.ZBVars.trace_filtered + SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
-
-    # #ZB T12 - CNN T22
-    # J += sum((SNN.Diag.CNNVars.T12 - SZB.Diag.ZBVars.ζDhat_filtered./denom).^2) / (129^2)
-
-    # attempting with a variance regularization term, might need a coefficient here
-    # J += sum(SZB.Diag.ZBVars.S_u .- mean(SZB.Diag.ZBVars.S_u).^2) + sum((SZB.Diag.ZBVars.S_v .- mean(SZB.Diag.ZBVars.S_v)).^2)
-
-    return J
-
-end
-
-function NLPModels.obj(model, param_guess)
-
-    PZB = ShallowWaters.Parameter(T = Float64;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=128
-    )
+function for_enzyme(model, param_guess)
 
     PNN = ShallowWaters.Parameter(T = Float64;
         output=false,
@@ -251,62 +184,122 @@ function NLPModels.obj(model, param_guess)
         nx=128
     )
 
-    model.SZB = ShallowWaters.model_setup(PZB)
     model.SNN = ShallowWaters.model_setup(PNN)
-    model.J = 0
 
-    # current = 1
-    # for model in (SNN.Diag.NNVars.model_diag, SNN.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
+    J = 0
+    # adding up the difference for 5 different hourly snapshots of the coarse-grained, hr states true Ts and 
+    # the output from the NN
+    for j = 1:5
 
-    current = 1
-    for m in (model.SNN.Diag.CNNVars.model_Su, model.SNN.Diag.CNNVars.model_Sv)
-        for layers in m[1]
-            for array in layers
-                    sz = prod(size(array))
-                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                    current += sz
+        current = 1
+        for m in (model.SNN.Diag.CNNVars.model_Su, model.SNN.Diag.CNNVars.model_Sv)
+            for layers in m[1]
+                for array in layers
+                        sz = prod(size(array))
+                        array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                        current += sz
+                end
             end
         end
+
+        u,v,_ = ShallowWaters.add_halo(model.snapshot[1][:,:,j], model.snapshot[2][:,:,j], model.snapshot[3][:,:,1],model.SNN)
+        ShallowWaters.CNN_momentum(u, v, model.SNN)
+        T11 = model.T11[:,:,j]
+        T22 = model.T22[:,:,j]
+        T12 = model.T12[:,:,j]
+
+        denom = model.SNN.grid.Δ^2 * model.SNN.grid.scale
+
+        # trying with the "true" S tensors
+        # True T11 - CNN T11
+        denom = model.SZB.grid.Δ^2 * model.SZB.grid.scale
+
+        # trying with the "true" S tensors
+        # True T11 - CNN T11
+        denom1 = sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2))
+        model.J += sum((model.SNN.Diag.CNNVars.T11 - T11).^2) / 128^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((T11 .- mean(T11)).^2)))^2) / denom1
+
+        # True T22 - CNN T22
+        denom2 = sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2))
+        model.J += sum((model.SNN.Diag.CNNVars.T22 - T22).^2) / 128^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((T22 .- mean(T22)).^2)))^2) / denom2
+
+        # True T12 - CNN T12
+        denom3 = sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2))
+        model.J += sum((model.SNN.Diag.CNNVars.T12 - T12).^2) / 129^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((T12 .- mean(T12)).^2)))^2) / denom3
+
     end
 
-    ShallowWaters.ZB_momentum(model.snapshot[1], model.snapshot[2], model.SZB, model.SZB.Diag)
-    ShallowWaters.CNN_momentum(model.snapshot[1], model.snapshot[2], model.SNN)
+    return model.J
 
-    denom = model.SZB.grid.Δ^2 * model.SZB.grid.scale
+end
 
-    # trying with the "true" S tensors
-    # ZB T11 - CNN T11
-    model.J = 0.0
-    denom1 = sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2))
-    model.J += sum((model.SNN.Diag.CNNVars.T11 - model.T11).^2 ) / 128^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((model.T11 .- mean(model.T11)).^2)))^2) / denom1
+function NLPModels.obj(model, param_guess)
 
-    #ZB T22 - CNN T22
-    denom2 = sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2))
-    model.J += sum((model.SNN.Diag.CNNVars.T22 - model.T22).^2) / 128^2  + ((sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((model.T22 .- mean(model.T22)).^2)))^2) / denom2
+    PNN = ShallowWaters.Parameter(T = Float64;
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128
+    )
 
-    #ZB T12 - CNN T12
-    denom3 = sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2))
-    model.J += sum((model.SNN.Diag.CNNVars.T12 - model.T12).^2) / 129^2  + ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((model.T12 .- mean(model.T12)).^2)))^2) / denom3
+    model.J = 0
 
-    # # ZB T11 - CNN T11
-    # model.J += sum((model.SNN.Diag.CNNVars.T11 - (model.SZB.Diag.ZBVars.trace_filtered - model.SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
+    # adding up the difference for 5 different snapshots of the coarse-grained, hr states true Ts and 
+    # the output from the NN
+    for j = 1:5
 
-    # #ZB T22 - CNN T22
-    # model.J += sum((model.SNN.Diag.CNNVars.T22 - (model.SZB.Diag.ZBVars.trace_filtered + model.SZB.Diag.ZBVars.ζD_filtered)./denom).^2) / (128^2)
+        model.SNN = ShallowWaters.model_setup(PNN)
 
-    # #ZB T12 - CNN T12
-    # model.J += sum((model.SNN.Diag.CNNVars.T12 - model.SZB.Diag.ZBVars.ζDhat_filtered./denom).^2) / (129^2)
+        current = 1
+        for m in (model.SNN.Diag.CNNVars.model_Su, model.SNN.Diag.CNNVars.model_Sv)
+            for layers in m[1]
+                for array in layers
+                        sz = prod(size(array))
+                        array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                        current += sz
+                end
+            end
+        end
 
-    # attempting with a variance regularization term, might need a coefficient here
-    # model.J += sum(model.SZB.Diag.ZBVars.S_u .- mean(model.SZB.Diag.ZBVars.S_u).^2) + sum((model.SZB.Diag.ZBVars.S_v .- mean(model.SZB.Diag.ZBVars.S_v)).^2)
+        u,v,_ = ShallowWaters.add_halo(model.snapshot[1][:,:,j], model.snapshot[2][:,:,j], model.snapshot[3][:,:,1],model.SNN)
+
+        ShallowWaters.CNN_momentum(u, v, model.SNN)
+        T11 = model.T11[:,:,j]
+        T22 = model.T22[:,:,j]
+        T12 = model.T12[:,:,j]
+
+        denom = model.SNN.grid.Δ^2 * model.SNN.grid.scale
+
+        # trying with the "true" S tensors
+        # True T11 - CNN T11
+        denom1 = sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2))
+        model.J += sum((model.SNN.Diag.CNNVars.T11 - T11).^2) / 128^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T11 .- mean(model.SNN.Diag.CNNVars.T11)).^2)) - sqrt(sum((T11 .- mean(T11)).^2)))^2) / denom1
+
+        # True T22 - CNN T22
+        denom2 = sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2))
+        model.J += sum((model.SNN.Diag.CNNVars.T22 - T22).^2) / 128^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T22 .- mean(model.SNN.Diag.CNNVars.T22)).^2)) - sqrt(sum((T22 .- mean(T22)).^2)))^2) / denom2
+
+        # True T12 - CNN T12
+        denom3 = sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2))
+        model.J += sum((model.SNN.Diag.CNNVars.T12 - T12).^2) / 129^2 + ((sqrt(sum((model.SNN.Diag.CNNVars.T12 .- mean(model.SNN.Diag.CNNVars.T12)).^2)) - sqrt(sum((T12 .- mean(T12)).^2)))^2) / denom3
+
+    end
 
     return model.J
 
@@ -314,29 +307,6 @@ end
 
 function NLPModels.grad!(model, param_guess, G)
 
-    PZB = ShallowWaters.Parameter(T=Float64;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=128
-    )
-
     PNN = ShallowWaters.Parameter(T = Float64;
         output=false,
         L_ratio=1,
@@ -360,30 +330,23 @@ function NLPModels.grad!(model, param_guess, G)
         nx=128
     )
 
-    model.SZB = ShallowWaters.model_setup(PZB)
     model.SNN = ShallowWaters.model_setup(PNN)
     model.J = 0
 
     dparam = Enzyme.make_zero(param_guess)
-    dSZB = Enzyme.make_zero(model.SZB)
-    dSNN = Enzyme.make_zero(model.SNN)
+    dmodel = Enzyme.make_zero(model)
 
     J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
         for_enzyme,
         Active,
+        Duplicated(model, dmodel),
         Duplicated(param_guess, dparam),
-        Const(model.snapshot),
-        Duplicated(model.SZB, dSZB),
-        Duplicated(model.SNN, dSNN),
-        Const(model.T11),
-        Const(model.T22),
-        Const(model.T12)
     )[2]
 
     G .= dparam
 
-    return G
+    return nothing
 
 end
 
@@ -470,72 +433,69 @@ function ignore(result)
 
     return SZB, SNN
 
-
 end
 
-function error()
+# function error()
 
-    Slr = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128
-    )
+#     Slr = ShallowWaters.model_setup(output=false,
+#         L_ratio=1,
+#         g=9.81,
+#         H=500,
+#         wind_forcing_x="double_gyre",
+#         Lx=3840e3,
+#         seasonal_wind_x=false,
+#         topography="flat",
+#         bc="nonperiodic",
+#         bottom_drag="quadratic",
+#         tracer_advection=false,
+#         tracer_relaxation=false,
+#         zb_forcing_momentum=false,
+#         zb_forcing_dissipation=false,
+#         zb_filtered=true,
+#         nn_forcing_momentum=false,
+#         nn_forcing_dissipation=true,
+#         N=1,
+#         α=2,
+#         nx=128
+#     )
 
-    param_guess = 1000 .* randn(883)
+#     param_guess = 1000 .* randn(883)
 
-    dparam = Enzyme.make_zero(param_guess)
-    # dstate = Enzyme.make_zero(state)
+#     dparam = Enzyme.make_zero(param_guess)
+#     # dstate = Enzyme.make_zero(state)
 
-    @time autodiff(
-        set_runtime_activity(Enzyme.Reverse),
-        initweights_compute_loss,
-        Active,
-        Duplicated(param_guess, dparam),
-        Const([Slr.Prog.u, Slr.Prog.v])
-    )
+#     @time autodiff(
+#         set_runtime_activity(Enzyme.Reverse),
+#         initweights_compute_loss,
+#         Active,
+#         Duplicated(param_guess, dparam),
+#         Const([Slr.Prog.u, Slr.Prog.v])
+#     )
 
+# end
 
+# function checking()
 
-end
+#     nlp = InitWeightsModel{Float64}()
 
-function checking()
+#     current = 1
+#     l = 0
+#     for model in (nlp.SNN.Diag.CNNVars.model_Su, nlp.SNN.Diag.CNNVars.model_Sv)
+#         for layers in model[1]
+#             for array in layers
+#                     sz = prod(size(array))
+#                     l += sz
+#             end
+#         end
+#     end
+#     G = zeros(l)
+#     NLPModels.grad!(nlp, nlp.meta.x0, G)
 
-    nlp = InitWeightsModel{Float64}()
+#     println("norm of initial gradient ", norm(G))
 
-    current = 1
-    l = 0
-    for model in (nlp.SNN.Diag.CNNVars.model_Su, nlp.SNN.Diag.CNNVars.model_Sv)
-        for layers in model[1]
-            for array in layers
-                    sz = prod(size(array))
-                    l += sz
-            end
-        end
-    end
-    G = zeros(l)
-    NLPModels.grad!(nlp, nlp.meta.x0, G)
-
-    println("norm of initial gradient ", norm(G))
-
-    G = zeros(l)
-    NLPModels.grad!(nlp, nlp.meta.x0, G)
-    println("should be the same norm ", norm(G))
+#     G = zeros(l)
+#     NLPModels.grad!(nlp, nlp.meta.x0, G)
+#     println("should be the same norm ", norm(G))
 
 
-end
+# end

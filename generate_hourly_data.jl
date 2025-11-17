@@ -281,45 +281,54 @@ function hourly_Ts()
         tracer_relaxation=false,
         N=1,
         α=2,
-        nx=1024,Ndays=10,
+        nx=128,
+        Ndays=10,
         initial_cond="ncfile",
-        initpath="./spinup_files/1024_spinup_noslip/"
+        initpath="./spinup_files/128_cginitcond_1year_postspinup_noforcing/"
     );
     halo = S_true.grid.halo
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    T11true = zeros(1024, 1024, 240)
-    T22true = zeros(1024, 1024, 240)
-    T12true = zeros(1025, 1025, 240)
+    T11truecg = zeros(128, 128, 240)
+    T22truecg = zeros(128, 128, 240)
+    T12truecg = zeros(129, 129, 240)
 
-    # cgstates = load_object("./offline_files/coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
-    hourlyhrstates = load_object("./spinup_files/1024_10days_postspinup_hourlysaves.jld2")
+    # hourlyhrstates = load_object("./spinup_files/1024_10days_postspinup_hourlysaves.jld2")
+    cgstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_102825.jld2")
 
     for j = 1:240
 
         # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
-        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hourlyhrstates[j].u,zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hourlyhrstates[j].v,zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+        uhrh = cat(zeros(T,127+2*halo,halo),cat(zeros(T,halo,128),cgstates[1][:,:,j],zeros(T,halo,128),dims=1),zeros(T,127+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,128+2*halo,halo),cat(zeros(T,halo,127),cgstates[2][:,:,j],zeros(T,halo,127),dims=1),zeros(T,128+2*halo,halo),dims=2)
 
         # moving to hr corner grid and cut off the halo
 
         uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
         vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
 
-        uhrT = zeros(1024,1024)
-        vhrT = zeros(1024,1024)
+        uhrT = zeros(128,128)
+        vhrT = zeros(128,128)
 
         ShallowWaters.Ixy!(uhrT,uhrq)
         ShallowWaters.Ixy!(vhrT,vhrq)
 
-        ubar = imfilter(uhrT, reflect(ker))
-        vbar = imfilter(vhrT, reflect(ker))
+        ubar = uhrT
+        vbar = vhrT
 
-        usqbar = imfilter(uhrT.^2, reflect(ker))
-        vsqbar = imfilter(vhrT.^2, reflect(ker))
+        # ubar = imfilter(uhrT, reflect(ker))
+        # vbar = imfilter(vhrT, reflect(ker))
 
+        usqbar = ubar.^2
+        vsqbar = vbar.^2
+
+        # usqbar = imfilter(uhrT.^2, reflect(ker))
+        # vsqbar = imfilter(vhrT.^2, reflect(ker))
+
+        uvbar = uhrq .* vhrq
+        ubarvbar = 
         uvbar = imfilter(uhrq .* vhrq, reflect(ker))
         ubarvbar = imfilter(uhrq, reflect(ker)) .* imfilter(vhrq, reflect(ker))
 
@@ -345,9 +354,34 @@ function coarsen_Ts()
     T22downsized = zeros(128, 128, 240)
     T12downsized = zeros(129, 129, 240)
     for j = 1:240
-        T11downsized[:,:,j] = (T11[8:8:end, 4:8:end,j] .+ T11[8:8:end, 5:8:end,j]) ./ 2
-        T22downsized[:,:,j] = (T22[4:8:end, 8:8:end,j] .+ T22[5:8:end, 8:8:end,j]) ./ 2
-        T12downsized[:,:,j] = (T12[4:8:end,4:8:end,j] .+ T12[5:8:end,5:8:end,j]) ./ 2
+        T11downsized[:,:,j] = (T11[4:8:end,4:8:end,j] .+ T11[5:8:end,5:8:end,j] .+ T11[4:8:end,5:8:end,j] .+ T11[5:8:end,4:8:end,j]) ./ 4
+        T22downsized[:,:,j] = (T22[4:8:end,4:8:end,j] .+ T22[5:8:end,5:8:end,j] .+ T22[4:8:end,5:8:end,j] .+ T22[5:8:end,4:8:end,j]) ./ 4
+        T12downsized[:,:,j] = T12[1:8:end,1:8:end,j]
     end
 
 end
+
+# prior way I computed the true Ts, hopefully the sameish as above
+
+# ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2")
+# vcg = load_object("./offline_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2")
+# uvbar = load_object("./offline_files/coarsegrained_hr_uvbar_t1_foroffline_101525.jld2")
+
+# ubar = ucg[1]
+# ubarsq = ucg[2]
+
+# vbar = vcg[1]
+# vbarsq = vcg[2]
+
+# ubarh = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubar,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2)
+# ubarhsq = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubarsq,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2)
+
+# vbarh = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbar,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2)
+# vbarhsq = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbarsq,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2)
+
+# uvbarh = cat(zeros(T,nx+2*haloη,haloη),cat(zeros(T,haloη,ny),uvbar,zeros(T,haloη,ny),dims=1),zeros(T,nx+2*haloη,haloη),dims=2)
+
+# T12_true = ShallowWaters.Iy(ubarh)[2:end-1,2:end-1] .* ShallowWaters.Ix(vbarh)[2:end-1,2:end-1] - ShallowWaters.Ixy(uvbarh)
+
+# T11_true = (ShallowWaters.Ixy(ShallowWaters.Iy(ubarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Iy(ubarhsq)[2:end-1,2:end-1])
+# T22_true = ShallowWaters.Ixy((ShallowWaters.Ix(vbarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Ix(vbarhsq)[2:end-1,2:end-1])
