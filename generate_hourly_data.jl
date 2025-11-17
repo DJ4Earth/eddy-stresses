@@ -266,7 +266,8 @@ end
 # computing and saving true tensors for hourly data
 function hourly_Ts()
 
-    S_true = ShallowWaters.model_setup(output=false,
+    T = Float64
+    S_true = ShallowWaters.model_setup(T=T; output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -325,6 +326,28 @@ function hourly_Ts()
         T11true[:,:,j] .= ubar .* ubar - usqbar
         T22true[:,:,j] .= vbar .* vbar - vsqbar
         T12true[:,:,j] .= ubarvbar - uvbar
+
+    end
+
+    return T11true, T22true, T12true
+
+end
+
+function coarsen_Ts()
+
+    Ts = load_object("./offline_files/true_Ts_hourlysaves_notcoarsened_T11T22T12_111025.jld2")
+
+    T11 = Ts[1]
+    T22 = Ts[2]
+    T12 = Ts[3]
+
+    T11downsized = zeros(128, 128, 240)
+    T22downsized = zeros(128, 128, 240)
+    T12downsized = zeros(129, 129, 240)
+    for j = 1:240
+        T11downsized[:,:,j] = (T11[8:8:end, 4:8:end,j] .+ T11[8:8:end, 5:8:end,j]) ./ 2
+        T22downsized[:,:,j] = (T22[4:8:end, 8:8:end,j] .+ T22[5:8:end, 8:8:end,j]) ./ 2
+        T12downsized[:,:,j] = (T12[4:8:end,4:8:end,j] .+ T12[5:8:end,5:8:end,j]) ./ 2
     end
 
 end
