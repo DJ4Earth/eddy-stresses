@@ -563,7 +563,6 @@ function NLPModels.grad!(model, param_guess, G)
         Duplicated(model, dmodel),
         Const(revolve)
     )[2]
-    println("Norm when running cpintegrate: ", J)
 
     # Get gradient
     current = 1
@@ -638,7 +637,7 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
 
     # hourly information
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825")
+    coarse_grained_hrstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
@@ -730,11 +729,11 @@ function run_multistate()
     end
 
     # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
-    param_guess = load_object("./offline_files/offlineresult_geluactivation_1e-5obj_300iterations_110525.jld2").solution
+    param_guess = load_object("./offline_files/results/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
-    ndays = 5
+    ndays = 1
     lower_bound = -10000
     upper_bound = 10000
     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess,lower_bound,upper_bound)
