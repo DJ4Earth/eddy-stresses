@@ -637,7 +637,8 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
     # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
     # hourly information
-    coarse_grained_hrstates = load_object("./offline_files/cgstates_downsized_hourly_tendays_uveta_102825.jld2")
+    # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
+    coarse_grained_hrstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
@@ -749,7 +750,6 @@ function run_multistate()
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-
     jldsave("online_fivedays_100iterations_8hourdata_result_200maxhistory.jld2", result=result)
 
     return nothing
@@ -797,7 +797,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
         write_checkpoints_period = 2274
     )
 
-    coarse_grained_hrstates = load_object("./cgstates_downsized_hourly_tendays_uveta_102825.jld2")
+    coarse_grained_hrstates = load_object("./hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]

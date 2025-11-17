@@ -1,0 +1,11 @@
+I ran the offline experiments with 5 snapshots, hourly
+
+The true Ts are precomputed using the coarse-grained, filtered high resolution states, and the snapshots being
+fed to the NN are also the same states. The offline problem seems to work really well, we see good decrease to the
+loss over the course of the optimization
+
+I'm going to stick with gelu as my activation function because having a smooth activation is helpful
+5 by 5 kernel, and 2 hidden layers each of size 25 (somewhat arbitrary)
+
+For input we only consider \zeta, D, and Dhat, there are no velocities being used as input
+overall there are ~36000 weights being tuned
