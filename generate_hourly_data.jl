@@ -165,13 +165,14 @@ function hourly_save_run(S_true)
         v0rhs = Diag.PrognosticVarsRHS.v .= v0
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S_true)
 
+        # if i ∈ 8*75:8*75:S_true.grid.nt
         if i ∈ 75:75:S_true.grid.nt
             temp = ShallowWaters.PrognosticVars{S_true.parameters.Tprog}(
                 ShallowWaters.remove_halo(u,v,η,sst,S_true)...)
-            # push!(hrstates, temp)
-            ufiltered[:,:,j] .= imfilter(temp.u, reflect(ker))
-            vfiltered[:,:,j] .= imfilter(temp.v, reflect(ker))
-            etafiltered[:,:,j] .= imfilter(temp.η, reflect(ker))
+            push!(hrstates, temp)
+            # ufiltered[:,:,j] .= imfilter(temp.u, reflect(ker))
+            # vfiltered[:,:,j] .= imfilter(temp.v, reflect(ker))
+            # etafiltered[:,:,j] .= imfilter(temp.η, reflect(ker))
             j+=1
         end
 
@@ -184,8 +185,8 @@ function hourly_save_run(S_true)
 
     end
 
-    # return hrstates
-    return [ufiltered, vfiltered, etafiltered]
+    return hrstates
+    # return [ufiltered, vfiltered, etafiltered]
 
 end
 
