@@ -77,7 +77,7 @@ end
 function for_enzyme(param_guess, state, SNN, T11, T22, T12)
 
     J = 0.0
-    for j = 1:5
+    for j = 3:3:240
         current = 1
         for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
             for layers in model[1]
@@ -145,7 +145,7 @@ function NLPModels.obj(model, param_guess)
 
     # adding up the difference for 5 different snapshots of the coarse-grained, hr states true Ts and 
     # the output from the NN
-    for j = 1:5
+    for j = 3:3:240
 
         current = 1
         for m in (model.SNN.Diag.CNNVars.model_Su, model.SNN.Diag.CNNVars.model_Sv)

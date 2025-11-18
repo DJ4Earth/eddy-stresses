@@ -217,7 +217,7 @@ function cpintegrate(chkp, scheme)::Float64
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
+    # chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
@@ -423,7 +423,7 @@ function integrate(chkp)::Float64
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
+    # chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
@@ -485,7 +485,6 @@ function NLPModels.obj(model, param_guess)
     end
 
     model.J = integrate(model)
-    println("Norm when running integrate: ", model.J)
 
     return model.J
 
@@ -716,17 +715,17 @@ function run_multistate()
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    param_guess = zeros(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
-    current = 1
-    for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
-        for layers in model[1]
-            for array in layers
-                    sz = prod(size(array))
-                    param_guess[current:(current + sz - 1)] .= vec(array)
-                    current += sz
-            end
-        end
-    end
+    # param_guess = zeros(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
+    # current = 1
+    # for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
+    #     for layers in model[1]
+    #         for array in layers
+    #                 sz = prod(size(array))
+    #                 param_guess[current:(current + sz - 1)] .= vec(array)
+    #                 current += sz
+    #         end
+    #     end
+    # end
 
     # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
     param_guess = load_object("./offline_files/results/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution

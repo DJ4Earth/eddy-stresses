@@ -118,19 +118,6 @@ function load_and_create_models()
     Strainednn_states.Prog.v .= copy(initial_cond[2])
     Strainednn_states.Prog.η .= copy(initial_cond[3])
 
-    # param_guess = result.minimizer
-    # param_guess = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
-    # current = 1
-    # for model in (Strainednn_states.Diag.NNVars.model_diag, Strainednn_states.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
-
     param_guess = load_object("./result_offline_onesnapshot_muchsmallernn_newoptimizer_082925.jld2").solution
     current = 1
     for model in (Strainednn_states.Diag.CNNVars.model_Su, Strainednn_states.Diag.CNNVars.model_Sv)
