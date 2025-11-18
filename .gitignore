@@ -8,7 +8,6 @@
 /spinup_files
 /for_video
 /technicalpaper_datafiles
-/old_files
-/run_0001
+/notusinganymore
 
 run_experiment.jl

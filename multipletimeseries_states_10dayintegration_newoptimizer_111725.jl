@@ -901,3 +901,15 @@ end
 #     eta = reshape(result.minimizer[34585:end-1], 130, 130),
 #     Fx0 = result.minimizer[end]
 # )
+
+
+temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+                S.Prog.u,
+                S.Prog.v,
+                S.Prog.η,
+                S.Prog.sst,
+                S
+            )...)
+fig = Figure();
+ax, hm = heatmap(fig[1,1],temp.v, colormap=:balance)
+Colorbar(fig[1,2], hm)

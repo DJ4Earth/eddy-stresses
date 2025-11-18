@@ -1,11 +1,7 @@
 """
 Mostly figure generation, I just wanted to be able to run include("technical_paper.jl")
-without all of this also running. The function deserialize opens any saved checkpoints/deprecated now
+without all of this also running.
 """
-function deserialize(x)
-    s = IOBuffer(x)
-    Serialization.deserialize(s)
-end
 
 function load_and_create_models()
 
@@ -24,10 +20,11 @@ function load_and_create_models()
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
 
-    Ndays = 10
+    Ndays = 365
     initial_cond = [u0, v0, eta0]
-
-    Snoparam = ShallowWaters.model_setup(output=false,
+    Snoparam = ShallowWaters.model_setup(T=Float64;
+        output=true,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -53,7 +50,9 @@ function load_and_create_models()
     Snoparam.Prog.v .= copy(initial_cond[2])
     Snoparam.Prog.η .= copy(initial_cond[3])
 
-    Snn = ShallowWaters.model_setup(output=false,
+    Pnn = ShallowWaters.Parameter(T=Float64;
+        output=true,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -75,24 +74,14 @@ function load_and_create_models()
         nx=128,
         Ndays=Ndays
     )
+    Snn = ShallowWaters.model_setup(Pnn)
     Snn.Prog.u .= copy(initial_cond[1])
     Snn.Prog.v .= copy(initial_cond[2])
     Snn.Prog.η .= copy(initial_cond[3])
 
-    # param_guess = result.minimizer
-    # # param_guess = load_object("./initialweights_standarddeviation1_justrandomnumbers.jld2")
-    # current = 1
-    # for model in (Snn.Diag.NNVars.model_diag, Snn.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
-
-    Strainednn_states = ShallowWaters.model_setup(output=false,
+    Pnnrelu = ShallowWaters.Parameter(T=Float64;
+        output=true,
+        output_dt=12,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -114,23 +103,27 @@ function load_and_create_models()
         nx=128,
         Ndays=Ndays
     )
-    Strainednn_states.Prog.u .= copy(initial_cond[1])
-    Strainednn_states.Prog.v .= copy(initial_cond[2])
-    Strainednn_states.Prog.η .= copy(initial_cond[3])
+    Snnrelu = ShallowWaters.model_setup(Pnnrelu)
+    Snnrelu.Prog.u .= copy(initial_cond[1])
+    Snnrelu.Prog.v .= copy(initial_cond[2])
+    Snnrelu.Prog.η .= copy(initial_cond[3])
 
-    param_guess = load_object("./result_offline_onesnapshot_muchsmallernn_newoptimizer_082925.jld2").solution
+    param_guessrelu = load_object("./offline_files/results/offlineresult_workingresults_3-25-25_1e-3objective_relu_activation.jld2").solution
     current = 1
-    for model in (Strainednn_states.Diag.CNNVars.model_Su, Strainednn_states.Diag.CNNVars.model_Sv)
+    for model in (Snnrelu.Diag.CNNVars.model_Su, Snnrelu.Diag.CNNVars.model_Sv)
         for layers in model[1]
             for array in layers
                     sz = prod(size(array))
-                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    array .= reshape(param_guessrelu[current:(current + sz - 1)], size(array)...)
                     current += sz
             end
         end
     end
 
-    Strainednn_kespec = ShallowWaters.model_setup(output=false,
+    Pnngelu = ShallowWaters.Parameter(
+        T=Float32;
+        output=true,
+        output_dt=12,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -152,113 +145,27 @@ function load_and_create_models()
         nx=128,
         Ndays=Ndays
     )
-    Strainednn_kespec.Prog.u .= copy(initial_cond[1])
-    Strainednn_kespec.Prog.v .= copy(initial_cond[2])
-    Strainednn.Prog.η .= copy(initial_cond[3])
+    Snngelu = ShallowWaters.model_setup(Pnngelu)
+    Snngelu.Prog.u .= copy(initial_cond[1])
+    Snngelu.Prog.v .= copy(initial_cond[2])
+    Snngelu.Prog.η .= copy(initial_cond[3])
 
-    # param_guess = result.minimizer
-    param_guess = load_object("./tuned_weights/result_kespec_tendays_dailydata_imagefiltering_5iterationsLBFGS_072225.jld2").minimizer
+    param_guessgelu = load_object("./offline_files/results/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution
     current = 1
-    for model in (Strainednn_kespec.Diag.NNVars.model_diag, Strainednn_kespec.Diag.NNVars.model_offdiag)
+    for model in (Snngelu.Diag.CNNVars.model_Su, Snngelu.Diag.CNNVars.model_Sv)
         for layers in model[1]
             for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
+                    sz = prod(size(array))
+                    array .= reshape(param_guessgelu[current:(current + sz - 1)], size(array)...)
+                    current += sz
             end
         end
     end
 
-    Strainednn_pd = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
-    Strainednn_pd.Prog.u .= copy(initial_cond[1])
-    Strainednn_pd.Prog.v .= copy(initial_cond[2])
-    Strainednn_pd.Prog.η .= copy(initial_cond[3])
-
-    # param_guess = result.minimizer
-    param_guess = load_object("./tuned_weights/result_percentdiff_tendays_dailydata_imagefiltering_10iterationsLBFGS_072225.jld2").minimizer
-    current = 1
-    for model in (Strainednn_pd.Diag.NNVars.model_diag, Strainednn_pd.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
-    end
-
-    Strainednn_pd65 = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
-    Strainednn_pd65.Prog.u .= copy(initial_cond[1])
-    Strainednn_pd65.Prog.v .= copy(initial_cond[2])
-    Strainednn_pd65.Prog.η .= copy(initial_cond[3])
-
-    # param_guess = result.minimizer
-    param_guess = load_object("./tuned_weights/result_percentdiff_imagefiltering_dailydata_truncatingat65_10days_10iterationsLBFGS_072225.jld2").minimizer
-    current = 1
-    for model in (Strainednn_pd65.Diag.NNVars.model_diag, Strainednn_pd65.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
-    end
-
-    # states_nn = save_states(Snn) # untrained
-    # states_noparam = save_states(Snoparam)
-    # states_trainednn_kespec = save_states(Strainednn_kespec)
-    states_trainednn_states = save_states(Strainednn_states)
-    # states_trainednn_pd = save_states(Strainednn_pd)
-    # states_trainednn_pd65 = save_states(Strainednn_pd65)
-
-    states_nn = load_object("./spinup_files/nnresult_nottrained_oneyearintegration_dailysaves_072325.jld2")
-    states_noparam = load_object("./spinup_files/output_noparam_oneyearintegration_dailysaves_072325.jld2")
-    states_trainednn_kespec = load_object("./spinup_files/nnresult_trained__kespec_oneyearintegration_dailysaves_072325.jld2")
-    # states_trainednn_states = load_object("./spinup_files/nnresult_trained_stateloss_oneyearintegration_dailysaves_072325.jld2")
-    states_trainednn_pd = load_object("./spinup_files/nnresult_trained_kespecpd_oneyearintegration_dailysaves_072325.jld2")
+    states_noparam = ShallowWaters.time_integration(Snoparam);
+    states_nn = ShallowWaters.time_integration(Snn);
+    states_relu = ShallowWaters.time_integration(Snnrelu);
+    states_gelu = ShallowWaters.time_integration(Snngelu);
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
     # imfilter(hru[:,:,j], reflect(ker))
