@@ -16,6 +16,22 @@ function load_and_create_models()
     vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
     etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
 
+    ugelu = ncread("./results/geluofflineweights/u.nc", "u")
+    vgelu = ncread("./results/geluofflineweights/v.nc", "v")
+    etagelu = ncread("./results/geluofflineweights/eta.nc", "eta")
+
+    urelu = ncread("./results/reluofflineweights/u.nc", "u")
+    vrelu = ncread("./results/reluofflineweights/v.nc", "v")
+    etarelu = ncread("./results/reluofflineweights/eta.nc", "eta")
+
+    unoparam = ncread("./results/noparameterization/u.nc", "u")
+    vnoparam = ncread("./results/noparameterization/v.nc", "v")
+    etanoparam = ncread("./results/noparameterization/eta.nc", "eta")
+
+    unn = ncread("./results/noparameterization/u.nc", "u")
+    vnn = ncread("./results/noparameterization/v.nc", "v")
+    etann = ncread("./results/noparameterization/eta.nc", "eta")
+
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
     eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
@@ -81,7 +97,7 @@ function load_and_create_models()
 
     Pnnrelu = ShallowWaters.Parameter(T=Float64;
         output=true,
-        output_dt=12,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -108,7 +124,7 @@ function load_and_create_models()
     Snnrelu.Prog.v .= copy(initial_cond[2])
     Snnrelu.Prog.η .= copy(initial_cond[3])
 
-    param_guessrelu = load_object("./offline_files/results/offlineresult_workingresults_3-25-25_1e-3objective_relu_activation.jld2").solution
+    param_guessrelu = load_object("./results/weights/offlineresult_workingresults_3-25-25_1e-3objective_relu_activation.jld2").solution
     current = 1
     for model in (Snnrelu.Diag.CNNVars.model_Su, Snnrelu.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -123,7 +139,7 @@ function load_and_create_models()
     Pnngelu = ShallowWaters.Parameter(
         T=Float32;
         output=true,
-        output_dt=12,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -150,7 +166,7 @@ function load_and_create_models()
     Snngelu.Prog.v .= copy(initial_cond[2])
     Snngelu.Prog.η .= copy(initial_cond[3])
 
-    param_guessgelu = load_object("./offline_files/results/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution
+    param_guessgelu = load_object("./results/weights/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution
     current = 1
     for model in (Snngelu.Diag.CNNVars.model_Su, Snngelu.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -211,7 +227,7 @@ function plots()
 
     # cg, zb, nn, no param
     fig = Figure(size=(900, 1000), fontsize=15);
-    t = 10
+    t = 366
     uhrcg = imfilter(uhr[:,:,t], reflect(ker))
     vhrcg = imfilter(vhr[:,:,t], reflect(ker))
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
@@ -226,7 +242,7 @@ function plots()
 
     ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_noparam[30].u[:,1:end-1].^2 .+ states_noparam[30].v[1:end-1,:].^2),
+    (unoparam[:,1:end-1,end].^2 .+ vnoparam[1:end-1,:,end].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E, no closure"),
     colorrange=(0,
@@ -246,7 +262,7 @@ function plots()
 
     ax1, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_nn[t-1].u[:,1:end-1].^2 .+ states_nn[t-1].v[1:end-1,:].^2),
+    (unn[:,1:end-1,end].^2 .+ vnn[1:end-1,:,end].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E with untrained NN closure"),
     colorrange=(0,
@@ -256,7 +272,7 @@ function plots()
 
     ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_offline[t-1].u[:,1:end-1].^2 .+ states_offline[t-1].v[1:end-1,:].^2),
+    (urelu[:,1:end-1,end].^2 .+ vrelu[1:end-1,:,end].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E with ''offline`` NN closure"),
     colorrange=(0,
@@ -266,7 +282,7 @@ function plots()
 
     ax1, hm6 = heatmap(fig[3,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (states_trainednn_states[t-1].u[:,1:end-1].^2 .+ states_trainednn_states[t-1].v[1:end-1,:].^2),
+    (ugelu[:,1:end-1,end].^2 .+ vgelu[1:end-1,:,end].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E with state tuned NN"),
     colorrange=(0,
