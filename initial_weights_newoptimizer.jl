@@ -52,7 +52,7 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     end
 
     # these are the filtered, coarsegrained high resolution states
-    filteredstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825.jld2")
+    filteredstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_111925.jld2")
     # these are the true T values, computed from the above
     true_Ts = load_object("./offline_files/true_Ts_hourlysaves_filteredandcg_T11T22T12_beginsatonehour_111725.jld2")
 
