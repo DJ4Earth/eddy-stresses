@@ -190,6 +190,27 @@ function hourly_save_run(S_true)
 
 end
 
+function filter()
+
+    u = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/u.nc", "u")
+    v = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/v.nc", "v")
+    eta = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/eta.nc", "eta")
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    ufiltered = zeros(1023, 1024, 241)
+    vfiltered = zeros(1024, 1023, 241)
+    etafiltered = zeros(1024, 1024, 241)
+
+    for j = 1:241
+        ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
+        vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
+        etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
+    end
+
+    jldsave("1024_filtered_uveta_imfilter_10days_postspinup_hourlysaves_111925.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+
+end
 
 function run()
 
@@ -234,7 +255,7 @@ end
 
 function downsize()
 
-    cgstates = load_object("./offline_files/hrstates_filtered_uveta_10days_hourlysaves_imfilter_beginsatonehour_102825.jld2")
+    cgstates = load_object("./offline_files/1024_filtered_uveta_imfilter_10days_postspinup_hourlysaves_111925.jld2")
 
     ucg = cgstates[1]
     vcg = cgstates[2]
@@ -289,19 +310,22 @@ function hourly_Ts()
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    T11true = zeros(1024, 1024, 240)
-    T22true = zeros(1024, 1024, 240)
-    T12true = zeros(1025, 1025, 240)
+    T11true = zeros(1024, 1024, 241)
+    T22true = zeros(1024, 1024, 241)
+    T12true = zeros(1025, 1025, 241)
 
-    hourlyhrstates = load_object("./spinup_files/1024_10days_postspinup_hourlysaves.jld2")
+    u = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/u.nc", "u")
+    v = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/v.nc", "v")
+    eta = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/eta.nc", "eta")
+
     # cgstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_111925.jld2")
 
-    for j = 1:240
+    for j = 1:241
 
         # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
-        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hourlyhrstates[j].u,zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hourlyhrstates[j].v,zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),u[:,:,j],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),v[:,:,j],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
 
         # moving to hr corner grid and cut off the halo
 
@@ -342,16 +366,16 @@ end
 
 function coarsen_Ts()
 
-    Ts = load_object("./offline_files/true_Ts_hourlysaves_notcoarsened_T11T22T12_111025.jld2")
+    Ts = load_object("./offline_files/trueTs_onlyfiltered_hourlysaves_T11T22T12_111925.jld2")
 
     T11 = Ts[1]
     T22 = Ts[2]
     T12 = Ts[3]
 
-    T11downsized = zeros(128, 128, 240)
-    T22downsized = zeros(128, 128, 240)
-    T12downsized = zeros(129, 129, 240)
-    for j = 1:240
+    T11downsized = zeros(128, 128, 241)
+    T22downsized = zeros(128, 128, 241)
+    T12downsized = zeros(129, 129, 241)
+    for j = 1:241
         T11downsized[:,:,j] = (T11[4:8:end,4:8:end,j] .+ T11[5:8:end,5:8:end,j] .+ T11[4:8:end,5:8:end,j] .+ T11[5:8:end,4:8:end,j]) ./ 4
         T22downsized[:,:,j] = (T22[4:8:end,4:8:end,j] .+ T22[5:8:end,5:8:end,j] .+ T22[4:8:end,5:8:end,j] .+ T22[5:8:end,4:8:end,j]) ./ 4
         T12downsized[:,:,j] = T12[1:8:end,1:8:end,j]

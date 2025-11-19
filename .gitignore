@@ -1,6 +1,7 @@
 *.gif
 *.err
 *.out
+*.txt
 *.bash
 *.h5
 *.jld2
