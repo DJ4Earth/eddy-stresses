@@ -166,7 +166,7 @@ function hourly_save_run(S_true)
         ShallowWaters.tracer!(i,u0rhs,v0rhs,Prog,Diag,S_true)
 
         # if i ∈ 8*75:8*75:S_true.grid.nt
-        if i ∈ 75:75:S_true.grid.nt
+        if i ∈ 225:224:S_true.grid.nt
             temp = ShallowWaters.PrognosticVars{S_true.parameters.Tprog}(
                 ShallowWaters.remove_halo(u,v,η,sst,S_true)...)
             push!(hrstates, temp)
@@ -234,7 +234,7 @@ end
 
 function downsize()
 
-    cgstates = load_object("./coarsegrained_hrstates_uveta_10days_imfilter_102825.jld2")
+    cgstates = load_object("./offline_files/hrstates_filtered_uveta_10days_hourlysaves_imfilter_beginsatonehour_102825.jld2")
 
     ucg = cgstates[1]
     vcg = cgstates[2]

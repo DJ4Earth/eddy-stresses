@@ -203,7 +203,7 @@ function NLPModels.grad!(model, param_guess, G)
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
-       zb_filtered=true,
+        zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=true,
         N=1,

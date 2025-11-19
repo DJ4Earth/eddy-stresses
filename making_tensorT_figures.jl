@@ -1,8 +1,8 @@
 function compute_Ts(j, Ndays)
 
-    ulr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/u.nc", "u")
-    vlr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/v.nc", "v")
-    etalr = ncread("./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825/eta.nc", "eta")
+    ulr = ncread("./spinup_files/128_cginitcond_1year_postspinup_noforcing/u.nc", "u")
+    vlr = ncread("./spinup_files/128_cginitcond_1year_postspinup_noforcing/v.nc", "v")
+    etalr = ncread("./spinup_files/128_cginitcond_1year_postspinup_noforcing/eta.nc", "eta")
 
     Ppred = ShallowWaters.Parameter(T=Float64;
         output=false,
@@ -27,7 +27,7 @@ function compute_Ts(j, Ndays)
         nx=128,
         Ndays=Ndays,
         initial_cond="ncfile",
-        initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
+        initpath="./spinup_files/128_cginitcond_1year_postspinup_noforcing/",
         init_starti=1
     );
     Spred = ShallowWaters.model_setup(Ppred);
@@ -55,19 +55,24 @@ function compute_Ts(j, Ndays)
         nx=128,
         Ndays=Ndays,
         initial_cond="ncfile",
-        initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
+        initpath="./spinup_files/128_cginitcond_1year_postspinup_noforcing/",
         init_starti=1
     );
     SNN = ShallowWaters.model_setup(PNN);
 
-    u, v, _ = ShallowWaters.add_halo(ulr[:,:,j], vlr[:,:,j], etalr[:,:,j], SNN)
-    snapshot = [u,v]
+    cgstates = load_object("./offline_files/hrstates_filtered_uveta_10days_hourlysaves_imfilter_beginsatonehour_102825.jld2")
+    ucg = cgstates[1]
+    vcg = cgstates[2]
+    etacg = cgstates[3]
 
-    # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution;
-    # param_guess = load_object("./offline_files/offlineresult_geluactivation_1e-5obj_300iterations_110525.jld2").solution;
-    # param_guess = load_objecT("./offline_files/offline")
-    # param_guess2 = zeros(Lux.parameterlength(SNN.Diag.CNNVars.model_Su) + Lux.parameterlength(SNN.Diag.CNNVars.model_Sv))
-    param_guess = load_object("./result_optim_toview.jld2").minimizer;
+    temp1 = (ucg[8:8:end, 4:8:end, j] .+ ucg[8:8:end, 5:8:end, j]) ./ 2
+    temp2 = 0.0.*(vcg[4:8:end, 8:8:end, j] .+ vcg[5:8:end, 8:8:end, j]) ./ 2
+    temp3 = (etacg[4:8:end,4:8:end,j] .+ etacg[5:8:end,5:8:end,j] .+ etacg[4:8:end,5:8:end,j] .+ etacg[5:8:end,4:8:end,j]) ./ 4
+
+    u, v, eta = ShallowWaters.add_halo(temp1, temp2, temp3, zeros(128,128), SNN)
+    snapshot = [u, v]
+
+    param_guess = load_object("./results/weights/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution;
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -80,10 +85,10 @@ function compute_Ts(j, Ndays)
         end
     end
 
-    ShallowWaters.time_integration(Spred)
-    ShallowWaters.time_integration(SNN)
-    # ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], Spred);
-    # ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], SNN);
+    # ShallowWaters.time_integration(Spred)
+    # ShallowWaters.time_integration(SNN)
+    ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], Spred);
+    ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], SNN);
 
     T11_pred = Spred.Diag.CNNVars.T11;
     T12_pred = Spred.Diag.CNNVars.T12;
@@ -92,6 +97,8 @@ function compute_Ts(j, Ndays)
     T11_NN = SNN.Diag.CNNVars.T11;
     T12_NN = SNN.Diag.CNNVars.T12;
     T22_NN = SNN.Diag.CNNVars.T22;
+
+    true_Ts = load_object("./offline_files/true_Ts_hourlysaves_filteredandcg_T11T22T12_beginsatonehour_111725.jld2")
 
     PZB = ShallowWaters.Parameter(T=Float64;
         output=false,

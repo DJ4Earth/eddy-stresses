@@ -97,7 +97,7 @@ function load_and_create_models()
 
     Pnnrelu = ShallowWaters.Parameter(T=Float64;
         output=true,
-        output_dt=8,
+        output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -139,7 +139,7 @@ function load_and_create_models()
     Pnngelu = ShallowWaters.Parameter(
         T=Float32;
         output=true,
-        output_dt=8,
+        output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -227,7 +227,7 @@ function plots()
 
     # cg, zb, nn, no param
     fig = Figure(size=(900, 1000), fontsize=15);
-    t = 366
+    t = 30
     uhrcg = imfilter(uhr[:,:,t], reflect(ker))
     vhrcg = imfilter(vhr[:,:,t], reflect(ker))
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
@@ -272,7 +272,7 @@ function plots()
 
     ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (urelu[:,1:end-1,end].^2 .+ vrelu[1:end-1,:,end].^2),
+    (urelu[:,1:end-1,1].^2 .+ vrelu[1:end-1,:,1].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E with ''offline`` NN closure"),
     colorrange=(0,
@@ -289,6 +289,46 @@ function plots()
     maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
     ));
     Colorbar(fig[3,4], hm1)
+
+    # spatially averaged energy over integration (all integrated for one year)
+
+    relu = []
+    gelu = []
+    noparam = []
+    nn = []
+    zb = []
+    cghr = []
+    for j = 1:732
+        push!(relu, sum(urelu[:,1:end-1,j].^2 .+ vrelu[1:end-1,:,j].^2))
+        push!(gelu, sum(ugelu[:,1:end-1,j].^2 .+ vgelu[1:end-1,:,j].^2))
+    end
+    for j = 1:366
+        uhrcg = imfilter(uhr[:,:,j], reflect(ker))
+        vhrcg = imfilter(vhr[:,:,j], reflect(ker))
+        ucgf = (uhrcg[8:8:end, 4:8:end] + uhrcg[8:8:end, 5:8:end]) ./ 2
+        vcgf = (vhrcg[4:8:end, 8:8:end] + vhrcg[5:8:end, 8:8:end]) ./ 2
+        push!(zb, sum(u_zb[:,1:end-1,j].^2 .+ v_zb[1:end-1,:,j].^2))
+        push!(cghr, sum(ucgf[:,1:end-1].^2 .+ vcgf[1:end-1,:].^2))
+    end
+    for j = 1:1107
+        push!(nn, sum(unn[:,1:end-1,j].^2 .+ vnn[1:end-1,:,j].^2))
+        push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
+    end
+
+    fig = Figure(size=(1000, 500), fontsize=15);
+    lines(fig[1,1], LinRange(0,365, 367), cghr, label="Coarse-grained 3.75km resolution", 
+        axis=(
+            xlabel="Day",
+            ylabel="Energy",
+            title="Spatially averaged energy"
+        )
+    )
+    lines!(fig[1,1], LinRange(0, 365, 1107), nn, label="Untrained NN closure")
+    lines!(fig[1,1], LinRange(0, 365, 1107), noparam, label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0,365, 367), zb, label="ZB closure")
+    lines!(fig[1,1], LinRange(0, 365, 732), relu, label="NN closure, offline with relu")
+    lines!(fig[1,1], LinRange(0, 365, 732), gelu, label="NN closure, offline with gelu")
+    axislegend(position = (0,0))
 
     # comparing trained NN results
 

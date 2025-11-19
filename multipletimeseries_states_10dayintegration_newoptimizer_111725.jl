@@ -474,15 +474,19 @@ function NLPModels.obj(model, param_guess)
     model.S.Prog.η .= initial_cond[3]
 
     current = 1
+    temp = 0.0
     for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
             for array in layers
                 sz = prod(size(array))
+                temp += norm(param_guess[current:(current + sz - 1)])
                 array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
                 current += sz
             end
         end
     end
+
+    println("Norm of the parameter in the model: ", temp)
 
     model.J = integrate(model)
 
@@ -711,31 +715,33 @@ function run_multistate()
         α=2,
         nx=128,
         Ndays=Ndays
-    )
+    );
 
-    Slr = ShallowWaters.model_setup(Plr)
+    Slr1 = ShallowWaters.model_setup(Plr);
+    Slr2 = ShallowWaters.model_setup(Plr);
 
-    # param_guess = zeros(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
-    # current = 1
-    # for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
-    #     for layers in model[1]
-    #         for array in layers
-    #                 sz = prod(size(array))
-    #                 param_guess[current:(current + sz - 1)] .= vec(array)
-    #                 current += sz
-    #         end
-    #     end
-    # end
+    param_guess1 = zeros(Lux.parameterlength(Slr1.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr1.Diag.CNNVars.model_Sv));
+    param_guess2 = load_object("./results/weights/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution;
+    current = 1
+    for model in (Slr1.Diag.CNNVars.model_Su, Slr1.Diag.CNNVars.model_Sv)
+        for layers in model[1]
+            for array in layers
+                    sz = prod(size(array))
+                    param_guess1[current:(current + sz - 1)] .= vec(array)
+                    current += sz
+            end
+        end
+    end
 
-    # param_guess = load_object("./offline_files/offlineresult_3-25-25_1e-3objective_relu_activation.jld2").solution
-    param_guess = load_object("./offline_files/results/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
     ndays = 1
     lower_bound = -10000
     upper_bound = 10000
-    nlp = multistatenlp_Chkp{Float64}(ndays,param_guess,lower_bound,upper_bound)
+    nlp1 = multistatenlp_Chkp{Float64}(ndays,param_guess1,lower_bound,upper_bound);
+    nlp2 = multistatenlp_Chkp{Float64}(ndays,param_guess2,lower_bound,upper_bound);
+
 
     # qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
@@ -903,13 +909,13 @@ end
 # )
 
 
-temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
-                S.Prog.u,
-                S.Prog.v,
-                S.Prog.η,
-                S.Prog.sst,
-                S
-            )...)
-fig = Figure();
-ax, hm = heatmap(fig[1,1],temp.v, colormap=:balance)
-Colorbar(fig[1,2], hm)
+# temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+#                 S.Prog.u,
+#                 S.Prog.v,
+#                 S.Prog.η,
+#                 S.Prog.sst,
+#                 S
+#             )...)
+# fig = Figure();
+# ax, hm = heatmap(fig[1,1],temp.v, colormap=:balance)
+# Colorbar(fig[1,2], hm)
