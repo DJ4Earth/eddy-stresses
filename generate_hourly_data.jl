@@ -300,8 +300,8 @@ function hourly_Ts()
 
         # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
-        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hourlyhrstates[1][:,:,j],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hourlyhrstates[2][:,:,j],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),hourlyhrstates[j].u,zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),hourlyhrstates[j].v,zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
 
         # moving to hr corner grid and cut off the halo
 
