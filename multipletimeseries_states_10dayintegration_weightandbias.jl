@@ -4,7 +4,6 @@
 mutable struct multistate_Chkp{T}
     S::ShallowWaters.ModelSetup{T,T}        # model structure
     initial_cond::Array{Array{T,2}, 1}
-    # data::Array{Array{Array{T,2}, 1}, 1}    # computed data
     data::Array{Array{T, 3}, 1}
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
@@ -202,7 +201,7 @@ function multistate_checkpointed_integration(chkp, scheme)
             chkp.avg_eta += temp.η
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
             chkp.j += 1
 
@@ -219,7 +218,7 @@ function multistate_checkpointed_integration(chkp, scheme)
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
+    # chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
 
     return chkp.J
@@ -413,7 +412,7 @@ function multistate_integration(chkp)
             chkp.avg_eta += temp.η
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / 127*128 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / 127*128
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
             chkp.j += 1
 
@@ -430,7 +429,7 @@ function multistate_integration(chkp)
     end
 
     # add the time-averaged ssh to the loss function
-    chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
+    # chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
@@ -654,22 +653,20 @@ function run_multistate()
     # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
     # 8-hourly information
-    coarse_grained_hrstates = load_object("./offline_files/cgstates_downsized_hourly_tendays_uveta_102825.jld2")
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:75:Slr.grid.nt
-    data = [uhrcg[:,:,8:8:end], vhrcg[:,:,8:8:end], etahrcg[:,:,8:8:end]]
+    data_steps = 75:74:Slr.grid.nt
+    data = [uhrcg[:,:,9:8:end], vhrcg[:,:,9:8:end], etahrcg[:,:,9:8:end]]
 
-    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
+    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
     initial_cond = [u0, v0, eta0]
 
     model = multistate_Chkp{T}(Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
-    param_guess = load_object("./offline_files/offlineresult_geluactivation_1e-5obj_300iterations_110525.jld2").solution
+    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
 
     result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]

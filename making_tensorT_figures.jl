@@ -60,19 +60,15 @@ function compute_Ts(j, Ndays)
     );
     SNN = ShallowWaters.model_setup(PNN);
 
-    cgstates = load_object("./offline_files/hrstates_filtered_uveta_10days_hourlysaves_imfilter_beginsatonehour_102825.jld2")
+    cgstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
     ucg = cgstates[1]
     vcg = cgstates[2]
     etacg = cgstates[3]
 
-    temp1 = (ucg[8:8:end, 4:8:end, j] .+ ucg[8:8:end, 5:8:end, j]) ./ 2
-    temp2 = 0.0.*(vcg[4:8:end, 8:8:end, j] .+ vcg[5:8:end, 8:8:end, j]) ./ 2
-    temp3 = (etacg[4:8:end,4:8:end,j] .+ etacg[5:8:end,5:8:end,j] .+ etacg[4:8:end,5:8:end,j] .+ etacg[5:8:end,4:8:end,j]) ./ 4
-
-    u, v, eta = ShallowWaters.add_halo(temp1, temp2, temp3, zeros(128,128), SNN)
+    u, v, eta = ShallowWaters.add_halo(ucg[:,:,j], vcg[:,:,j], etacg[:,:,j], zeros(128,128), SNN)
     snapshot = [u, v]
 
-    param_guess = load_object("./results/weights/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -85,8 +81,6 @@ function compute_Ts(j, Ndays)
         end
     end
 
-    # ShallowWaters.time_integration(Spred)
-    # ShallowWaters.time_integration(SNN)
     ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], Spred);
     ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], SNN);
 
@@ -97,8 +91,6 @@ function compute_Ts(j, Ndays)
     T11_NN = SNN.Diag.CNNVars.T11;
     T12_NN = SNN.Diag.CNNVars.T12;
     T22_NN = SNN.Diag.CNNVars.T22;
-
-    true_Ts = load_object("./offline_files/true_Ts_hourlysaves_filteredandcg_T11T22T12_beginsatonehour_111725.jld2")
 
     PZB = ShallowWaters.Parameter(T=Float64;
         output=false,
@@ -140,29 +132,11 @@ function compute_Ts(j, Ndays)
     halo = SZB.grid.halo
     haloη = SZB.grid.haloη
 
-    ucg = load_object("./offline_files/coarsegrained_hr_ubar_ubarsq_t1_foroffline_101525.jld2");
-    vcg = load_object("./offline_files/coarsegrained_hr_vbar_vbarsq_t1_foroffline_101525.jld2");
-    uvbar = load_object("./offline_files/coarsegrained_hr_uvbar_t1_foroffline_101525.jld2");
+    true_Ts = load_object("./offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
 
-    ubar = ucg[1];
-    ubarsq = ucg[2];
-
-    vbar = vcg[1];
-    vbarsq = vcg[2];
-
-    T = Float64
-    ubarh = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubar,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2);
-    ubarhsq = cat(zeros(T,nux+2*halo,halo),cat(zeros(T,halo,nuy),ubarsq,zeros(T,halo,nuy),dims=1),zeros(T,nux+2*halo,halo),dims=2);
-
-    vbarh = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbar,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2);
-    vbarhsq = cat(zeros(T,nvx+2*halo,halo),cat(zeros(T,halo,nvy),vbarsq,zeros(T,halo,nvy),dims=1),zeros(T,nvx+2*halo,halo),dims=2);
-
-    uvbarh = cat(zeros(T,nx+2*haloη,haloη),cat(zeros(T,haloη,ny),uvbar,zeros(T,haloη,ny),dims=1),zeros(T,nx+2*haloη,haloη),dims=2);
-
-    T12_true = ShallowWaters.Iy(ubarh)[2:end-1,2:end-1] .* ShallowWaters.Ix(vbarh)[2:end-1,2:end-1] - ShallowWaters.Ixy(uvbarh);
-
-    T11_true = (ShallowWaters.Ixy(ShallowWaters.Iy(ubarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Iy(ubarhsq)[2:end-1,2:end-1]);
-    T22_true = ShallowWaters.Ixy((ShallowWaters.Ix(vbarh)[2:end-1,2:end-1])).^2 - ShallowWaters.Ixy(ShallowWaters.Ix(vbarhsq)[2:end-1,2:end-1]);
+    T11_true = true_Ts[1][:,:,j];
+    T22_true = true_Ts[2][:,:,j];
+    T12_true = true_Ts[3][:,:,j];
 
     ζD_filtered = SZB.Diag.ZBVars.ζD_filtered;
     ζDhat_filtered = SZB.Diag.ZBVars.ζDhat_filtered;
@@ -202,13 +176,13 @@ PZB = ShallowWaters.Parameter(T=Float64;
 );
 SZB = ShallowWaters.model_setup(PZB);
 
-# snapshot to use, can be anything within a one year integration
-j = 2
+# snapshot to use, can be anything within j = 3:3:241
+# these are the values the offline weights were trained on
 Ndays = 1
 T11_true, T12_true, T22_true, ζD_filtered, ζDhat_filtered, trace_filtered, T11_NN, T12_NN, T22_NN, T11_pred, T12_pred, T22_pred = compute_Ts(j, Ndays);
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
-## "True" versus NN T's
+## True versus NN T's
 
 fig = Figure(fontsize = 15,size=(900,450));
 

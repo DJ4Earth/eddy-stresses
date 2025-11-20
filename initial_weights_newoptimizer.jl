@@ -52,9 +52,9 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     end
 
     # these are the filtered, coarsegrained high resolution states
-    filteredstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_111925.jld2")
+    filteredstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
     # these are the true T values, computed from the above
-    true_Ts = load_object("./offline_files/true_Ts_hourlysaves_filteredandcg_T11T22T12_beginsatonehour_111725.jld2")
+    true_Ts = load_object("./offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
 
     # for if we want to apply constraints to the value of the parameter being guessed
     # lvar is by default -Inf * ones(Float64, nvar)
@@ -77,7 +77,7 @@ end
 function for_enzyme(param_guess, state, SNN, T11, T22, T12)
 
     J = 0.0
-    for j = 3:3:240
+    for j = 3:3:241
         current = 1
         for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
             for layers in model[1]
@@ -145,7 +145,7 @@ function NLPModels.obj(model, param_guess)
 
     # adding up the difference for 5 different snapshots of the coarse-grained, hr states true Ts and 
     # the output from the NN
-    for j = 3:3:240
+    for j = 3:3:241
 
         current = 1
         for m in (model.SNN.Diag.CNNVars.model_Su, model.SNN.Diag.CNNVars.model_Sv)
@@ -223,7 +223,7 @@ function NLPModels.grad!(model, param_guess, G)
         Active,
         Duplicated(param_guess, dparam),
         Const(model.snapshot),
-        Duplicated(SNN, dSNN),
+        Duplicated(model.SNN, dSNN),
         Const(model.T11),
         Const(model.T22),
         Const(model.T12)

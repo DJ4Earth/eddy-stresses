@@ -204,7 +204,7 @@ function cpintegrate(chkp, scheme)::Float64
             chkp.avg_eta += temp.η
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
             chkp.j += 1
 
@@ -410,7 +410,7 @@ function integrate(chkp)::Float64
             chkp.avg_eta += temp.η
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2)
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
             chkp.j += 1
 
@@ -485,8 +485,6 @@ function NLPModels.obj(model, param_guess)
             end
         end
     end
-
-    println("Norm of the parameter in the model: ", temp)
 
     model.J = integrate(model)
 
@@ -640,16 +638,14 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
 
     # hourly information
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825.jld2")
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:75:Slr.grid.nt
-    data = [uhrcg[:,:,8:8:end], vhrcg[:,:,8:8:end], etahrcg[:,:,8:8:end]]
+    data_steps = 75:74:Slr.grid.nt
+    data = [uhrcg[:,:,9:8:end], vhrcg[:,:,9:8:end], etahrcg[:,:,9:8:end]]
 
-    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
+    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
     initial_cond = [u0, v0, eta0]
 
@@ -692,7 +688,7 @@ function run_multistate()
     # end
 
     T = Float64
-
+    Ndays = 1
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -717,17 +713,15 @@ function run_multistate()
         Ndays=Ndays
     );
 
-    Slr1 = ShallowWaters.model_setup(Plr);
-    Slr2 = ShallowWaters.model_setup(Plr);
+    Slr = ShallowWaters.model_setup(Plr);
 
-    param_guess1 = zeros(Lux.parameterlength(Slr1.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr1.Diag.CNNVars.model_Sv));
-    param_guess2 = load_object("./results/weights/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
     current = 1
-    for model in (Slr1.Diag.CNNVars.model_Su, Slr1.Diag.CNNVars.model_Sv)
+    for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
         for layers in model[1]
             for array in layers
                     sz = prod(size(array))
-                    param_guess1[current:(current + sz - 1)] .= vec(array)
+                    param_guess[current:(current + sz - 1)] .= vec(array)
                     current += sz
             end
         end
@@ -736,19 +730,16 @@ function run_multistate()
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
-    ndays = 1
     lower_bound = -10000
     upper_bound = 10000
-    nlp1 = multistatenlp_Chkp{Float64}(ndays,param_guess1,lower_bound,upper_bound);
-    nlp2 = multistatenlp_Chkp{Float64}(ndays,param_guess2,lower_bound,upper_bound);
+    nlp = multistatenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
 
-
-    # qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
+    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
         nlp;
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
-        # quasi_newton_options=qn_options,
+        quasi_newton_options=qn_options,
         max_iter=100
     )
 
