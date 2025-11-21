@@ -192,23 +192,23 @@ end
 
 function filter()
 
-    u = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/u.nc", "u")
-    v = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/v.nc", "v")
-    eta = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/eta.nc", "eta")
+    u = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u")
+    v = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v")
+    eta = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta")
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    ufiltered = zeros(1023, 1024, 241)
-    vfiltered = zeros(1024, 1023, 241)
-    etafiltered = zeros(1024, 1024, 241)
+    ufiltered = zeros(1023, 1024, 91)
+    vfiltered = zeros(1024, 1023, 91)
+    etafiltered = zeros(1024, 1024, 91)
 
-    for j = 1:241
+    for j = 1:91
         ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
         vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
         etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
     end
 
-    jldsave("1024_filtered_uveta_imfilter_10days_postspinup_hourlysaves_111925.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    jldsave("1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2", uveta = [ufiltered, vfiltered, etafiltered])
 
 end
 
@@ -255,7 +255,7 @@ end
 
 function downsize()
 
-    cgstates = load_object("./offline_files/1024_filtered_uveta_imfilter_10days_postspinup_hourlysaves_111925.jld2")
+    cgstates = load_object("./offline_files/1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2")
 
     ucg = cgstates[1]
     vcg = cgstates[2]
@@ -289,7 +289,8 @@ end
 function hourly_Ts()
 
     T = Float64
-    S_true = ShallowWaters.model_setup(T=T; output=false,
+    S_true = ShallowWaters.model_setup(T=T; output=true,
+        output_dt = 8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -304,7 +305,9 @@ function hourly_Ts()
         N=1,
         α=2,
         nx=1024,
-        Ndays=10
+        Ndays=30,
+        initial_cond="ncfile",
+        initpath="./spinup_files/1024_spinup_noslip"
     );
     halo = S_true.grid.halo
 

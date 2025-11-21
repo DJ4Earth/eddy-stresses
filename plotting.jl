@@ -5,40 +5,14 @@ without all of this also running.
 
 function load_and_create_models()
 
-    offlineweights
+    T = Float64
+    Ndays = 30
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
 
-    # load once
-    u_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/u.nc", "u")
-    v_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/v.nc", "v")
-    eta_zb = ncread("./spinup_files/128_zbforcingdissipation_cginitcond_postspinup_365days_071825/eta.nc", "eta")
-
-    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    etahr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
-
-    ugelu = ncread("./results/geluofflineweights/u.nc", "u")
-    vgelu = ncread("./results/geluofflineweights/v.nc", "v")
-    etagelu = ncread("./results/geluofflineweights/eta.nc", "eta")
-
-    urelu = ncread("./results/reluofflineweights/u.nc", "u")
-    vrelu = ncread("./results/reluofflineweights/v.nc", "v")
-    etarelu = ncread("./results/reluofflineweights/eta.nc", "eta")
-
-    unoparam = ncread("./results/noparameterization/u.nc", "u")
-    vnoparam = ncread("./results/noparameterization/v.nc", "v")
-    etanoparam = ncread("./results/noparameterization/eta.nc", "eta")
-
-    unn = ncread("./results/noparameterization/u.nc", "u")
-    vnn = ncread("./results/noparameterization/v.nc", "v")
-    etann = ncread("./results/noparameterization/eta.nc", "eta")
-
-    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
-
-    Ndays = 365
-    initial_cond = [u0, v0, eta0]
-    Snoparam = ShallowWaters.model_setup(T=Float64;
+    Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=8,
         L_ratio=1,
@@ -61,12 +35,54 @@ function load_and_create_models()
         α=2,
         nx=128,
         Ndays=Ndays
-    )
-    Snoparam.Prog.u .= copy(initial_cond[1])
-    Snoparam.Prog.v .= copy(initial_cond[2])
-    Snoparam.Prog.η .= copy(initial_cond[3])
+    );
 
-    Pnn = ShallowWaters.Parameter(T=Float64;
+    Snoparam = ShallowWaters.model_setup(Pnoparam);
+
+    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Snoparam);
+    initial_cond = [u0, v0, eta0];
+
+    Snoparam.Prog.u .= copy(initial_cond[1]);
+    Snoparam.Prog.v .= copy(initial_cond[2]);
+    Snoparam.Prog.η .= copy(initial_cond[3]);
+
+    ShallowWaters.time_integration(Snoparam);
+
+    PZB = ShallowWaters.Parameter(T=T,
+        output=true,
+        output_dt=8,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    );
+
+    SZB = ShallowWaters.model_setup(PZB);
+    SZB.Prog.u .= copy(initial_cond[1]);
+    SZB.Prog.v .= copy(initial_cond[2]);
+    SZB.Prog.η .= copy(initial_cond[3]);
+
+    ShallowWaters.time_integration(SZB);
+
+    # the offline problem is unstable even for short integrations, Ndays here is thus capped
+    Ndays = 3
+    Poffline = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=8,
         L_ratio=1,
@@ -89,15 +105,33 @@ function load_and_create_models()
         α=2,
         nx=128,
         Ndays=Ndays
-    )
-    Snn = ShallowWaters.model_setup(Pnn)
-    Snn.Prog.u .= copy(initial_cond[1])
-    Snn.Prog.v .= copy(initial_cond[2])
-    Snn.Prog.η .= copy(initial_cond[3])
+    );
 
-    Pnnrelu = ShallowWaters.Parameter(T=Float64;
+    Soffline = ShallowWaters.model_setup(Poffline);
+
+    offlineweights = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution
+    current = 1
+    for m in (Soffline.Diag.CNNVars.model_Su, Soffline.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(offlineweights[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
+    Soffline.Prog.u .= copy(initial_cond[1]);
+    Soffline.Prog.v .= copy(initial_cond[2]);
+    Soffline.Prog.η .= copy(initial_cond[3]);
+
+    ShallowWaters.time_integration(Soffline);
+
+    # now creating the online version, Ndays can be larger
+    Ndays = 30
+    Ponline = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=24,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -118,70 +152,52 @@ function load_and_create_models()
         α=2,
         nx=128,
         Ndays=Ndays
-    )
-    Snnrelu = ShallowWaters.model_setup(Pnnrelu)
-    Snnrelu.Prog.u .= copy(initial_cond[1])
-    Snnrelu.Prog.v .= copy(initial_cond[2])
-    Snnrelu.Prog.η .= copy(initial_cond[3])
+    );
 
-    param_guessrelu = load_object("./results/weights/offlineresult_workingresults_3-25-25_1e-3objective_relu_activation.jld2").solution
+    Sonline = ShallowWaters.model_setup(Ponline);
+
+    onlineweights = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_112125.jld2").solution
     current = 1
-    for model in (Snnrelu.Diag.CNNVars.model_Su, Snnrelu.Diag.CNNVars.model_Sv)
-        for layers in model[1]
+    for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
+        for layers in m[1]
             for array in layers
                     sz = prod(size(array))
-                    array .= reshape(param_guessrelu[current:(current + sz - 1)], size(array)...)
+                    array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
                     current += sz
             end
         end
     end
 
-    Pnngelu = ShallowWaters.Parameter(
-        T=Float32;
-        output=true,
-        output_dt=24,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
-    Snngelu = ShallowWaters.model_setup(Pnngelu)
-    Snngelu.Prog.u .= copy(initial_cond[1])
-    Snngelu.Prog.v .= copy(initial_cond[2])
-    Snngelu.Prog.η .= copy(initial_cond[3])
+    Sonline.Prog.u .= copy(initial_cond[1]);
+    Sonline.Prog.v .= copy(initial_cond[2]);
+    Sonline.Prog.η .= copy(initial_cond[3]);
 
-    param_guessgelu = load_object("./results/weights/offline_5snapshots_111025/result_offline_5snapshots_150iterations_geluactivation_111725.jld2").solution
-    current = 1
-    for model in (Snngelu.Diag.CNNVars.model_Su, Snngelu.Diag.CNNVars.model_Sv)
-        for layers in model[1]
-            for array in layers
-                    sz = prod(size(array))
-                    array .= reshape(param_guessgelu[current:(current + sz - 1)], size(array)...)
-                    current += sz
-            end
-        end
-    end
+    ShallowWaters.time_integration(Sonline)
 
-    states_noparam = ShallowWaters.time_integration(Snoparam);
-    states_nn = ShallowWaters.time_integration(Snn);
-    states_relu = ShallowWaters.time_integration(Snnrelu);
-    states_gelu = ShallowWaters.time_integration(Snngelu);
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+
+    uhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u");
+    vhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v");
+    etahr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta");
+
+    uofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/u.nc", "u");
+    vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
+    etaofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/eta.nc", "eta");
+
+    unoparam = ncread("./results/128_noparam_postspinup_cginitcond_30days_8hoursaves/u.nc", "u");
+    vnoparam = ncread("./results/128_noparam_postspinup_cginitcond_30days_8hoursaves/v.nc", "v");
+    etanoparam = ncread("./results/128_noparam_postspinup_cginitcond_30days_8hoursaves/eta.nc", "eta");
+
+    uonlinegelu = ncread("./results/128_online_geluactivation_offlineinitweights_madnlp_30days_8hoursaves/u.nc", "u");
+    vonlinegelu = ncread("./results/128_online_geluactivation_offlineinitweights_madnlp_30days_8hoursaves/v.nc", "v");
+    etaonlinegelu = ncread("./results/128_online_geluactivation_offlineinitweights_madnlp_30days_8hoursaves/eta.nc", "eta");
+
+    uzb = ncread("./results/128_ZBparam_postspinup_cginitcond_30days_8hoursaves/u.nc", "u");
+    vzb = ncread("./results/128_ZBparam_postspinup_cginitcond_30days_8hoursaves/v.nc", "v");
+    etazb = ncread("./results/128_ZBparam_postspinup_cginitcond_30days_8hoursaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
     # imfilter(hru[:,:,j], reflect(ker))
@@ -198,276 +214,231 @@ function plots()
     # states_noparam, states_nn (untrained), states_trainednn_pd, states_trainednn_pd65, states_trainednn_kespec, states_trainednn_states
 
     # to get coarse-grained states
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
-    # imfilter(hru[:,:,j], reflect(ker))
 
-    t = 366
+    # t is timestep, and I saved every 8 hours up to 30 days
+    # this means t can be anything between 1 (the initial condition) and 91 (the final step after 30 days)
+
+    # high-resolution versus coarse-grained high resolution energy
+    t = 31
     fig = Figure(size=(800, 400), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
-    LinRange(0, 3840, 1024),
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
     (uhr[:,1:end-1,t].^2 .+ vhr[1:end-1,:,t].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="E"),
+    axis=(xlabel="km", ylabel="km", title="3.75 km resolution E(10 days, x, y)"),
     colorrange=(0,
-    maximum((uhr[:,1:end-1,t].^2 .+ vhr[1:end-1,:,t].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[1,2], hm1)
 
-    uhrcg = imfilter(uhr[:,:,t], reflect(ker))
-    vhrcg = imfilter(vhr[:,:,t], reflect(ker))
+    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="Coarse-grained E(10 days, x, y)"),
+    colorrange=(0,
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
+    Colorbar(fig[1,4], hm1)
+
+    # not sure
+    t = 31
+    fig = Figure(size=(800, 400), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="Coarse-grained energy"),
+    colorrange=(0,
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
+    Colorbar(fig[1,2], hm1)
+
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 1024),
     LinRange(0, 3840, 1024),
-    (uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2),
+    (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained E"),
+    axis=(xlabel="km", ylabel="km", title="30 km, no parameterization"),
     colorrange=(0,
-    maximum((uhr[:,1:end-1,t].^2 .+ vhr[1:end-1,:,t].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[1,4], hm1)
 
     # cg, zb, nn, no param
+    t = 31
     fig = Figure(size=(900, 1000), fontsize=15);
-    t = 30
-    uhrcg = imfilter(uhr[:,:,t], reflect(ker))
-    vhrcg = imfilter(vhr[:,:,t], reflect(ker))
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
-    LinRange(0, 3840, 1024),
-    (uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2),
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained E"),
+    axis=(xlabel="km", ylabel="km", title="Filtered high-resolution energy"),
     colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[1,2], hm1)
 
     ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (unoparam[:,1:end-1,end].^2 .+ vnoparam[1:end-1,:,end].^2),
+    (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E, no closure"),
     colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[1,4], hm1)
 
     ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (u_zb[:,1:end-1,t].^2 .+ v_zb[1:end-1,:,t].^2),
+    (uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30km resolution E with ZB closure"),
+    axis=(xlabel="km", ylabel="km", title="30 km resolution E, ZB closure"),
     colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[2,2], hm1)
 
     ax1, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (unn[:,1:end-1,end].^2 .+ vnn[1:end-1,:,end].^2),
+    (uonlinegelu[:,1:end-1,t].^2 .+ vonlinegelu[1:end-1,:,t].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30km resolution E with untrained NN closure"),
+    axis=(xlabel="km", ylabel="km", title="30 km resolution E, online closure"),
     colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[2,4], hm1)
 
     ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (urelu[:,1:end-1,1].^2 .+ vrelu[1:end-1,:,1].^2),
+    (uofflinegelu[:,1:end-1,10].^2 .+ vofflinegelu[1:end-1,:,10].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30km resolution E with ''offline`` NN closure"),
+    axis=(xlabel="km", ylabel="km", title="30 km resolution E, offline closure after 3 days"),
     colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
     Colorbar(fig[3,2], hm1)
 
-    ax1, hm6 = heatmap(fig[3,3], LinRange(0, 3840, 128),
+    # same as the above but without the coarse-grained energy
+    # cg, zb, nn, no param
+    t = 31
+    fig = Figure(size=(900, 800), fontsize=15);
+
+    ax1, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (ugelu[:,1:end-1,end].^2 .+ vgelu[1:end-1,:,end].^2),
+    (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
     colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30km resolution E with state tuned NN"),
+    axis=(xlabel="km", ylabel="km", title="30km resolution E(10 days, x, y), no closure"),
     colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
-    Colorbar(fig[3,4], hm1)
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
+    Colorbar(fig[1,2], hm1)
 
-    # spatially averaged energy over integration (all integrated for one year)
+    ax1, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="30 km resolution E(10 days, x, y), ZB closure"),
+    colorrange=(0,
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
+    Colorbar(fig[1,4], hm1)
 
-    relu = []
+    ax1, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (uonlinegelu[:,1:end-1,t].^2 .+ vonlinegelu[1:end-1,:,t].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="30 km resolution E(10 days, x, y), online closure"),
+    colorrange=(0,
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
+    Colorbar(fig[2,2], hm1)
+
+    ax1, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (uofflinegelu[:,1:end-1,10].^2 .+ vofflinegelu[1:end-1,:,10].^2),
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="30 km resolution E(3 days, x, y), offline closure"),
+    colorrange=(0,
+    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    );
+    Colorbar(fig[2,4], hm1)
+
+    # spatially averaged energy over integration (30 day integrations on all)
+
     gelu = []
     noparam = []
-    nn = []
     zb = []
     cghr = []
-    for j = 1:732
-        push!(relu, sum(urelu[:,1:end-1,j].^2 .+ vrelu[1:end-1,:,j].^2))
-        push!(gelu, sum(ugelu[:,1:end-1,j].^2 .+ vgelu[1:end-1,:,j].^2))
-    end
-    for j = 1:366
-        uhrcg = imfilter(uhr[:,:,j], reflect(ker))
-        vhrcg = imfilter(vhr[:,:,j], reflect(ker))
-        ucgf = (uhrcg[8:8:end, 4:8:end] + uhrcg[8:8:end, 5:8:end]) ./ 2
-        vcgf = (vhrcg[4:8:end, 8:8:end] + vhrcg[5:8:end, 8:8:end]) ./ 2
-        push!(zb, sum(u_zb[:,1:end-1,j].^2 .+ v_zb[1:end-1,:,j].^2))
-        push!(cghr, sum(ucgf[:,1:end-1].^2 .+ vcgf[1:end-1,:].^2))
-    end
-    for j = 1:1107
-        push!(nn, sum(unn[:,1:end-1,j].^2 .+ vnn[1:end-1,:,j].^2))
+    for j = 1:31
+        push!(gelu, sum(uonlinegelu[:,1:end-1,j].^2 .+ vonlinegelu[1:end-1,:,j].^2))
+        push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
+        push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
         push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
     end
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0,365, 367), cghr, label="Coarse-grained 3.75km resolution", 
+    lines(fig[1,1], LinRange(0,10, 31), cghr, label="Coarse-grained 3.75km resolution", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy"
         )
     )
-    lines!(fig[1,1], LinRange(0, 365, 1107), nn, label="Untrained NN closure")
-    lines!(fig[1,1], LinRange(0, 365, 1107), noparam, label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0,365, 367), zb, label="ZB closure")
-    lines!(fig[1,1], LinRange(0, 365, 732), relu, label="NN closure, offline with relu")
-    lines!(fig[1,1], LinRange(0, 365, 732), gelu, label="NN closure, offline with gelu")
+    lines!(fig[1,1], LinRange(0,10, 31), noparam, label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0,10, 31), zb, label="ZB closure")
+    lines!(fig[1,1], LinRange(0,10, 31), gelu, label="Online closure")
     axislegend(position = (0,0))
 
     # comparing trained NN results
 
     ###################################################################################
 
-    ## Different NN results, energy ##########################################################
-
-    # nc files
-    # u_zb, uhr
-    # jld2 files (my save states function)
-    # states_noparam, states_nn (untrained), states_trainednn_pd, states_trainednn_pd65, states_trainednn_kespec, states_trainednn_states
-
-    # to get coarse-grained states
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
-    # imfilter(hru[:,:,j], reflect(ker))
-
-    fig = Figure(size=(900, 900), fontsize=15);
-    t = 31
-    ax1, hm = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (states_trainednn_states[t].u[:,1:end-1].^2 .+ states_trainednn_states[t].v[1:end-1,:].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Trained closure, states"),
-    colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
-    Colorbar(fig[1,2], hm1)
-
-    ax1, hm = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (states_trainednn_kespec[t].u[:,1:end-1].^2 .+ states_trainednn_kespec[t].v[1:end-1,:].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Trained closure, KE spectrum"),
-    colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
-    Colorbar(fig[1,4], hm1)
-
-    ax1, hm = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (states_trainednn_pd[t].u[:,1:end-1].^2 .+ states_trainednn_pd[t].v[1:end-1,:].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Trained closure, KE spectrum percent-diff"),
-    colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
-    Colorbar(fig[2,2], hm1)
-
-    ax1, hm = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (states_trainednn_pd65[t].u[:,1:end-1].^2 .+ states_trainednn_pd65[t].v[1:end-1,:].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Trained closure, KE spectrum percent-diff 65"),
-    colorrange=(0,
-    maximum((uhrcg[:,1:end-1].^2 .+ vhrcg[1:end-1,:].^2))
-    ));
-    Colorbar(fig[2,4], hm1)
-
-    ##############################################################################################
-
     # comparing results, KE spectrum #############################################################
 
-    # nc files
-    # u_zb, uhr
-    # jld2 files (my save states function)
-    # states_noparam, states_nn (untrained), states_trainednn_pd, states_trainednn_pd65, states_trainednn_kespec, states_trainednn_states
-
     # to get coarse-grained states
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
     # imfilter(hru[:,:,j], reflect(ker))
 
-    totalstates = 364 # saved hourly
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+
+    totalstates = 91 # saved every 8 hours (this is when the hr cg and low resolution match up)
     up_noparam = zeros(65,totalstates)
     vp_noparam = zeros(65,totalstates)
 
-    up_zb = zeros(65,366)
-    vp_zb = zeros(65,366)
+    up_zb = zeros(65,totalstates)
+    vp_zb = zeros(65,totalstates)
 
-    up_hr = zeros(513,366)
-    vp_hr = zeros(513,366)
+    up_hr = zeros(513,totalstates)
+    vp_hr = zeros(513,totalstates)
 
-    up_cghr = zeros(513,366)
-    vp_cghr = zeros(513,366)
+    up_cghr = zeros(513,totalstates)
+    vp_cghr = zeros(513,totalstates)
 
     up_nn = zeros(65,totalstates)
     vp_nn = zeros(65,totalstates)
 
-    up_nnkesp = zeros(65,totalstates)
-    vp_nnkesp = zeros(65,totalstates)
+    for t = 1:totalstates
 
-    up_nnstates = zeros(65,totalstates)
-    vp_nnstates = zeros(65,totalstates)
-
-    up_nnpd = zeros(65,totalstates)
-    vp_nnpd = zeros(65,totalstates)
-
-    up_offline = zeros(65, totalstates)
-    vp_offline = zeros(65, totalstates)
-
-    for t = 1:366
-
-        up_zb[:,t] = power(periodogram(u_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_zb[:,t] = power(periodogram(v_zb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_zb[:,t] = power(periodogram(uzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_zb[:,t] = power(periodogram(vzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
 
         up_hr[:,t] = power(periodogram(uhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
         vp_hr[:,t] = power(periodogram(vhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
-        up_cghr[:,t] = power(periodogram(imfilter(uhr[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
-        vp_cghr[:,t] = power(periodogram(imfilter(vhr[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
+        up_cghr[:,t] = power(periodogram(imfilter(uhrcg[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
+        vp_cghr[:,t] = power(periodogram(imfilter(vhrcg[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
+
+        up_noparam[:,t] = power(periodogram(unoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_noparam[:,t] = power(periodogram(vnoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_nn[:,t] = power(periodogram(uonlinegelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_nn[:,t] = power(periodogram(vonlinegelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
     end
 
-    for t = 1:totalstates
-
-        up_noparam[:,t] = power(periodogram(states_noparam[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_noparam[:,t] = power(periodogram(states_noparam[t].v; radialavg=true, radialsum=false)) ./ 128^2
-
-        #untrained
-        up_nn[:,t] = power(periodogram(states_nn[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_nn[:,t] = power(periodogram(states_nn[t].v; radialavg=true, radialsum=false)) ./ 128^2
-
-        # all trained
-        up_nnstates[:,t] = power(periodogram(states_trainednn_states[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_nnstates[:,t] = power(periodogram(states_trainednn_states[t].v; radialavg=true, radialsum=false)) ./ 128^2
-
-        up_nnkesp[:,t] = power(periodogram(states_trainednn_kespec[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_nnkesp[:,t] = power(periodogram(states_trainednn_kespec[t].v; radialavg=true, radialsum=false)) ./ 128^2
-
-        up_nnpd[:,t] = power(periodogram(states_trainednn_pd[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_nnpd[:,t] = power(periodogram(states_trainednn_pd[t].v; radialavg=true, radialsum=false)) ./ 128^2
-
-        up_offline[:,t] = power(periodogram(states_offline[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        vp_offline[:,t] = power(periodogram(states_offline[t].v; radialavg=true, radialsum=false)) ./ 128^2
-
-        # up_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].u; radialavg=true, radialsum=false)) ./ 128^2
-        # vp_nnpd65[:,t] = power(periodogram(states_trainednn_pd65[t].v; radialavg=true, radialsum=false)) ./ 128^2
-    end
-
-    lr_wl = (1 ./ freq(periodogram(u_zb[:,:,10]; radialavg=true, radialsum=false))) * 30;
+    lr_wl = (1 ./ freq(periodogram(uzb[:,:,10]; radialavg=true, radialsum=false))) * 30;
     nnu_freq = LinRange(0, 64, 65)
     nnu_freq = nnu_freq ./ 65
     nnu_freq = 1 ./ nnu_freq 
@@ -478,7 +449,7 @@ function plots()
     hr_wl[1] = 1100
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    t = 90
+    t = 91
     lines(fig[1,1], hr_wl[2:65], up_cghr[2:65,t] + vp_cghr[2:65,t], label="Coarse-grained 3.75km resolution", axis=(
             xscale=log10,
             yscale=log10,
@@ -486,16 +457,12 @@ function plots()
             ylabel="KE(k)",
             xreversed=true,
             xticks=[700, 100, 30, 10, 2],
-            title="KE spectrum, 30 day integration")
+            title="KE spectrum")
     )
-    lines!(fig[1,1], lr_wl[2:end], up_nn[2:end,t] + vp_nn[2:end,t], label="Untrained NN closure"
+    lines!(fig[1,1], lr_wl[2:end], up_nn[2:end,t] + vp_nn[2:end,t], label="Online NN closure"
     )
-    lines!(fig[1,1], lr_wl[2:end], up_noparam[2:end,t] + vp_noparam[2:end,t], label="30km resolution, no closure")
+    lines!(fig[1,1], lr_wl[2:end], up_noparam[2:end,t] + vp_noparam[2:end,t], label="30 km resolution, no closure")
     lines!(fig[1,1], lr_wl[2:end], up_zb[2:end,t] + vp_zb[2:end,t], label="ZB closure")
-    lines!(fig[1,1], lr_wl[2:end], up_nnstates[2:end,t] + vp_nnstates[2:end,t], label="NN closure, state loss")
-    lines!(fig[1,1], lr_wl[2:end], up_nnkesp[2:end,t] + vp_nnkesp[2:end,t], label="NN closure, KE spectra loss")
-    lines!(fig[1,1], lr_wl[2:end], up_nnpd[2:end,t] + vp_nnpd[2:end,t], label="NN closure, KE spectra percent diff loss")
-    lines!(fig[1,1], lr_wl[2:end], up_offline[2:end,t] + vp_offline[2:end,t], label="NN closure, offline trained")
     axislegend(position = (0,0))
 
     #### comparing time-averaged ke spectra
@@ -515,46 +482,14 @@ function plots()
     up_nn_avg = zeros(65)
     vp_nn_avg = zeros(65)
 
-    up_nnkesp_avg = zeros(65)
-    vp_nnkesp_avg = zeros(65)
-
-    up_nnstates_avg = zeros(65)
-    vp_nnstates_avg = zeros(65)
-
-    up_nnpd_avg = zeros(65)
-    vp_nnpd_avg = zeros(65)
-
-    up_offline_avg = zeros(65)
-    vp_offline_avg = zeros(65)
-
-    daystoaverage = 364
-    for t = 1:daystoaverage
+    daystoaverage = 30
+    for t = 2:daystoaverage+1
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
 
-        # untrained
         up_nn_avg += up_nn[:,t]
         vp_nn_avg += vp_nn[:,t]
-
-        up_nnkesp_avg += up_nnkesp[:,t]
-        vp_nnkesp_avg += vp_nnkesp[:,t]
-
-        up_nnstates_avg += up_nnstates[:,t]
-        vp_nnstates_avg += vp_nnstates[:,t]
-
-        up_nnpd_avg += up_nnpd[:,t]
-        vp_nnpd_avg += vp_nnpd[:,t]
-
-        up_offline_avg += up_offline[:,t]
-        vp_offline_avg += vp_offline[:,t]
-
-    end
-
-    for t = 1:(daystoaverage+1)
-
-        up_zb_avg += up_zb[:,t]
-        vp_zb_avg += vp_zb[:,t]
 
         up_hr_avg += up_hr[:,t]
         vp_hr_avg += vp_hr[:,t]
@@ -574,12 +509,8 @@ function plots()
         title="One-year averaged KE spectrum")
     )
     lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/31, label="ZB closure")
-    lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30km resolution, no closure")
-    lines!(fig[1,1], lr_wl[2:end], (up_nn_avg[2:end] + vp_nn_avg[2:end])/totalstates, label="Untrained NN closure")
-    # lines!(fig[1,1], lr_wl[2:end], (up_nnstates_avg[2:end] + vp_nnstates_avg[2:end])/totalstates, label="NN closure, state loss")
-    # lines!(fig[1,1], lr_wl[2:end], (up_nnkesp_avg[2:end] + vp_nnkesp_avg[2:end])/totalstates, label="NN closure, KE spectra loss")
-    # lines!(fig[1,1], lr_wl[2:end], (up_nnpd_avg[2:end] + vp_nnpd_avg[2:end])/totalstates, label="NN closure, KE spectra percent diff loss")
-    lines!(fig[1,1], lr_wl[2:end], (up_offline_avg[2:end] + vp_offline_avg[2:end])/totalstates, label="NN closure, offline loss")
+    lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30 km resolution, no closure")
+    lines!(fig[1,1], lr_wl[2:end], (up_nn_avg[2:end] + vp_nn_avg[2:end])/totalstates, label="Online NN closure")
     axislegend(position = (0,0))
 
     #############################################################################################
