@@ -472,20 +472,10 @@ function multistate_compute_loss(model, param_guess)
     data_steps = model.data_steps
     initial_cond = model.initial_cond
 
-    model.S.Prog.u .= initial_cond[1]
-    model.S.Prog.v .= initial_cond[2]
-    model.S.Prog.η .= initial_cond[3]
+    model.S.Prog.u .= copy(initial_cond[1])
+    model.S.Prog.v .= copy(initial_cond[2])
+    model.S.Prog.η .= copy(initial_cond[3])
 
-    # current = 1
-    # for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-    #     for layers in model[1]
-    #         for array in layers
-    #             sz = prod(size(array))
-    #             array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-    #             current += sz
-    #         end
-    #     end
-    # end
     current = 1
     for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -540,9 +530,9 @@ function multistate_compute_gradient(G, param_guess, model)
     data_steps = model.data_steps
     initial_cond = model.initial_cond
 
-    model.S.Prog.u .= initial_cond[1]
-    model.S.Prog.v .= initial_cond[2]
-    model.S.Prog.η .= initial_cond[3]
+    model.S.Prog.u .= copy(initial_cond[1])
+    model.S.Prog.v .= copy(initial_cond[2])
+    model.S.Prog.η .= copy(initial_cond[3])
 
     current = 1
     for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
@@ -653,12 +643,12 @@ function run_multistate()
     # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
 
     # 8-hourly information
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
     data_steps = 75:74:Slr.grid.nt
-    data = [uhrcg[:,:,9:8:end], vhrcg[:,:,9:8:end], etahrcg[:,:,9:8:end]]
+    data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
@@ -666,7 +656,8 @@ function run_multistate()
 
     model = multistate_Chkp{T}(Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
-    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+    # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+    param_guess = load_object(".tuned_weights/online_optimresult_states_1day_gelu_112025.jld2").minimizer
 
     result = nothing
     for ndays = [1, 2, 4, 6, 8, 10]

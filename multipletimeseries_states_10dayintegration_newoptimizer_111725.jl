@@ -469,9 +469,9 @@ function NLPModels.obj(model, param_guess)
     data_steps = model.data_steps
     initial_cond = model.initial_cond
 
-    model.S.Prog.u .= initial_cond[1]
-    model.S.Prog.v .= initial_cond[2]
-    model.S.Prog.η .= initial_cond[3]
+    model.S.Prog.u .= copy(initial_cond[1])
+    model.S.Prog.v .= copy(initial_cond[2])
+    model.S.Prog.η .= copy(initial_cond[3])
 
     current = 1
     temp = 0.0
@@ -532,9 +532,9 @@ function NLPModels.grad!(model, param_guess, G)
     data_steps = model.data_steps
     initial_cond = model.initial_cond
 
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
+    model.S.Prog.u .= copy(initial_cond[1])
+    model.S.Prog.v .= copy(initial_cond[2])
+    model.S.Prog.η .= copy(initial_cond[3])
 
     current = 1
     for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
@@ -638,12 +638,12 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
 
     # hourly information
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
     data_steps = 75:74:Slr.grid.nt
-    data = [uhrcg[:,:,9:8:end], vhrcg[:,:,9:8:end], etahrcg[:,:,9:8:end]]
+    data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
@@ -688,7 +688,7 @@ function run_multistate()
     # end
 
     T = Float64
-    Ndays = 1
+    Ndays = 5
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -715,18 +715,8 @@ function run_multistate()
 
     Slr = ShallowWaters.model_setup(Plr);
 
-    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
-    current = 1
-    for model in (Slr.Diag.CNNVars.model_Su, Slr.Diag.CNNVars.model_Sv)
-        for layers in model[1]
-            for array in layers
-                    sz = prod(size(array))
-                    param_guess[current:(current + sz - 1)] .= vec(array)
-                    current += sz
-            end
-        end
-    end
-
+    # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_112125.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -887,6 +877,52 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
     end
 
     println("Finite difference result: $diffs")
+
+end
+
+function checking_loss()
+
+    T = Float64
+    Ndays = 1
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    );
+
+    Slr = ShallowWaters.model_setup(Plr);
+
+    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+
+
+    # lvar is by default -Inf * ones(Float64, nvar)
+    # uvar is by default Inf * ones(Float64, nvar)
+    lower_bound = -10000
+    upper_bound = 10000
+    nlp = multistatenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+
+    nlp.S.Prog.u .= copy(initial_cond[1])
+    nlp.S.Prog.v .= copy(initial_cond[2])
+    nlp.S.Prog.η .= copy(initial_cond[3])
+
 
 end
 
