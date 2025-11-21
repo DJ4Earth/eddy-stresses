@@ -1,7 +1,7 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
+mutable struct kespectrum_percentdiff_Chkp{T, S} <: AbstractNLPModel{T,S}
     meta::NLPModelMeta{T,S}
     counters::Counters
     S::ShallowWaters.ModelSetup{T,T}        # model structure
@@ -200,11 +200,13 @@ function cpintegrate(chkp, scheme)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
+            ke_u_lr = power(periodogram(temp.u; radialavg=true))
+            ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
+            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+
+            chkp.J += sum( (ke_u_hr[:]- ke_u_lr[:]).^2 ./ ke_u_hr[:].^2 + (ke_v_hr[:] - ke_v_lr[:]).^2 ./ ke_v_hr[:].^2 )
 
             chkp.j += 1
 
@@ -406,11 +408,13 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
+            ke_u_lr = power(periodogram(temp.u; radialavg=true))
+            ke_v_lr = power(periodogram(temp.v; radialavg=true))
 
-            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
+            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
+            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+
+            chkp.J += sum( (ke_u_hr[:]- ke_u_lr[:]).^2 ./ ke_u_hr[:].^2 + (ke_v_hr[:] - ke_v_lr[:]).^2 ./ ke_v_hr[:].^2 )
 
             chkp.j += 1
 
@@ -581,7 +585,7 @@ function NLPModels.grad!(model, param_guess, G)
 
 end
 
-function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
+function kespectrum_percentdiff_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
 
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
@@ -660,32 +664,11 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
     )
     counters = Counters()
 
-    return multistatenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
+    return kespectrum_percentdiff_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
 end
 
-function run_multistate()
-
-    # result = nothing
-    # for ndays = [1, 2, 4, 6, 8, 10]
-
-    #     if ndays === 1
-    #         # the initial guess for weights will be the result from the offline problem
-    #         param_guess = load_object("./offline_workingresults_5-25-25NN_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
-    #     else
-    #         param_guess = result.solution
-    #     end
-    #     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
-    #     qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
-    #     result = madnlp(
-    #         nlp;
-    #         # linear_solver=LapackCPUSolver,
-    #         hessian_approximation=MadNLP.CompactLBFGS,
-    #         quasi_newton_options=qn_options,
-    #         max_iter=100
-    #     )
-
-    # end
+function run_kespectrum_percentdiff()
 
     T = Float64
     Ndays = 5
@@ -734,8 +717,6 @@ function run_multistate()
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
-
-    jldsave("online_fivedays_100iterations_8hourdata_result_200maxhistory.jld2", result=result)
 
     return nothing
 
@@ -934,7 +915,6 @@ end
 #     eta = reshape(result.minimizer[34585:end-1], 130, 130),
 #     Fx0 = result.minimizer[end]
 # )
-
 
 # temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
 #                 S.Prog.u,

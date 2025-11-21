@@ -14,7 +14,7 @@ function load_and_create_models()
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=8,
+        output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -34,7 +34,7 @@ function load_and_create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=365
     );
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);
@@ -174,7 +174,7 @@ function load_and_create_models()
 
     ShallowWaters.time_integration(Sonline)
 
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_30days_postspinup_8hoursaves_112125.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -398,37 +398,52 @@ function plots()
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
     # imfilter(hru[:,:,j], reflect(ker))
 
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2");
+    uhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u");
+    vhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v");
+    etahr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta");
+
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_30days_postspinup_8hoursaves_112125.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
+
+    filtered_hrstates = load_object("./offline_files/1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2");
+    uhrfilter= filtered_hrstates[1];
+    vhrfilter = filtered_hrstates[2];
+    etahrfilter = filtered_hrstates[3];
 
     totalstates = 91 # saved every 8 hours (this is when the hr cg and low resolution match up)
     up_noparam = zeros(65,totalstates)
     vp_noparam = zeros(65,totalstates)
 
+    up_hr = zeros(513, totalstates)
+    vp_hr = zeros(513, totalstates)
+
     up_zb = zeros(65,totalstates)
     vp_zb = zeros(65,totalstates)
 
-    up_hr = zeros(513,totalstates)
-    vp_hr = zeros(513,totalstates)
+    up_hrfilter = zeros(513,totalstates)
+    vp_hrfilter = zeros(513,totalstates)
 
-    up_cghr = zeros(513,totalstates)
-    vp_cghr = zeros(513,totalstates)
+    up_hrcg = zeros(65,totalstates)
+    vp_hrcg = zeros(65,totalstates)
 
     up_nn = zeros(65,totalstates)
     vp_nn = zeros(65,totalstates)
 
     for t = 1:totalstates
 
-        up_zb[:,t] = power(periodogram(uzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_zb[:,t] = power(periodogram(vzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
-
         up_hr[:,t] = power(periodogram(uhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
         vp_hr[:,t] = power(periodogram(vhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
-        up_cghr[:,t] = power(periodogram(imfilter(uhrcg[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
-        vp_cghr[:,t] = power(periodogram(imfilter(vhrcg[:,:,t], reflect(ker)); radialavg=true, radialsum=false)) ./ 1024^2
+        up_zb[:,t] = power(periodogram(uzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_zb[:,t] = power(periodogram(vzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_hrfilter[:,t] = power(periodogram(uhrfilter[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+        vp_hrfilter[:,t] = power(periodogram(vhrfilter[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+
+        up_hrcg[:,t] = power(periodogram(uhrcg[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_hrcg[:,t] = power(periodogram(vhrcg[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
         up_noparam[:,t] = power(periodogram(unoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_noparam[:,t] = power(periodogram(vnoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
@@ -450,7 +465,7 @@ function plots()
 
     fig = Figure(size=(1000, 500), fontsize=15);
     t = 91
-    lines(fig[1,1], hr_wl[2:65], up_cghr[2:65,t] + vp_cghr[2:65,t], label="Coarse-grained 3.75km resolution", axis=(
+    lines(fig[1,1], hr_wl[2:65], up_hrfilter[2:65,t] + vp_hrfilter[2:65,t], label="Filtered and coarse-grained 3.75km resolution", axis=(
             xscale=log10,
             yscale=log10,
             xlabel="Wavelength (km)",
@@ -476,8 +491,8 @@ function plots()
     up_hr_avg = zeros(513)
     vp_hr_avg = zeros(513)
 
-    up_cghr_avg = zeros(513)
-    vp_cghr_avg = zeros(513)
+    up_cghr_avg = zeros(65)
+    vp_cghr_avg = zeros(65)
 
     up_nn_avg = zeros(65)
     vp_nn_avg = zeros(65)
@@ -490,6 +505,9 @@ function plots()
 
         up_nn_avg += up_nn[:,t]
         vp_nn_avg += vp_nn[:,t]
+
+        up_zb_avg += up_zb[:,t]
+        vp_zb_avg += vp_zb[:,t]
 
         up_hr_avg += up_hr[:,t]
         vp_hr_avg += vp_hr[:,t]
@@ -518,81 +536,20 @@ function plots()
 
     # comparing cg energy spectra to energy spectra of the cg
 
-    u_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    v_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    eta_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta")
+    # up_hr, up_hrfilter, up_hrcg
 
-    ucg2_hr = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
-    vcg2_hr = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
-    etacg2_hr = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
-
-    Slr = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=1
-    )
-
-    temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-            ucg2_hr,
-            vcg2_hr,
-            etacg2_hr,
-            Slr.Prog.sst,
-            Slr
-        )...)
-
-    up_hr= zeros(513)
-    ufp_hr= zeros(513)
-
-    vp_hr = zeros(513)
-    etap_hr = zeros(513)
-    upcg2 = zeros(65)
-    vpcg2 = zeros(65)
-    etapcg2 = zeros(65)
-    upcg = zeros(65)
-    vpcg = zeros(65)
-    etapcg = zeros(65)
-
-    up_hr[:] = power(periodogram(u_hr[:,:,2]; radialavg=true, radialsum=false)) ./ 1024^2
-    vp_hr[:] = power(periodogram(v_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
-    etap_hr[:] = power(periodogram(eta_hr[:,:,1]; radialavg=true, radialsum=false)) ./ 1024^2
-
-    ufp_hr[:] = power(periodogram(newu; radialavg=true, radialsum=false)) ./ 1024^2
-
-    upcg[:] = power(periodogram(ucg; radialavg=true, radialsum=false)) ./ 128^2
-    vpcg[:] = power(periodogram(vcg; radialavg=true, radialsum=false)) ./ 128^2
-    etapcg[:] = power(periodogram(etacg; radialavg = true, radialsum=false)) ./128^2
-
-    upcg2[:] = power(periodogram(temp.u; radialavg=true, radialsum=false)) ./ 128^2
-    vpcg2[:] = power(periodogram(temp.v; radialavg=true, radialsum=false)) ./ 128^2
-    etapcg2[:] = power(periodogram(temp.η; radialavg = true, radialsum=false)) ./128^2
-
-    true_wl = 1 ./ freq(periodogram(u[:,:,1]; radialavg=true)) * 3.75;
+    true_wl = (1 ./ freq(periodogram(uhr[:,:,1]; radialavg=true))) * 3.75;
     true_wl[1] = 1100
-    cg_wl = (1 ./ freq(periodogram(temp.u; radialavg=true, radialsum=false))) * 30;
+    cg_wl = (1 ./ freq(periodogram(uhrcg[:,:,1]; radialavg=true, radialsum=false))) * 30;
     cg_wl[1] = 1100
 
+    t = 1
     fig = Figure();
-    lines(fig[1,1], true_wl[2:end], up_hr[2:end] + vp_hr[2:end], label="HR", axis=(
+    lines(fig[1,1], true_wl[2:end], up_hr[2:end,t] + vp_hr[2:end,t], label="3.75 km resolution", axis=(
             xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2], title="HR energy spectrum")
     )
-    lines!(fig[1,1], cg_wl[2:end], upcg[2:end] + vpcg[2:end], label="Coarse-grained HR spectrum")
+    lines!(fig[1,1], cg_wl[2:end], up_hrcg[2:end,t] + vp_hrcg[2:end,t], label="Filtered, coarsened HR spectrum")
+    lines!(fig[1,1], true_wl[2:end], up_hrfilter[2:end,t] + vp_hrfilter[2:end,t], label="Filtered HR spectrum")
     axislegend()
 
     figu = Figure();
