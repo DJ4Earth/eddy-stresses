@@ -218,6 +218,163 @@ function plots()
     # t is timestep, and I saved every 8 hours up to 30 days
     # this means t can be anything between 1 (the initial condition) and 91 (the final step after 30 days)
 
+    # Prognostic variables #############################################################
+
+    # just u fields
+    t = 46
+    fig = Figure(size=(900, 800), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcg[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained u(15 days, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    unoparam[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), no closure"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2)
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uzb[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), ZB closure"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,2], hm3)
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uonlinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), online closure"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,4], hm4)
+
+    # u and v fields
+    t = 46
+    fig = Figure(size=(1800, 800), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcg[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained u(15 days, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    unoparam[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), no closure"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2)
+
+    ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uzb[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), ZB closure"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,6], hm3)
+
+    ax4, hm4 = heatmap(fig[1,7], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uonlinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), online closure"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,8], hm4)
+
+    ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vhrcg[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained v(15 days, x, y)"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,2], hm1)
+
+    ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vnoparam[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="v(15 days, x, y), no closure"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,4], hm2)
+
+    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vzb[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="v(15 days, x, y), ZB closure"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,6], hm3)
+
+    ax4, hm4 = heatmap(fig[2,7], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vonlinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="v(15 days, x, y), online closure"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,8], hm4)
+
+    # eta fields
+    t = 46
+    fig = Figure(size=(900, 800), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etahrcg[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained eta(15 days, x, y)"),
+    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etanoparam[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="eta(15 days, x, y), no closure"),
+    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2)
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etazb[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="eta(15 days, x, y), ZB closure"),
+    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
+    );
+    Colorbar(fig[2,2], hm3)
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etaonlinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="eta(15 days, x, y), online closure"),
+    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
+    );
+    Colorbar(fig[2,4], hm4)
+
+    # Energy ############################################################################
+
     # high-resolution versus coarse-grained high resolution energy
     t = 31
     fig = Figure(size=(800, 400), fontsize=15);
@@ -241,7 +398,7 @@ function plots()
     );
     Colorbar(fig[1,4], hm1)
 
-    # not sure
+    # coarse-grained versus no parameterization
     t = 31
     fig = Figure(size=(800, 400), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
@@ -388,11 +545,10 @@ function plots()
     lines!(fig[1,1], LinRange(0,10, 31), gelu, label="Online closure")
     axislegend(position = (0,0))
 
-    # comparing trained NN results
 
     ###################################################################################
 
-    # comparing results, KE spectrum #############################################################
+    # KE spectrum #############################################################
 
     # to get coarse-grained states
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
@@ -465,7 +621,7 @@ function plots()
 
     fig = Figure(size=(1000, 500), fontsize=15);
     t = 91
-    lines(fig[1,1], hr_wl[2:65], up_hrfilter[2:65,t] + vp_hrfilter[2:65,t], label="Filtered and coarse-grained 3.75km resolution", axis=(
+    lines(fig[1,1], hr_wl[2:65], up_hrfilter[2:65,t] + vp_hrfilter[2:65,t], label="Filtered 3.75km resolution", axis=(
             xscale=log10,
             yscale=log10,
             xlabel="Wavelength (km)",
@@ -494,11 +650,13 @@ function plots()
     up_cghr_avg = zeros(65)
     vp_cghr_avg = zeros(65)
 
+    up_filter_avg = zeros(513)
+    vp_filter_avg = zeros(513)
+
     up_nn_avg = zeros(65)
     vp_nn_avg = zeros(65)
 
-    daystoaverage = 30
-    for t = 2:daystoaverage+1
+    for t = 2:91
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
@@ -512,19 +670,22 @@ function plots()
         up_hr_avg += up_hr[:,t]
         vp_hr_avg += vp_hr[:,t]
 
+        up_filter_avg += up_hrfilter[:,t]
+        vp_filter_avg += vp_hrfilter[:,t]
+
         up_cghr_avg += up_cghr[:,t]
         vp_cghr_avg += vp_cghr[:,t]
 
     end
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], hr_wl[2:65], (up_cghr_avg[2:65] + vp_cghr_avg[2:65])/31, label="Coarse-grained 3.75km resolution", axis=(
+    lines(fig[1,1], hr_wl[2:65], (up_cghr_avg[2:65] + vp_cghr_avg[2:65])/31, label="Filtered, coarse-grained 3.75km resolution", axis=(
         xscale=log10,
         yscale=log10,
         xlabel="Wavelength (km)",
         ylabel="KE(k)", xreversed=true,
         xticks=[700, 100, 30, 10, 2],
-        title="One-year averaged KE spectrum")
+        title="30 day averaged KE spectrum")
     )
     lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/31, label="ZB closure")
     lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30 km resolution, no closure")
@@ -553,27 +714,27 @@ function plots()
     axislegend()
 
     figu = Figure();
-    lines(figu[1,1], true_wl[2:65], up_hr[2:65], label="HR", axis=(
+    lines(figu[1,1], true_wl[2:65], up_hr[2:65,t], label="HR", axis=(
             xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
     )
-    lines!(figu[1,1], cg_wl[2:end], upcg[2:end], label="Coarse-grained HR recomputed")
-    lines!(figu[1,1], cg_wl[2:end], upcg2[2:end], label="Coarse-grained HR saved")
+    lines!(figu[1,1], cg_wl[2:end], up_hrcg[2:end,t], label="Coarse-grained HR")
+    lines!(figu[1,1], true_wl[2:end], up_hrfilter[2:end,t], label="Filtered HR")
     axislegend()
 
     figv = Figure();
-        lines(figv[1,1], true_wl[2:65], vp_hr[2:65], label="HR", axis=(
+        lines(figv[1,1], true_wl[2:65], vp_hr[2:65,t], label="HR", axis=(
             xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
     )
-    lines!(figv[1,1], cg_wl[2:end], vpcg[2:end], label="Coarse-grained HR")
-    lines!(figv[1,1], cg_wl[2:end], vpcg2[2:end], label="Coarse-grained HR")
+    lines!(figv[1,1], cg_wl[2:end], vp_hrcg[2:end,t], label="Coarse-grained HR")
+    lines!(figv[1,1], true_wl[2:65], vp_hrfilter[2:65,t], label="Filtered HR")
     axislegend()
 
     figeta = Figure();
-        lines(figeta[1,1], true_wl[2:65], etap_hr[2:65], label="HR", axis=(
+        lines(figeta[1,1], true_wl[2:65], etap_hr[2:65,t], label="HR", axis=(
             xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
     )
-    lines!(figeta[1,1], cg_wl[2:end], etapcg[2:end], label="Coarse-grained HR")
-    lines!(figeta[1,1], cg_wl[2:end], etapcg2[2:end], label="Coarse-grained HR")
+    lines!(figeta[1,1], cg_wl[2:end], etap_hrcg[2:end,t], label="Coarse-grained HR")
+    lines!(figeta[1,1], cg_wl[2:end], etap_hrfilter[2:end,t], label="Filtered HR")
     axislegend()
 
 
