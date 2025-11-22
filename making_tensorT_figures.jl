@@ -1,36 +1,5 @@
 function compute_Ts(j, Ndays)
 
-    ulr = ncread("./spinup_files/128_cginitcond_1year_postspinup_noforcing/u.nc", "u")
-    vlr = ncread("./spinup_files/128_cginitcond_1year_postspinup_noforcing/v.nc", "v")
-    etalr = ncread("./spinup_files/128_cginitcond_1year_postspinup_noforcing/eta.nc", "eta")
-
-    Ppred = ShallowWaters.Parameter(T=Float64;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays,
-        initial_cond="ncfile",
-        initpath="./spinup_files/128_cginitcond_1year_postspinup_noforcing/",
-        init_starti=1
-    );
-    Spred = ShallowWaters.model_setup(Ppred);
 
     PNN = ShallowWaters.Parameter(T=Float64;
         output=false,
@@ -53,9 +22,9 @@ function compute_Ts(j, Ndays)
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
+        Ndays=1,
         initial_cond="ncfile",
-        initpath="./spinup_files/128_cginitcond_1year_postspinup_noforcing/",
+        initpath="./spinup_files/128_postspinup_cginitcond_noforcing_1year/",
         init_starti=1
     );
     SNN = ShallowWaters.model_setup(PNN);
@@ -81,56 +50,42 @@ function compute_Ts(j, Ndays)
         end
     end
 
-    ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], Spred);
     ShallowWaters.CNN_momentum(snapshot[1], snapshot[2], SNN);
-
-    T11_pred = Spred.Diag.CNNVars.T11;
-    T12_pred = Spred.Diag.CNNVars.T12;
-    T22_pred = Spred.Diag.CNNVars.T22;
 
     T11_NN = SNN.Diag.CNNVars.T11;
     T12_NN = SNN.Diag.CNNVars.T12;
     T22_NN = SNN.Diag.CNNVars.T22;
 
-    PZB = ShallowWaters.Parameter(T=Float64;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=1,
-        initial_cond="ncfile",
-        initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
-        init_starti=1
-    );
-    SZB = ShallowWaters.model_setup(PZB);
-    ShallowWaters.ZB_momentum(snapshot[1], snapshot[2], SZB, SZB.Diag);
+    # PZB = ShallowWaters.Parameter(T=Float64;
+    #     output=false,
+    #     L_ratio=1,
+    #     g=9.81,
+    #     H=500,
+    #     wind_forcing_x="double_gyre",
+    #     Lx=3840e3,
+    #     seasonal_wind_x=false,
+    #     topography="flat",
+    #     bc="nonperiodic",
+    #     bottom_drag="quadratic",
+    #     tracer_advection=false,
+    #     tracer_relaxation=false,
+    #     zb_forcing_momentum=false,
+    #     zb_forcing_dissipation=true,
+    #     zb_filtered=true,
+    #     nn_forcing_momentum=false,
+    #     nn_forcing_dissipation=false,
+    #     N=1,
+    #     α=2,
+    #     nx=128,
+    #     Ndays=1,
+    #     initial_cond="ncfile",
+    #     initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
+    #     init_starti=1
+    # );
+    # SZB = ShallowWaters.model_setup(PZB);
+    # ShallowWaters.ZB_momentum(snapshot[1], snapshot[2], SZB, SZB.Diag);
 
     # high-resolution T's
-
-    nx = SZB.grid.nx
-    ny = SZB.grid.ny
-    nux = SZB.grid.nux
-    nuy = SZB.grid.nuy
-    nvx = SZB.grid.nvx
-    nvy = SZB.grid.nvy
-    halo = SZB.grid.halo
-    haloη = SZB.grid.haloη
 
     true_Ts = load_object("./offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
 
@@ -142,7 +97,7 @@ function compute_Ts(j, Ndays)
     ζDhat_filtered = SZB.Diag.ZBVars.ζDhat_filtered;
     trace_filtered = SZB.Diag.ZBVars.trace_filtered;
 
-    return T11_true, T12_true, T22_true, ζD_filtered, ζDhat_filtered, trace_filtered, T11_NN, T12_NN, T22_NN, T11_pred, T12_pred, T22_pred
+    return T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN
 
 end
 
@@ -179,7 +134,8 @@ SZB = ShallowWaters.model_setup(PZB);
 # snapshot to use, can be anything within j = 3:3:241
 # these are the values the offline weights were trained on
 Ndays = 1
-T11_true, T12_true, T22_true, ζD_filtered, ζDhat_filtered, trace_filtered, T11_NN, T12_NN, T22_NN, T11_pred, T12_pred, T22_pred = compute_Ts(j, Ndays);
+j = 3
+T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN = compute_Ts(j, Ndays);
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
 ## True versus NN T's
@@ -220,7 +176,7 @@ ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T11_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{11}"),
+axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{11}"),
 colorrange=(-maximum(abs.(T11_true)),
 maximum(abs.(T11_true)))
 );
@@ -230,7 +186,7 @@ ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T12_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{12}"),
+axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{12}"),
 colorrange=(-maximum(abs.(T12_true)),
 maximum(abs.(T12_true)))
 );
@@ -240,11 +196,25 @@ ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T22_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{22}"),
+axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{22}"),
 colorrange=(-maximum(abs.(T22_true)),
 maximum(abs.(T22_true)))
 );
 Colorbar(fig[2,6], hm3)
+
+ga = fig[1, 1] = GridLayout()
+gb = fig[1, 3] = GridLayout()
+gc = fig[1, 5] = GridLayout()
+gd = fig[2, 1] = GridLayout()
+ge = fig[2, 3] = GridLayout()
+gf = fig[2, 5] = GridLayout()
+for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb,gc,gd,ge,gf])
+Label(layout[1, 1, TopLeft()], label,
+    fontsize = 15,
+    font = :bold,
+    padding = (0, 5, 5, 0),
+    halign = :right)
+end
 
 # Zanna-Bolton output versus the NN output
 

@@ -414,7 +414,7 @@ function integrate(chkp)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-            chkp.J += sum( (ke_u_hr[:]- ke_u_lr[:]).^2 ./ ke_u_hr[:].^2 + (ke_v_hr[:] - ke_v_lr[:]).^2 ./ ke_v_hr[:].^2 )
+            chkp.J += sum( ((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])).^2 ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
 
             chkp.j += 1
 

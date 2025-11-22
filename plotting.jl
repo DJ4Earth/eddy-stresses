@@ -220,6 +220,80 @@ function plots()
 
     # Prognostic variables #############################################################
 
+    # for showing offline instability
+    t = 10
+    fig = Figure(size=(950, 275), fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etaofflinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\eta(3 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(etaofflinegelu[:,:,t])),maximum(abs.(etaofflinegelu[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uofflinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u(3 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(uofflinegelu[:,:,t])),maximum(abs.(uofflinegelu[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2)
+
+    ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinegelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v(3 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(vofflinegelu[:,:,t])),maximum(abs.(vofflinegelu[:,:,t])))
+    );
+    Colorbar(fig[1,6], hm3)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)"], [ga, gb,gc])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # high versus low resolution eta
+    t = 1
+    fig = Figure(size=(800, 350), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etahr[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\mathbf{\eta}(3650 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(etahr[:,:,t])),maximum(abs.(etahr[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    etahrcg[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{\mathbf{\eta}}(3650 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+
     # just u fields
     t = 46
     fig = Figure(size=(900, 800), fontsize=15);
@@ -227,37 +301,49 @@ function plots()
     LinRange(0, 3840, 128),
     uhrcg[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained u(15 days, x, y)"),
+    axis=(xlabel="km", ylabel="km", title=L"\overline{u}(15 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
-    Colorbar(fig[1,2], hm1)
+    Colorbar(fig[1,2], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     unoparam[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), no closure"),
+    axis=(xlabel="km", ylabel="km", title=L"u(15 \; \text{days}, x, y)\text{, no closure}"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
-    Colorbar(fig[1,4], hm2)
+    Colorbar(fig[1,4], hm2, label="m")
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     uzb[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), ZB closure"),
+    axis=(xlabel="km", ylabel="km", title=L"u(15 \; \text{days}, x, y)\text{, ZB20 closure}"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
-    Colorbar(fig[2,2], hm3)
+    Colorbar(fig[2,2], hm3, label="m")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     uonlinegelu[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), online closure"),
+    axis=(xlabel="km", ylabel="km", title=L"u(15 \; \text{days}, x, y)\text{, online closure}"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
-    Colorbar(fig[2,4], hm4)
+    Colorbar(fig[2,4], hm4, label="m")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
     # u and v fields
     t = 46
@@ -373,11 +459,62 @@ function plots()
     );
     Colorbar(fig[2,4], hm4)
 
+    # time-series of prognostic field computed with online parameterization
+    t = [4, 10, 46, 91]
+    fig = Figure(size=(900, 800), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uonlinegelu[:,:,t[1]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u(1 \text{ day}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1, label="m/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uonlinegelu[:,:,t[2]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u(3 \text{ days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2, label="m/s")
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uonlinegelu[:,:,t[3]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u(15 \text{ days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,2], hm3, label="m/s")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uonlinegelu[:,:,t[4]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u(30 \text{ days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,4], hm4, label="m/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
     # Energy ############################################################################
 
     # high-resolution versus coarse-grained high resolution energy
     t = 31
-    fig = Figure(size=(800, 400), fontsize=15);
+    fig = Figure(size=(800, 350), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (uhr[:,1:end-1,t].^2 .+ vhr[1:end-1,:,t].^2),
@@ -397,6 +534,16 @@ function plots()
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
     Colorbar(fig[1,4], hm1)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
     # coarse-grained versus no parameterization
     t = 31
