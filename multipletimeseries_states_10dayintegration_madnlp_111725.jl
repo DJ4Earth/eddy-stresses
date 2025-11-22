@@ -716,7 +716,8 @@ function run_multistate()
     Slr = ShallowWaters.model_setup(Plr);
 
     # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
-    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_112125.jld2").solution
+    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_reluactivation.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_geluactivation_112125.jld2").solution;
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -730,7 +731,7 @@ function run_multistate()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=100
+        max_iter=50
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)

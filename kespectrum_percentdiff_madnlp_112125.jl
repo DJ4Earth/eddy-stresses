@@ -206,7 +206,7 @@ function cpintegrate(chkp, scheme)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
 
-            chkp.J += sum( (ke_u_hr[:]- ke_u_lr[:]).^2 ./ ke_u_hr[:].^2 + (ke_v_hr[:] - ke_v_lr[:]).^2 ./ ke_v_hr[:].^2 )
+            chkp.J += sum( ((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])).^2 ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
 
             chkp.j += 1
 
@@ -671,7 +671,7 @@ end
 function run_kespectrum_percentdiff()
 
     T = Float64
-    Ndays = 5
+    Ndays = 1
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -699,13 +699,14 @@ function run_kespectrum_percentdiff()
     Slr = ShallowWaters.model_setup(Plr);
 
     # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
-    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_112125.jld2").solution
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_reluactivation.jld2").solution
+    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_geluactivation_112125.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
     lower_bound = -10000
     upper_bound = 10000
-    nlp = multistatenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+    nlp = kespectrum_percentdiff_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
 
     qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
