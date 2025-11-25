@@ -200,11 +200,11 @@ function cpintegrate(chkp, scheme)::Float64
                 chkp.S
             )...)
 
-            ke_u_lr = power(periodogram(temp.u; radialavg=true))
-            ke_v_lr = power(periodogram(temp.v; radialavg=true))
+            ke_u_lr = power(periodogram(temp.u; radialavg=true)) ./ 128^2
+            ke_v_lr = power(periodogram(temp.v; radialavg=true)) ./ 128^2
 
-            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
+            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
             chkp.J += sum( ((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])).^2 ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
 
@@ -408,11 +408,11 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            ke_u_lr = power(periodogram(temp.u; radialavg=true))
-            ke_v_lr = power(periodogram(temp.v; radialavg=true))
+            ke_u_lr = power(periodogram(temp.u; radialavg=true)) ./ 128^2
+            ke_v_lr = power(periodogram(temp.v; radialavg=true)) ./ 128^2
 
-            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
+            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
             chkp.J += sum( ((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])).^2 ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
 
@@ -699,8 +699,10 @@ function run_kespectrum_percentdiff()
     Slr = ShallowWaters.model_setup(Plr);
 
     # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
-    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_reluactivation.jld2").solution
-    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_geluactivation_112125.jld2").solution
+    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_reluactivation.jld2").solution
+
+    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_geluactivation_112125.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_online_madnlp_state_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
