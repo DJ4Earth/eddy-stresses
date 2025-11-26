@@ -206,7 +206,7 @@ function cpintegrate(chkp, scheme)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
-            chkp.J += sum( ((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])).^2 ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
+            chkp.J += sum( abs.((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])) ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
 
             chkp.j += 1
 
@@ -414,7 +414,7 @@ function integrate(chkp)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
-            chkp.J += sum( ((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])).^2 ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
+            chkp.J += sum( abs.((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])) ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
 
             chkp.j += 1
 
@@ -725,7 +725,7 @@ function run_kespectrum_percentdiff()
 
 end
 
-function finite_difference_withnlp(Ndays, xcoord, ycoord)
+function finite_difference_withnlp(Ndays)
 
     # Type precision
     T = Float64
@@ -766,20 +766,35 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
         write_checkpoints_period = 2274
     )
 
-    coarse_grained_hrstates = load_object("./hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825")
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:75:S0.grid.nt
-    data = [uhrcg[:,:,8:8:end], vhrcg[:,:,8:8:end], etahrcg[:,:,8:8:end]]
+    data_steps = 75:74:S0.grid.nt
+    data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
-    u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
-    v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
-    eta0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[3]
+    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),S0)
 
     initial_cond = [u0, v0, eta0]
 
-    param_guess = load_object("./offlineresult_3-25-25_1e-3objective.jld2").solution
+    S0.Prog.u .= copy(initial_cond[1])
+    S0.Prog.v .= copy(initial_cond[2])
+    S0.Prog.η .= copy(initial_cond[3])
+
+    param_guess = load_object("./tuned_weights/result_online_madnlp_state_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution
+
+    current = 1
+    temp = 0.0
+    for m in (S0.Diag.CNNVars.model_Su, S0.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                sz = prod(size(array))
+                temp += norm(param_guess[current:(current + sz - 1)])
+                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                current += sz
+            end
+        end
+    end
 
     meta = NLPModelMeta(Lux.parameterlength(S0.Diag.CNNVars.model_Su) + Lux.parameterlength(S0.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -788,7 +803,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
     )
 
     S1 = deepcopy(S0)
-    chkp1 = multistatenlp_Chkp{T, typeof(param_guess)}(meta,
+    chkp1 = kespectrum_percentdiff_Chkp{T, typeof(param_guess)}(meta,
         Counters(),
         S1,
         initial_cond,
@@ -801,12 +816,13 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
         zeros(128,128),
         zeros(128,128)
     )
+
     dchkp1 = Enzyme.make_zero(chkp1)
 
     # Enzyme deriv
     J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        multistate_checkpointed_integration,
+        cpintegrate,
         Active,
         Duplicated(chkp1, dchkp1),
         Const(revolve)
@@ -817,7 +833,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
     println("Enzyme derivative: $enzyme_deriv")
 
     S2 = deepcopy(S0)
-    chkp2 = multistatenlp_Chkp{T, typeof(param_guess)}(meta,
+    chkp2 = kespectrum_percentdiff_Chkp{T, typeof(param_guess)}(meta,
         Counters(),
         S2,
         initial_cond,
@@ -831,7 +847,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
         zeros(128,128)
     )
 
-    @time unperturbed_loss = multistate_checkpointed_integration(chkp2, revolve)
+    @time unperturbed_loss = cpintegrate(chkp2, revolve)
     println("Loss when not using Enzyme: $unperturbed_loss")
 
     steps = [100, 50, 30, 20, 10, 1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
@@ -839,7 +855,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
     for s in steps
 
         S3 = deepcopy(S0)
-        chkp3 = multistatenlp_Chkp{T, typeof(param_guess)}(meta,
+        chkp3 = kespectrum_percentdiff_Chkp{T, typeof(param_guess)}(meta,
             Counters(),
             S3,
             initial_cond,
@@ -855,7 +871,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
 
         chkp3.S.Diag.CNNVars.model_Su[1][1][1][3, 2, 2, 25] += s
 
-        J = multistate_checkpointed_integration(chkp3, revolve)
+        J = cpintegrate(chkp3, revolve)
         push!(diffs, (J - unperturbed_loss) / s)
 
     end

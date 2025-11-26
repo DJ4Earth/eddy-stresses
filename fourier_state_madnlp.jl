@@ -3,7 +3,7 @@
 # are all constant, nothing changes in time
 using MadNLPMumps
 
-mutable struct kespectrum_Chkp{T, S} <: AbstractNLPModel{T,S}
+mutable struct fourier_Chkp{T, S} <: AbstractNLPModel{T,S}
     meta::NLPModelMeta{T,S}
     counters::Counters
     S::ShallowWaters.ModelSetup{T,T}        # model structure
@@ -202,13 +202,8 @@ function cpintegrate(chkp, scheme)::Float64
                 chkp.S
             )...)
 
-            ke_u_lr = power(periodogram(temp.u; radialavg=true)) ./ 128^2
-            ke_v_lr = power(periodogram(temp.v; radialavg=true)) ./ 128^2
-
-            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
-            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
-
-            chkp.J += sum(((ke_u_hr[1:45] + ke_v_hr[1:45]) - (ke_v_lr[1:45] + ke_u_lr[1:45])).^2)
+            chkp.J += sum((fft(chkp.data[1][:,:,chkp.j])[1:120, 1:120] - fft(temp.u)[1:120, 1:120]).^2) / (120*120) +
+                sum((fft(chkp.data[2][:,:,chkp.j])[1:120, 1:120] - fft(temp.v)[1:120, 1:120]).^2) / (120*120)
 
             chkp.j += 1
 
@@ -410,13 +405,8 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            ke_u_lr = power(periodogram(temp.u; radialavg=true)) ./ 128^2
-            ke_v_lr = power(periodogram(temp.v; radialavg=true)) ./ 128^2
-
-            ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
-            ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
-
-            chkp.J += sum(((ke_u_hr[1:45] + ke_v_hr[1:45]) - (ke_v_lr[1:45] + ke_u_lr[1:45])).^2)
+            chkp.J += sum((fft(chkp.data[1][:,:,chkp.j])[1:120, 1:120] - fft(temp.u)[1:120, 1:120]).^2) / (120*120) +
+                sum((fft(chkp.data[2][:,:,chkp.j])[1:120, 1:120] - fft(temp.v)[1:120, 1:120]).^2) / (120*120)
 
             chkp.j += 1
 
@@ -587,7 +577,7 @@ function NLPModels.grad!(model, param_guess, G)
 
 end
 
-function kespectrum_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
+function fourier_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
 
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
@@ -666,11 +656,11 @@ function kespectrum_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<
     )
     counters = Counters()
 
-    return kespectrum_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
+    return fourier_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
 end
 
-function run_kespectrum()
+function run_fourier()
 
     T = Float64
     Ndays = 1
@@ -710,7 +700,7 @@ function run_kespectrum()
     # uvar is by default Inf * ones(Float64, nvar)
     lower_bound = -10000
     upper_bound = 10000
-    nlp = kespectrum_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+    nlp = fourier_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
 
     qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
@@ -805,7 +795,7 @@ function finite_difference_withnlp(Ndays)
     )
 
     S1 = deepcopy(S0)
-    chkp1 = kespectrum_Chkp{T, typeof(param_guess)}(meta,
+    chkp1 = fourier_Chkp{T, typeof(param_guess)}(meta,
         Counters(),
         S1,
         initial_cond,
