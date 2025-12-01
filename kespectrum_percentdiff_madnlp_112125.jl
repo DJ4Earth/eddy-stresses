@@ -206,7 +206,7 @@ function cpintegrate(chkp, scheme)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
-            chkp.J += sum( abs.((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])) ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
+            chkp.J += sum( abs.(( (ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:]) ) ./ (ke_u_hr[:] + ke_v_hr[:])) )
 
             chkp.j += 1
 
@@ -414,7 +414,7 @@ function integrate(chkp)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
-            chkp.J += sum( abs.((ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:])) ./ (ke_u_hr[:] + ke_v_hr[:]).^2 )
+            chkp.J += sum( abs.(( (ke_u_hr[:] + ke_v_hr[:]) - (ke_v_lr[:] + ke_u_lr[:]) ) ./ (ke_u_hr[:] + ke_v_hr[:])) )
 
             chkp.j += 1
 
@@ -671,7 +671,7 @@ end
 function run_kespectrum_percentdiff()
 
     T = Float64
-    Ndays = 1
+    Ndays = 3
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -702,7 +702,7 @@ function run_kespectrum_percentdiff()
     # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_reluactivation.jld2").solution
 
     # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_geluactivation_112125.jld2").solution;
-    param_guess = load_object("./tuned_weights/result_online_madnlp_state_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -716,7 +716,7 @@ function run_kespectrum_percentdiff()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=100
+        max_iter=75
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
