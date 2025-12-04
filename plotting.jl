@@ -6,7 +6,7 @@ without all of this also running.
 function load_and_create_models()
 
     T = Float64
-    Ndays = 30
+    Ndays = 365*3
     coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
@@ -34,7 +34,7 @@ function load_and_create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=365
+        Ndays=Ndays
     );
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);
@@ -50,7 +50,7 @@ function load_and_create_models()
 
     PZB = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=8,
+        output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -109,7 +109,7 @@ function load_and_create_models()
 
     Soffline = ShallowWaters.model_setup(Poffline);
 
-    offlineweights = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution
+    offlineweights = load_object("./tuned_weights/result_offline_150iterations_reluactivation_111925.jld2").solution
     current = 1
     for m in (Soffline.Diag.CNNVars.model_Su, Soffline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -128,10 +128,10 @@ function load_and_create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 30
+    Ndays = 3*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=8,
+        output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -156,7 +156,7 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_100iterations_112125.jld2").solution
+    onlineweights = load_object("./tuned_weights/result_online_madnlp_fourierstates_3dayoptimization_startfrom5daystate_75iterations_geluactivation.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -187,26 +187,66 @@ function load_and_create_models()
     vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
     etaofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/eta.nc", "eta");
 
-    unoparam = ncread("./results/128_noparam_postspinup_cginitcond_30days_8hoursaves/u.nc", "u");
-    vnoparam = ncread("./results/128_noparam_postspinup_cginitcond_30days_8hoursaves/v.nc", "v");
-    etanoparam = ncread("./results/128_noparam_postspinup_cginitcond_30days_8hoursaves/eta.nc", "eta");
+    uofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/u.nc", "u");
+    vofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
+    etaofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
 
-    uonlinegelu = ncread("./results/128_online_geluactivation_offlineinitweights_madnlp_30days_8hoursaves/u.nc", "u");
-    vonlinegelu = ncread("./results/128_online_geluactivation_offlineinitweights_madnlp_30days_8hoursaves/v.nc", "v");
-    etaonlinegelu = ncread("./results/128_online_geluactivation_offlineinitweights_madnlp_30days_8hoursaves/eta.nc", "eta");
+    unoparam = ncread("./results/128_noparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vnoparam = ncread("./results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etanoparam = ncread("./results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
-    uzb = ncread("./results/128_ZBparam_postspinup_cginitcond_30days_8hoursaves/u.nc", "u");
-    vzb = ncread("./results/128_ZBparam_postspinup_cginitcond_30days_8hoursaves/v.nc", "v");
-    etazb = ncread("./results/128_ZBparam_postspinup_cginitcond_30days_8hoursaves/eta.nc", "eta");
+    # gelu activation function
 
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+    u1daystategelu = ncread("./results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
+    v1daystategelu = ncread("./results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
+    eta1daystategelu = ncread("./results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
+
+    u5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
+    v5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
+    eta5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
+
+    ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vkespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etakespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+
+    ukespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vkespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etakespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+
+    ufourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vfourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etafourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+
+    uhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etahybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+
+    # relu activation function
+
+    u1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
+    v1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
+    eta1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
+
+    u5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
+    v5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
+    eta5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
+
+    ukespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
+    vkespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
+    etakespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
+
+    # zanna bolton
+
+    uzb = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vzb = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etazb = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
 
 end
 
-function plots()
-
-    # energy plots ############################################################
+function offline_plots()
 
     # nc files
     # u_zb, uhr
@@ -218,11 +258,11 @@ function plots()
     # t is timestep, and I saved every 8 hours up to 30 days
     # this means t can be anything between 1 (the initial condition) and 91 (the final step after 30 days)
 
-    # Prognostic variables #############################################################
+    ###################################################################################
 
-    # for showing offline instability
+     # for showing offline instability
     t = 10
-    fig = Figure(size=(950, 275), fontsize=15);
+    fig = Figure(size=(950, 250), fontsize=15);
 
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -231,7 +271,7 @@ function plots()
     axis=(xlabel="km", ylabel="km", title=L"\eta(3 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(etaofflinegelu[:,:,t])),maximum(abs.(etaofflinegelu[:,:,t])))
     );
-    Colorbar(fig[1,2], hm1)
+    Colorbar(fig[1,2], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -240,7 +280,7 @@ function plots()
     axis=(xlabel="km", ylabel="km", title=L"u(3 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uofflinegelu[:,:,t])),maximum(abs.(uofflinegelu[:,:,t])))
     );
-    Colorbar(fig[1,4], hm2)
+    Colorbar(fig[1,4], hm2, label="m/s")
 
     ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -249,7 +289,7 @@ function plots()
     axis=(xlabel="km", ylabel="km", title=L"v(3 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(vofflinegelu[:,:,t])),maximum(abs.(vofflinegelu[:,:,t])))
     );
-    Colorbar(fig[1,6], hm3)
+    Colorbar(fig[1,6], hm3, label="m/s")
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
@@ -262,9 +302,16 @@ function plots()
         halign = :right)
     end
 
+
+end
+
+function prognostic_plots()
+
+    # Prognostic variables #############################################################
+
     # high versus low resolution eta
     t = 1
-    fig = Figure(size=(800, 350), fontsize=15);
+    fig = Figure(size=(775, 300), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     etahr[:,:,t],
@@ -272,7 +319,7 @@ function plots()
     axis=(xlabel="km", ylabel="km", title=L"\mathbf{\eta}(3650 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(etahr[:,:,t])),maximum(abs.(etahr[:,:,t])))
     );
-    Colorbar(fig[1,2], hm1)
+    Colorbar(fig[1,2], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -281,7 +328,7 @@ function plots()
     axis=(xlabel="km", ylabel="km", title=L"\overline{\mathbf{\eta}}(3650 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
     );
-    Colorbar(fig[1,4], hm2)
+    Colorbar(fig[1,4], hm2,label="m")
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
@@ -295,8 +342,61 @@ function plots()
 
 
     # just u fields
-    t = 46
-    fig = Figure(size=(900, 800), fontsize=15);
+    t = 500
+    fig = Figure(size=(700, 550), fontsize=15);
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcg[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{u}(30 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm1, label="m/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    unoparam[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u(30 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm2, label="m/s")
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uzb[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_{\text{ZB20}}(30 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,2], hm3, label="m/s")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    u5daystategelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(30 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,4], hm4, label="m/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # looking at u fields to see if additional state optimization helped
+    # just u fields
+    t = 91
+    fig = Figure(size=(700, 550), fontsize=15);
+
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     uhrcg[:,:,t],
@@ -308,27 +408,27 @@ function plots()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    unoparam[:,:,t],
+    uzb[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(15 \; \text{days}, x, y)\text{, no closure}"),
+    axis=(xlabel="km", ylabel="km", title=L"u_{\text{ZB20}}(15 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
     Colorbar(fig[1,4], hm2, label="m")
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uzb[:,:,t],
+    uonline1daygelu[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(15 \; \text{days}, x, y)\text{, ZB20 closure}"),
+    axis=(xlabel="km", ylabel="km", title=L"u_1(15 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
     Colorbar(fig[2,2], hm3, label="m")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonlinegelu[:,:,t],
+    uonline5daygelu[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(15 \; \text{days}, x, y)\text{, online closure}"),
+    axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(15 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
     Colorbar(fig[2,4], hm4, label="m")
@@ -344,6 +444,20 @@ function plots()
         padding = (0, 5, 5, 0),
         halign = :right)
     end
+
+    # 1 + 5 state optimization versus ZB20
+
+    t = 182
+    fig = Figure(size=(700, 550), fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    u5daystategelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(90 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,31])),maximum(abs.(uhrcg[:,:,31])))
+    );
+    Colorbar(fig[1,2], hm1, label="m")
 
     # u and v fields
     t = 46
@@ -460,48 +574,89 @@ function plots()
     Colorbar(fig[2,4], hm4)
 
     # time-series of prognostic field computed with online parameterization
-    t = [4, 10, 46, 91]
-    fig = Figure(size=(900, 800), fontsize=15);
+    t = [46, 91, 136, 273]
+    fig = Figure(size=(700, 525), fontsize=15);
+
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonlinegelu[:,:,t[1]],
+    ufourier[:,:,t[1]],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(1 \text{ day}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title=L"u_{1}(1 \text{ day}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
     );
     Colorbar(fig[1,2], hm1, label="m/s")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonlinegelu[:,:,t[2]],
+    ufourier[:,:,t[2]],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(3 \text{ days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title=L"u_{1}(3 \text{ days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
     );
     Colorbar(fig[1,4], hm2, label="m/s")
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonlinegelu[:,:,t[3]],
+    ufourier[:,:,t[3]],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(15 \text{ days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title=L"u_{1}(15 \text{ days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
     );
     Colorbar(fig[2,2], hm3, label="m/s")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonlinegelu[:,:,t[4]],
+    ufourier[:,:,t[4]],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(30 \text{ days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title=L"u_{1}(30 \text{ days}, x, y)"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
     );
     Colorbar(fig[2,4], hm4, label="m/s")
+
+    # ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # u5daystategelu[:,:,t[1]],
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(1 \text{ day}, x, y)"),
+    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    # );
+    # Colorbar(fig[2,2], hm1, label="m/s")
+
+    # ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # u5daystategelu[:,:,t[2]],
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(3 \text{ days}, x, y)"),
+    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    # );
+    # Colorbar(fig[2,4], hm2, label="m/s")
+
+    # ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # u5daystategelu[:,:,t[3]],
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(15 \text{ days}, x, y)"),
+    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    # );
+    # Colorbar(fig[2,6], hm3, label="m/s")
+
+    # ax4, hm4 = heatmap(fig[2,7], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # u5daystategelu[:,:,t[4]],
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(30 \text{ days}, x, y)"),
+    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    # );
+    # Colorbar(fig[2,8], hm4, label="m/s")
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
     gc = fig[2, 1] = GridLayout()
     gd = fig[2, 3] = GridLayout()
+    # ge = fig[2, 1] = GridLayout()
+    # gf = fig[2, 3] = GridLayout()
+    # gg = fig[2, 5] = GridLayout()
+    # gh = fig[2, 7] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
@@ -510,10 +665,16 @@ function plots()
         halign = :right)
     end
 
+
+
+end
+
+function energy_plots()
+
     # Energy ############################################################################
 
     # high-resolution versus coarse-grained high resolution energy
-    t = 31
+    t = 1098
     fig = Figure(size=(800, 350), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -523,7 +684,7 @@ function plots()
     colorrange=(0,
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
-    Colorbar(fig[1,2], hm1)
+    Colorbar(fig[1,2], hm1, label=L"(m/s)^2")
 
     ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -533,7 +694,7 @@ function plots()
     colorrange=(0,
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
-    Colorbar(fig[1,4], hm1)
+    Colorbar(fig[1,4], hm1, label=L"(m/s)^2")
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
@@ -569,7 +730,7 @@ function plots()
     Colorbar(fig[1,4], hm1)
 
     # cg, zb, nn, no param
-    t = 31
+    t = 91
     fig = Figure(size=(900, 1000), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -603,23 +764,34 @@ function plots()
 
     ax1, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (uonlinegelu[:,1:end-1,t].^2 .+ vonlinegelu[1:end-1,:,t].^2),
+    (uonline5daygelu[:,1:end-1,t].^2 .+ vonline5daygelu[1:end-1,:,t].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30 km resolution E, online closure"),
     colorrange=(0,
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
-    Colorbar(fig[2,4], hm1)
+    Colorbar(fig[2,4], hm1, label=L"(m/s)^2")
 
-    ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uofflinegelu[:,1:end-1,10].^2 .+ vofflinegelu[1:end-1,:,10].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution E, offline closure after 3 days"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[3,2], hm1)
+    # ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # (uofflinegelu[:,1:end-1,10].^2 .+ vofflinegelu[1:end-1,:,10].^2),
+    # colormap=:amp,
+    # axis=(xlabel="km", ylabel="km", title="30 km resolution E, offline closure after 3 days"),
+    # colorrange=(0,
+    # maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
+    # );
+    # Colorbar(fig[3,2], hm1)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
     # same as the above but without the coarse-grained energy
     # cg, zb, nn, no param
@@ -666,34 +838,73 @@ function plots()
     );
     Colorbar(fig[2,4], hm1)
 
-    # spatially averaged energy over integration (30 day integrations on all)
+    # spatially averaged energy over integration (3 year integrations on all)
 
-    gelu = []
+    oneday = []
+    fiveday = []
+    kespec = []
+    hybrid = []
+    fourier = []
+    kespecpd = []
+    # relu1day = []
+    # relu5day = []
+    # reluKEspec = []
     noparam = []
     zb = []
     cghr = []
-    for j = 1:31
-        push!(gelu, sum(uonlinegelu[:,1:end-1,j].^2 .+ vonlinegelu[1:end-1,:,j].^2))
+    for j = 1:1098
+        push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
+        push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
+        push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
+        push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
+        push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
+        push!(kespecpd, sum(ukespecpd[:,1:end-1,j].^2 .+ vkespecpd[1:end-1,:,j].^2))
+        # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
+        # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
+        # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
         push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
-        push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
+        # push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
         push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
     end
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0,10, 31), cghr, label="Coarse-grained 3.75km resolution", 
+    lines(fig[1,1], LinRange(0, 1095, 1098), kespec ./ (128^2), label="KE spectrum", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy"
         )
     )
-    lines!(fig[1,1], LinRange(0,10, 31), noparam, label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0,10, 31), zb, label="ZB closure")
-    lines!(fig[1,1], LinRange(0,10, 31), gelu, label="Online closure")
-    axislegend(position = (0,0))
+    lines!(fig[1,1], LinRange(0, 1095, 1098), noparam./ (128^2), label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0, 1095, 1098), zb./ (128^2), label="ZB closure")
+    lines!(fig[1,1], LinRange(0, 1095, 1098), oneday./ (128^2), label="Online closure, 1 day gelu")
+    lines!(fig[1,1], LinRange(0, 1095, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
+    lines!(fig[1,1], LinRange(0, 1095, 1098), hybrid./ (128^2), label="Hybrid")
+    lines!(fig[1,1], LinRange(0, 1095, 1098), kespecpd./ (128^2), label="KE spectrum pd")
+    lines!(fig[1,1], LinRange(0, 1095, 1098), fourier./ (128^2), label="Fourier")
+    axislegend(position = (0,1))
 
 
-    ###################################################################################
+    fig = Figure(size=(1000, 500), fontsize=15);
+    lines(fig[1,1], LinRange(0, 365, 366), kespec[1:366] ./ (128^2), label="KE spectrum", 
+        axis=(
+            xlabel="Day",
+            ylabel="Energy",
+            title="Spatially averaged energy"
+        )
+    )
+    lines!(fig[1,1], LinRange(0, 365, 366), noparam[1:366]./ (128^2), label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0, 365, 366), zb[1:366]./ (128^2), label="ZB closure")
+    lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
+    lines!(fig[1,1], LinRange(0, 365, 366), fiveday[1:366]./ (128^2), label="Online closure, 5 day gelu")
+    lines!(fig[1,1], LinRange(0, 365, 366), hybrid[1:366]./ (128^2), label="Hybrid")
+    lines!(fig[1,1], LinRange(0, 365, 366), kespecpd[1:366]./ (128^2), label="KE spectrum pd")
+    lines!(fig[1,1], LinRange(0, 365, 366), fourier[1:366]./ (128^2), label="Fourier")
+    axislegend(position = (0,1))
+
+end
+
+function spectrum_plots()
 
     # KE spectrum #############################################################
 
@@ -705,7 +916,7 @@ function plots()
     vhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v");
     etahr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta");
 
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_30days_postspinup_8hoursaves_112125.jld2");
+    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -715,7 +926,7 @@ function plots()
     vhrfilter = filtered_hrstates[2];
     etahrfilter = filtered_hrstates[3];
 
-    totalstates = 91 # saved every 8 hours (this is when the hr cg and low resolution match up)
+    totalstates = 1098 # saved every 8 hours (this is when the hr cg and low resolution match up)
     up_noparam = zeros(65,totalstates)
     vp_noparam = zeros(65,totalstates)
 
@@ -731,19 +942,44 @@ function plots()
     up_hrcg = zeros(65,totalstates)
     vp_hrcg = zeros(65,totalstates)
 
-    up_nn = zeros(65,totalstates)
-    vp_nn = zeros(65,totalstates)
+    up_gelu1day = zeros(65,totalstates)
+    vp_gelu1day = zeros(65,totalstates)
+
+    up_gelu5day = zeros(65,totalstates)
+    vp_gelu5day = zeros(65,totalstates)
+
+    up_geluKEspecpd = zeros(65,totalstates)
+    vp_geluKEspecpd = zeros(65,totalstates)
+
+    up_geluKEspec = zeros(65,totalstates)
+    vp_geluKEspec = zeros(65,totalstates)
+
+    up_geluhybrid = zeros(65,totalstates)
+    vp_geluhybrid = zeros(65,totalstates)
+
+    up_gelufourier = zeros(65,totalstates)
+    vp_gelufourier = zeros(65,totalstates)
+
+
+    # up_relu1day = zeros(65,totalstates)
+    # vp_relu1day = zeros(65,totalstates)
+
+    # up_relu5day = zeros(65,totalstates)
+    # vp_relu5day = zeros(65,totalstates)
+
+    # up_reluKEspecpd = zeros(65,totalstates)
+    # vp_reluKEspecpd = zeros(65,totalstates)
 
     for t = 1:totalstates
 
-        up_hr[:,t] = power(periodogram(uhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
-        vp_hr[:,t] = power(periodogram(vhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+        # up_hr[:,t] = power(periodogram(uhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+        # vp_hr[:,t] = power(periodogram(vhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
         up_zb[:,t] = power(periodogram(uzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_zb[:,t] = power(periodogram(vzb[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_hrfilter[:,t] = power(periodogram(uhrfilter[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
-        vp_hrfilter[:,t] = power(periodogram(vhrfilter[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+        # up_hrfilter[:,t] = power(periodogram(uhrfilter[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+        # vp_hrfilter[:,t] = power(periodogram(vhrfilter[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
         up_hrcg[:,t] = power(periodogram(uhrcg[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_hrcg[:,t] = power(periodogram(vhrcg[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
@@ -751,8 +987,33 @@ function plots()
         up_noparam[:,t] = power(periodogram(unoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_noparam[:,t] = power(periodogram(vnoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_nn[:,t] = power(periodogram(uonlinegelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_nn[:,t] = power(periodogram(vonlinegelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_gelu1day[:,t] = power(periodogram(u1daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_gelu1day[:,t] = power(periodogram(v1daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_gelu5day[:,t] = power(periodogram(u5daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_gelu5day[:,t] = power(periodogram(v5daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_geluKEspecpd[:,t] = power(periodogram(ukespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_geluKEspecpd[:,t] = power(periodogram(vkespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_geluKEspec[:,t] = power(periodogram(ukespec[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_geluKEspec[:,t] = power(periodogram(vkespec[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_geluhybrid[:,t] = power(periodogram(uhybrid[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_geluhybrid[:,t] = power(periodogram(vhybrid[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_gelufourier[:,t] = power(periodogram(ufourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_gelufourier[:,t] = power(periodogram(vfourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+
+        # up_relu1day[:,t] = power(periodogram(u1daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_relu1day[:,t] = power(periodogram(v1daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        # up_relu5day[:,t] = power(periodogram(u5daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_relu5day[:,t] = power(periodogram(v5daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        # up_reluKEspecpd[:,t] = power(periodogram(ukespecpdrelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_reluKEspecpd[:,t] = power(periodogram(vkespecpdrelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
     end
 
@@ -767,8 +1028,8 @@ function plots()
     hr_wl[1] = 1100
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    t = 91
-    lines(fig[1,1], hr_wl[2:65], up_hrfilter[2:65,t] + vp_hrfilter[2:65,t], label="Filtered 3.75km resolution", axis=(
+    t = 385
+    lines(fig[1,1], hr_wl[2:65], up_hrcg[2:65,t] + vp_hrcg[2:65,t], label="Filtered, coarse-grained 3.75km resolution", axis=(
             xscale=log10,
             yscale=log10,
             xlabel="Wavelength (km)",
@@ -777,8 +1038,9 @@ function plots()
             xticks=[700, 100, 30, 10, 2],
             title="KE spectrum")
     )
-    lines!(fig[1,1], lr_wl[2:end], up_nn[2:end,t] + vp_nn[2:end,t], label="Online NN closure"
-    )
+    # lines!(fig[1,1], lr_wl[2:end], up_gelu1day[2:end,t] + vp_gelu1day[2:end,t], label="Online NN closure, 1 day")
+    lines!(fig[1,1], lr_wl[2:end], up_gelu5day[2:end,t] + vp_gelu5day[2:end,t], label="Online NN closure, 1 + 5 day")
+    lines!(fig[1,1], lr_wl[2:end], up_geluKEspecpd[2:end,t] + up_geluKEspecpd[2:end,t], label="Online NN closure, KE spectrum PD")
     lines!(fig[1,1], lr_wl[2:end], up_noparam[2:end,t] + vp_noparam[2:end,t], label="30 km resolution, no closure")
     lines!(fig[1,1], lr_wl[2:end], up_zb[2:end,t] + vp_zb[2:end,t], label="ZB closure")
     axislegend(position = (0,0))
@@ -800,28 +1062,67 @@ function plots()
     up_filter_avg = zeros(513)
     vp_filter_avg = zeros(513)
 
-    up_nn_avg = zeros(65)
-    vp_nn_avg = zeros(65)
+    up_gelu1day_avg = zeros(65)
+    vp_gelu1day_avg = zeros(65)
 
-    for t = 2:91
+    up_gelu5day_avg = zeros(65)
+    vp_gelu5day_avg = zeros(65)
+
+    up_geluKEspec_avg = zeros(65)
+    vp_geluKEspec_avg = zeros(65)
+
+    up_geluKEspecpd_avg = zeros(65)
+    vp_geluKEspecpd_avg = zeros(65)
+
+    up_geluhybrid_avg = zeros(65)
+    vp_geluhybrid_avg = zeros(65)
+
+    up_gelufourier_avg = zeros(65)
+    vp_gelufourier_avg = zeros(65)
+
+    # up_relu1day_avg = zeros(65)
+    # vp_relu1day_avg = zeros(65)
+
+    # up_relu5day_avg = zeros(65)
+    # vp_relu5day_avg = zeros(65)
+
+    # up_reluKEspec_avg = zeros(65)
+    # vp_reluKEspec_avg = zeros(65)
+
+    for t = 700:1098
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
 
-        up_nn_avg += up_nn[:,t]
-        vp_nn_avg += vp_nn[:,t]
-
         up_zb_avg += up_zb[:,t]
         vp_zb_avg += vp_zb[:,t]
 
-        up_hr_avg += up_hr[:,t]
-        vp_hr_avg += vp_hr[:,t]
+        # up_hr_avg += up_hr[:,t]
+        # vp_hr_avg += vp_hr[:,t]
 
         up_filter_avg += up_hrfilter[:,t]
         vp_filter_avg += vp_hrfilter[:,t]
 
-        up_cghr_avg += up_cghr[:,t]
-        vp_cghr_avg += vp_cghr[:,t]
+        up_cghr_avg += up_hrcg[:,t]
+        vp_cghr_avg += vp_hrcg[:,t]
+
+        up_gelu1day_avg += up_gelu1day[:,t]
+        vp_gelu1day_avg += vp_gelu1day[:,t]
+
+        up_gelu5day_avg += up_gelu5day[:,t]
+        vp_gelu5day_avg += vp_gelu5day[:,t]
+
+        up_geluKEspec_avg += up_geluKEspec[:,t]
+        vp_geluKEspec_avg += vp_geluKEspec[:,t]
+
+        up_geluKEspecpd_avg += up_geluKEspecpd[:,t]
+        vp_geluKEspecpd_avg += vp_geluKEspecpd[:,t]
+
+        up_geluhybrid_avg += up_geluhybrid[:,t]
+        vp_geluhybrid_avg += vp_geluhybrid[:,t]
+
+        up_gelufourier_avg += up_gelufourier[:,t]
+        vp_gelufourier_avg += vp_gelufourier[:,t]
 
     end
 
@@ -832,11 +1133,16 @@ function plots()
         xlabel="Wavelength (km)",
         ylabel="KE(k)", xreversed=true,
         xticks=[700, 100, 30, 10, 2],
-        title="30 day averaged KE spectrum")
+        title="Time-averaged KE spectrum")
     )
-    lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/31, label="ZB closure")
-    lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30 km resolution, no closure")
-    lines!(fig[1,1], lr_wl[2:end], (up_nn_avg[2:end] + vp_nn_avg[2:end])/totalstates, label="Online NN closure")
+    lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/31, label="ZB20")
+    lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/31, label="30 km resolution, no closure")
+    # lines!(fig[1,1], lr_wl[2:end], (up_relu1day_avg[2:end] + vp_gelu1day_avg[2:end])/totalstates, label="Online NN closure, 1 day")
+    lines!(fig[1,1], lr_wl[2:end], (up_gelu5day_avg[2:end] + vp_gelu5day_avg[2:end])/31, label="Online NN closure, 1 + 5 days")
+    lines!(fig[1,1], lr_wl[2:end], (up_geluKEspec_avg[2:end] + vp_geluKEspec_avg[2:end])/31, label="Online NN closure, KE spec")
+    lines!(fig[1,1], lr_wl[2:end], (up_geluKEspecpd_avg[2:end] + vp_geluKEspecpd_avg[2:end])/31, label="Online NN closure, KE spec percent-diff")
+    lines!(fig[1,1], lr_wl[2:end], (up_geluhybrid_avg[2:end] + vp_geluhybrid_avg[2:end])/31, label="Online NN closure, Hybrid")
+    lines!(fig[1,1], lr_wl[2:end], (up_gelufourier_avg[2:end] + vp_gelufourier_avg[2:end])/31, label="Online NN closure, Fourier")
     axislegend(position = (0,0))
 
     #############################################################################################
@@ -884,180 +1190,157 @@ function plots()
     lines!(figeta[1,1], cg_wl[2:end], etap_hrfilter[2:end,t], label="Filtered HR")
     axislegend()
 
-
 end
 
-function longer_integration_kespec()
+function appendix_plots()
 
-    Ndays = 365
+     ## Appendix figures
 
-    u_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    v_hr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
+    # comparing the offline results relu versus gelu
+    t = [4, 7, 10]
+    fig = Figure(size=(1040, 520), fontsize=15);
 
-    initial_cond = load_object("./coarsegrained_1024_10yearstate_061925.jld2")
-    result = load_object("./tuned_weights/weights_aftertraining_kespectrum_twooptimiterations_onetimeseries_10dayintegraton_dailydataduringfinalweek_070925.jld2")
+    ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinegelu[:,:,t[1]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v_{\text{offline}}(1 \text{ day}, x, y), \; \text{GELU}"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t[1]])),maximum(abs.(vhrcg[:,:,t[1]])))
+    );
+    Colorbar(fig[1,2], hm2, label="m/s")
 
-    S_zb = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
+    ax3, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinegelu[:,:,t[2]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v_{\text{offline}}(2 \text{ days}, x, y), \text{ GELU}"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t[2]])),maximum(abs.(vhrcg[:,:,t[2]])))
+    );
+    Colorbar(fig[1,4], hm3, label="m/s")
+
+    ax4, hm4 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinegelu[:,:,t[3]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v_{\text{offline}}(3 \text{ days}, x, y), \; \text{GELU}"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t[3]])),maximum(abs.(vhrcg[:,:,t[3]])))
+    );
+    Colorbar(fig[1,6], hm4, label="m/s")
+
+    ax2, hm2 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinerelu[:,:,t[1]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v_{\text{offline}}(1 \text{ day}, x, y), \; \text{ReLU}"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t[1]])),maximum(abs.(vhrcg[:,:,t[1]])))
+    );
+    Colorbar(fig[2,2], hm2, label="m/s")
+
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinerelu[:,:,t[2]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v_{\text{offline}}(2 \text{ days}, x, y), \; \text{ReLU}"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t[2]])),maximum(abs.(vhrcg[:,:,t[2]])))
+    );
+    Colorbar(fig[2,4], hm3, label="m/s")
+
+    ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    vofflinerelu[:,:,t[3]],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"v_{\text{offline}}(3 \text{ days}, x, y), \; \text{ReLU}"),
+    colorrange=(-maximum(abs.(vhrcg[:,:,t[3]])),maximum(abs.(vhrcg[:,:,t[3]])))
     )
+    Colorbar(fig[2,6], hm4, label="m/s")
 
-    S_zb.Prog.u .= initial_cond[1]
-    S_zb.Prog.v .= initial_cond[2]
-    S_zb.Prog.η .= initial_cond[3]
-
-    S_before = ShallowWaters.model_setup(output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
-
-    S_before.Prog.u .= initial_cond[1]
-    S_before.Prog.v .= initial_cond[2]
-    S_before.Prog.η .= initial_cond[3]
-
-    S_after = ShallowWaters.model_setup(output=true,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    )
-
-    S_after.Prog.u .= initial_cond[1]
-    S_after.Prog.v .= initial_cond[2]
-    S_after.Prog.η .= initial_cond[3]
-
-    current = 1
-    for model in (S_after.Diag.NNVars.model_diag, S_after.Diag.NNVars.model_offdiag)
-        for layers in model[1]
-            for array in layers
-                sz = prod(size(array))
-                array .= reshape(result.minimizer[current:(current + sz - 1)], size(array)...)
-                current += sz
-            end
-        end
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[2, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
     end
 
-    ShallowWaters.time_integration(S_after)
-    ShallowWaters.time_integration(S_before)
-    ShallowWaters.time_integration(S_zb)
 
-    temp_before = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-    S_before.Prog.u,
-    S_before.Prog.v,
-    S_before.Prog.η,
-    S_before.Prog.sst,
-    S_before
-    )...)
-    temp_after = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-    S_after.Prog.u,
-    S_after.Prog.v,
-    S_after.Prog.η,
-    S_after.Prog.sst,
-    S_after
-    )...)
-    temp_zb = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-    S_zb.Prog.u,
-    S_zb.Prog.v,
-    S_zb.Prog.η,
-    S_zb.Prog.sst,
-    S_zb
-    )...)
+    # comparing the online results relu versus gelu
+    t = 91
+    fig = Figure(size=(700, 525), fontsize=15);
 
-    up_before = zeros(65)
-    vp_before = zeros(65)
+    ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    u1daystategelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_1(30 \text{ days}, x, y), \; \text{GELU}"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,2], hm2, label="m/s")
 
-    up_nn = zeros(65)
-    vp_nn = zeros(65)
+    ax3, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    u5daystategelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(30 \text{ days}, x, y), \text{ GELU}"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[1,4], hm3, label="m/s")
 
-    up_zb = zeros(65)
-    vp_zb = zeros(65)
+    # ax4, hm4 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # ukespecpd1day1daystartgelu[:,:,t],
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title=L"u_{\text{1 + KE pd}}(30 \text{ days}, x, y), \; \text{GELU}"),
+    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    # );
+    # Colorbar(fig[1,6], hm4, label="m/s")
 
-    up_true = zeros(513)
-    vp_true = zeros(513)
+    ax2, hm2 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    u1daystaterelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_1(30 \text{ days}, x, y), \; \text{ReLU}"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,2], hm2, label="m/s")
 
-    up_before[:] = power(periodogram(temp_before.u; radialavg=true, radialsum=false)) ./ 128^2
-    vp_before[:] = power(periodogram(temp_before.v; radialavg=true, radialsum=false)) ./ 128^2
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    u5daystaterelu[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(30 \text{ days}, x, y), \; \text{ReLU}"),
+    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    );
+    Colorbar(fig[2,4], hm3, label="m/s")
 
-    up_nn[:] = power(periodogram(temp_after.u; radialavg=true, radialsum=false)) ./ 128^2
-    vp_nn[:] = power(periodogram(temp_after.v; radialavg=true, radialsum=false)) ./ 128^2
+    # ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # ukespecpd1dayrelu[:,:,t],
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title=L"u_{\text{1 + KE pd}}(30 \text{ days}, x, y), \; \text{ReLU}"),
+    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
+    # );
+    # Colorbar(fig[2,6], hm4, label="m/s")
 
-    up_zb[:] = power(periodogram(temp_zb.u; radialavg=true, radialsum=false)) ./ 128^2
-    vp_zb[:] = power(periodogram(temp_zb.v; radialavg=true, radialsum=false)) ./ 128^2
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    # gc = fig[1, 5] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 3] = GridLayout()
+    # gf = fig[2, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", ], [ga, gb, gc, gd])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
-    t = 365
-    up_true[:] = power(periodogram(u_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
-    vp_true[:] = power(periodogram(v_hr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
-    nn_wl = (1 ./ freq(periodogram(temp_zb.u; radialavg=true, radialsum=false))) * 30;
-    nnu_freq = LinRange(0, 64, 65)
-    nnu_freq = nnu_freq ./ 65
-    nnu_freq = 1 ./ nnu_freq 
-    nnu_freq[1] =  1000
-    nn_wl[1] = 1000
-
-    true_wl = 1 ./ freq(periodogram(u_hr[:,:,3]; radialavg=true)) * 3.75;
-    true_wl[1] = 1100
-
-    fig2 = Figure(size=(800, 500));
-    lines(fig2[1,1], nn_wl[2:end], up_before[2:end] + vp_before[2:end], label="NN before training", axis=(
-            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, title="KE Spectrum after training")
-    )
-    lines!(fig2[1,1], nn_wl[2:end], up_nn[2:end] + vp_nn[2:end], label="NN after training")
-    lines!(fig2[1,1], nn_wl[2:end], up_zb[2:end] + vp_zb[2:end], label="ZB")
-    lines!(fig2[1,1], true_wl[2:end], up_true[2:end] + vp_true[2:end], label="HR")
-    axislegend()
 
 end
-

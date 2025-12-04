@@ -126,7 +126,7 @@ PZB = ShallowWaters.Parameter(T=Float64;
     nx=128,
     Ndays=1,
     initial_cond="ncfile",
-    initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
+    initpath="./spinup_files/128_postspinup_cginitcond_noforcing_1year",
     init_starti=1
 );
 SZB = ShallowWaters.model_setup(PZB);
@@ -134,13 +134,13 @@ SZB = ShallowWaters.model_setup(PZB);
 # snapshot to use, can be anything within j = 3:3:241
 # these are the values the offline weights were trained on
 Ndays = 1
-j = 3
+j = 6
 T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN = compute_Ts(j, Ndays);
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
 ## True versus NN T's
 
-fig = Figure(fontsize = 15,size=(900,450));
+fig = Figure(size=(1040, 520), fontsize=15);
 
 ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
@@ -150,7 +150,7 @@ axis=(xlabel="km", ylabel="km", title=L"T_{11}"),
 colorrange=(-maximum(abs.(T11_true)),
 maximum(abs.(T11_true)))
 );
-Colorbar(fig[1,2], hm1)
+Colorbar(fig[1,2], hm1, label=L"(m/s)^2")
 
 ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
@@ -160,7 +160,7 @@ axis=(xlabel="km", ylabel="km", title=L"T_{12}"),
 colorrange=(-maximum(abs.(T12_true)),
 maximum(abs.(T12_true)))
 );
-Colorbar(fig[1,4], hm2)
+Colorbar(fig[1,4], hm2, label=L"(m/s)^2")
 
 ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
@@ -170,37 +170,37 @@ axis=(xlabel="km", ylabel="km", title=L"T_{22}"),
 colorrange=(-maximum(abs.(T22_true)),
 maximum(abs.(T22_true)))
 );
-Colorbar(fig[1,6], hm3)
+Colorbar(fig[1,6], hm3, label=L"(m/s)^2")
 
 ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T11_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{11}"),
+axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{11}"),
 colorrange=(-maximum(abs.(T11_true)),
 maximum(abs.(T11_true)))
 );
-Colorbar(fig[2,2], hm1)
+Colorbar(fig[2,2], hm1, label=L"(m/s)^2")
 
 ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T12_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{12}"),
+axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{12}"),
 colorrange=(-maximum(abs.(T12_true)),
 maximum(abs.(T12_true)))
 );
-Colorbar(fig[2,4], hm2)
+Colorbar(fig[2,4], hm2, label=L"(m/s)^2")
 
 ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T22_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{22}"),
+axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{22}"),
 colorrange=(-maximum(abs.(T22_true)),
 maximum(abs.(T22_true)))
 );
-Colorbar(fig[2,6], hm3)
+Colorbar(fig[2,6], hm3, label=L"(m/s)^2")
 
 ga = fig[1, 1] = GridLayout()
 gb = fig[1, 3] = GridLayout()

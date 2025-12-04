@@ -192,23 +192,23 @@ end
 
 function filter()
 
-    u = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u")
-    v = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v")
-    eta = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta")
+    u = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
+    v = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
+    eta = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    ufiltered = zeros(1023, 1024, 91)
-    vfiltered = zeros(1024, 1023, 91)
-    etafiltered = zeros(1024, 1024, 91)
+    ufiltered = zeros(1023, 1024, 1098)
+    vfiltered = zeros(1024, 1023, 1098)
+    etafiltered = zeros(1024, 1024, 1098)
 
-    for j = 1:91
+    for j = 1:1098
         ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
         vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
         etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
     end
 
-    jldsave("1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
 
 end
 
@@ -255,15 +255,15 @@ end
 
 function downsize()
 
-    cgstates = load_object("./offline_files/1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2")
+    cgstates = load_object("./spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2");
 
-    ucg = cgstates[1]
-    vcg = cgstates[2]
-    etacg = cgstates[3]
+    ucg = cgstates[1];
+    vcg = cgstates[2];
+    etacg = cgstates[3];
 
-    ucgdownsized = (ucg[8:8:end, 4:8:end, :] .+ ucg[8:8:end, 5:8:end, :]) ./ 2
-    vcgdownsize = (vcg[4:8:end, 8:8:end, :] .+ vcg[5:8:end, 8:8:end, :]) ./ 2
-    etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4
+    ucgdownsized = (ucg[8:8:end, 4:8:end, :] .+ ucg[8:8:end, 5:8:end, :]) ./ 2;
+    vcgdownsize = (vcg[4:8:end, 8:8:end, :] .+ vcg[5:8:end, 8:8:end, :]) ./ 2;
+    etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4;
 
     # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
