@@ -205,6 +205,8 @@ function cpintegrate(chkp, scheme)::Float64
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
+            chkp.J += sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
+
 
             chkp.j += 1
 
@@ -412,6 +414,8 @@ function integrate(chkp)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
+            chkp.J += sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
+
             chkp.j += 1
 
         end
@@ -609,41 +613,33 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    Phr = ShallowWaters.Parameter(T=T,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays
-    )
-    Shr = ShallowWaters.model_setup(Phr)
+    # Phr = ShallowWaters.Parameter(T=T,
+    #     output=false,
+    #     L_ratio=1,
+    #     g=9.81,
+    #     H=500,
+    #     wind_forcing_x="double_gyre",
+    #     Lx=3840e3,
+    #     seasonal_wind_x=false,
+    #     topography="flat",
+    #     bc="nonperiodic",
+    #     bottom_drag="quadratic",
+    #     tracer_advection=false,
+    #     tracer_relaxation=false,
+    #     N=1,
+    #     α=2,
+    #     nx=1024,
+    #     Ndays=Ndays
+    # )
+    # Shr = ShallowWaters.model_setup(Phr)
 
-    # daily information
-    # uhrcg = load_object("./spinup_files/coarsegrainedu_30days_dailysaves_071525.jld2")
-    # vhrcg = load_object("./spinup_files/coarsegrainedv_30days_dailysaves_071525.jld2")
-    # etahrcg = load_object("./spinup_files/coarsegrainedeta_30days_dailysaves_071525.jld2")
-    # data_steps = 225:224:Slr.grid.nt
-    # data = [uhrcg[2:11], vhrcg[2:11], etahrcg[2:11]]
-
-    # hourly information
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2")
-    uhrcg = coarse_grained_hrstates[1]
-    vhrcg = coarse_grained_hrstates[2]
-    etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:74:Slr.grid.nt
-    data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+    data_steps = 75:74:Slr.grid.nt;
+    data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]];
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
@@ -666,26 +662,153 @@ end
 
 function run_multistate()
 
-    # result = nothing
-    # for ndays = [1, 2, 4, 6, 8, 10]
+    result = nothing
+    T = Float64
+    Ndays = 1
 
-    #     if ndays === 1
-    #         # the initial guess for weights will be the result from the offline problem
-    #         param_guess = load_object("./offline_workingresults_5-25-25NN_nobias_1000iterations_1e-3obj_1e-2grad_102025.jld2").solution
-    #     else
-    #         param_guess = result.solution
-    #     end
-    #     nlp = multistatenlp_Chkp{Float64}(ndays,param_guess)
-    #     qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
-    #     result = madnlp(
-    #         nlp;
-    #         # linear_solver=LapackCPUSolver,
-    #         hessian_approximation=MadNLP.CompactLBFGS,
-    #         quasi_newton_options=qn_options,
-    #         max_iter=100
-    #     )
+    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
 
-    # end
+    days = [3, 10, 15, 25, 30, 35, 40] .* 3 .+ 1
+    for n ∈ days
+
+        if n === 10
+
+            Plr = ShallowWaters.Parameter(T=T,
+                output=false,
+                L_ratio=1,
+                g=9.81,
+                H=500,
+                wind_forcing_x="double_gyre",
+                Lx=3840e3,
+                seasonal_wind_x=false,
+                topography="flat",
+                bc="nonperiodic",
+                bottom_drag="quadratic",
+                tracer_advection=false,
+                tracer_relaxation=false,
+                zb_forcing_momentum=false,
+                zb_forcing_dissipation=false,
+                zb_filtered=true,
+                nn_forcing_momentum=false,
+                nn_forcing_dissipation=true,
+                N=1,
+                α=2,
+                nx=128,
+                Ndays=1
+            )
+
+            Slr = ShallowWaters.model_setup(Plr)
+            param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
+
+            u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128,128),Slr)
+
+            data_steps = 75:74:Slr.grid.nt;
+            data = [uhrcg[:,:,(n+1):end], vhrcg[:,:,(n+1):end], etahrcg[:,:,(n+1):end]];
+
+            initial_cond = [u0, v0, eta0]
+
+            meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+                ncon=0,
+                nnzh=0,
+                x0=param_guess
+            )
+
+            nlp = multistatenlp_Chkp{T, typeof(param_guess)}(
+                meta,
+                Counters(),
+                Slr,
+                initial_cond,
+                data,
+                data_steps,
+                0.0,
+                1,
+                1,
+                0.0,
+                zeros(128,128),
+                zeros(128,128)
+            )
+
+        else
+
+            Plr = ShallowWaters.Parameter(T=T,
+                output=false,
+                L_ratio=1,
+                g=9.81,
+                H=500,
+                wind_forcing_x="double_gyre",
+                Lx=3840e3,
+                seasonal_wind_x=false,
+                topography="flat",
+                bc="nonperiodic",
+                bottom_drag="quadratic",
+                tracer_advection=false,
+                tracer_relaxation=false,
+                zb_forcing_momentum=false,
+                zb_forcing_dissipation=false,
+                zb_filtered=true,
+                nn_forcing_momentum=false,
+                nn_forcing_dissipation=true,
+                N=1,
+                α=2,
+                nx=128,
+                Ndays=1
+            )
+            Slr = ShallowWaters.model_setup(Plr)
+            param_guess = result.solution
+
+            u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128,128),Slr)
+
+            data_steps = 75:74:Slr.grid.nt;
+            data = [uhrcg[:,:,(n+1):end], vhrcg[:,:,(n+1):end], etahrcg[:,:,(n+1):end]];
+
+            initial_cond = [u0, v0, eta0]
+
+            meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+                ncon=0,
+                nnzh=0,
+                x0=param_guess
+            )
+
+            nlp = multistatenlp_Chkp{T, typeof(param_guess)}(
+                meta,
+                Counters(),
+                Slr,
+                initial_cond,
+                data,
+                data_steps,
+                0.0,
+                1,
+                1,
+                0.0,
+                zeros(128,128),
+                zeros(128,128)
+            )
+        end
+
+        qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
+        result = madnlp(
+            nlp;
+            # linear_solver=LapackCPUSolver,
+            hessian_approximation=MadNLP.CompactLBFGS,
+            quasi_newton_options=qn_options,
+            max_iter=20
+        )
+
+    end
+
+    # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
+
+    days = [3, 10, 15, 25, 30, 35, 40]
+    jldsave("result_multistate_witheta_3-10-15-25-30-35-40daystart_1dayoptimization_initialweights5daystate_20iterations.jld2", result=result)
+
+    return nothing
+
+end
+
+function run_oneintegration()
 
     T = Float64
     Ndays = 5
@@ -715,10 +838,7 @@ function run_multistate()
 
     Slr = ShallowWaters.model_setup(Plr);
 
-    # param_guess = load_object("./tuned_weights/result_offline_150iterations_reluactivation_111925.jld2").solution
-    # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
-    param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_reluactivation.jld2").solution;
-    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_geluactivation_112125.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -734,12 +854,6 @@ function run_multistate()
         quasi_newton_options=qn_options,
         max_iter=50
     )
-
-    # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
-
-    jldsave("online_fivedays_100iterations_8hourdata_result_200maxhistory.jld2", result=result)
-
-    return nothing
 
 end
 

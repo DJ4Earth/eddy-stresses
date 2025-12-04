@@ -208,12 +208,14 @@ function cpintegrate(chkp, scheme)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
-            chkp.J += sum( (temp.u .- chkp.data[1][:,:,chkp.j]).^2 ) / (127*128) + sum( (temp.v .- chkp.data[2][:,:,chkp.j]).^2 ) / (127*128) + 
-                sum( abs.( (ke_u_hr[1:45] + ke_v_hr[1:45]) - (ke_v_lr[1:45] + ke_u_lr[1:45]) ) )
+            chkp.J += 1e1 * sum( (temp.u .- chkp.data[1][:,:,chkp.j]).^2 ) / (127*128) + 1e1 * sum( (temp.v .- chkp.data[2][:,:,chkp.j]).^2 ) / (127*128) 
+                + 1e1 * sum( (temp.η .- chkp.data[3][:,:,chkp.j]).^2 ) / (128*128)
+                + sum( abs.( (ke_u_hr[1:45] + ke_v_hr[1:45]) - (ke_v_lr[1:45] + ke_u_lr[1:45]) ) )
+
 
             chkp.j += 1
 
-        end
+        end 
 
         copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
         copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
@@ -417,8 +419,9 @@ function integrate(chkp)::Float64
             ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true)) ./ 128^2
             ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true)) ./ 128^2
 
-            chkp.J += sum( (temp.u .- chkp.data[1][:,:,chkp.j]).^2 ) / (127*128) + sum( (temp.v .- chkp.data[2][:,:,chkp.j]).^2 ) / (127*128) + 
-                sum( abs.( (ke_u_hr[1:45] + ke_v_hr[1:45]) - (ke_v_lr[1:45] + ke_u_lr[1:45]) ) )
+            chkp.J += 1e1 * sum( (temp.u .- chkp.data[1][:,:,chkp.j]).^2 ) / (127*128) + 1e1 * sum( (temp.v .- chkp.data[2][:,:,chkp.j]).^2 ) / (127*128) 
+                + 1e1 * sum( (temp.η .- chkp.data[3][:,:,chkp.j]).^2 ) / (128*128)
+                + sum( abs.( (ke_u_hr[1:45] + ke_v_hr[1:45]) - (ke_v_lr[1:45] + ke_u_lr[1:45]) ) )
 
             chkp.j += 1
 
@@ -720,7 +723,7 @@ function run_hybrid()
         # linear_solver=MadNLPMumps.MumpsSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=75
+        max_iter=50
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
