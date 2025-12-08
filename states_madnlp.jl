@@ -206,7 +206,7 @@ function cpintegrate(chkp, scheme)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (127*128)
+                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -414,7 +414,7 @@ function integrate(chkp)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (127*128)
+                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -694,7 +694,7 @@ function run_state()
     # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
     # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_reluactivation.jld2").solution;
     # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_geluactivation_112125.jld2").solution;
-    param_guess = load_object("./tuned_weights/result_online_state_witheta_5dayoptimization_startfrom5daystate_50iterations.jld2").solution
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -708,7 +708,7 @@ function run_state()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=50
+        max_iter=40
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)

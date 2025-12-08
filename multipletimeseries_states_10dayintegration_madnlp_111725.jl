@@ -500,7 +500,7 @@ function NLPModels.obj(model, param_guess)
             end
         end
 
-        model.J += integrate(model)
+        model.J = integrate(model)
 
     end
 
@@ -515,10 +515,10 @@ function NLPModels.grad!(model, param_guess, G)
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
+    println("Norm of G: ", norm(G))
+
     # Type precision
     T = model.S.parameters.T
-    model.J = 0
-
     days = model.days
     for n in days
 
@@ -551,6 +551,7 @@ function NLPModels.grad!(model, param_guess, G)
         model.j = 1
         model.i = 1
         model.t = 0
+        model.J = 0
 
         data_steps = model.data_steps
 
@@ -706,7 +707,7 @@ function run_multistate()
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    days = [3, 10] .* 3 .+ 1 #, 15, 25, 30, 35, 40] .* 3 .+ 1
+    days = [3, 25, 30, 40, 50, 60, 80] .* 3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -739,7 +740,7 @@ function run_multistate()
         max_iter=20
     )
 
-    jldsave("result_multistate_witheta_3-10-15-25-30-35-40daystart_1dayoptimization_initialweights5daystate_20iterations.jld2", result=result)
+    jldsave("result_multistate_witheta_3-25-30-40-50-60-80daystart_1dayoptimization_initialweights5daystate_20iterations.jld2", result=result)
 
     return nothing
 
