@@ -6,7 +6,7 @@ without all of this also running.
 function load_and_create_models()
 
     T = Float64
-    Ndays = 365*3
+    Ndays = 365
     coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
@@ -156,7 +156,7 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./tuned_weights/result_online_madnlp_fourierstates_3dayoptimization_startfrom5daystate_75iterations_geluactivation.jld2").solution
+    onlineweights = load_object("./result_online_state_witheta_5dayoptimization_startfrom5daystate_gelu_50iterations.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -174,7 +174,7 @@ function load_and_create_models()
 
     ShallowWaters.time_integration(Sonline)
 
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_30days_postspinup_8hoursaves_112125.jld2");
+    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -204,6 +204,14 @@ function load_and_create_models()
     u5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
     v5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
     eta5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
+
+    u10day = ncread("./10daystate/u.nc", "u");
+    v10day = ncread("./10daystate/v.nc", "v");
+    eta10day = ncread("./10daystate/eta.nc", "eta");
+
+    u5dayeta = ncread("./5daystate_witheta/u.nc", "u");
+    v5dayeta = ncread("./5daystate_witheta/v.nc", "v");
+    eta5dayeta = ncread("./5daystate_witheta/eta.nc", "eta");
 
     ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
     vkespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
@@ -342,7 +350,7 @@ function prognostic_plots()
 
 
     # just u fields
-    t = 500
+    t = 365
     fig = Figure(size=(700, 550), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -355,7 +363,7 @@ function prognostic_plots()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    unoparam[:,:,t],
+    u5dayeta[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u(30 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -850,40 +858,50 @@ function energy_plots()
     # relu5day = []
     # reluKEspec = []
     noparam = []
+    fivedayeta = []
+    tenday = []
     zb = []
     cghr = []
     for j = 1:1098
         push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
         push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
-        push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
-        push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
-        push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
-        push!(kespecpd, sum(ukespecpd[:,1:end-1,j].^2 .+ vkespecpd[1:end-1,:,j].^2))
+        # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
+        # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
+        # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
+        # push!(kespecpd, sum(ukespecpd[:,1:end-1,j].^2 .+ vkespecpd[1:end-1,:,j].^2))
         # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
         push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
-        # push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
+        push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
         push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
     end
 
+    for j = 1:366
+
+        push!(fivedayeta, sum(u5dayeta[:,1:end-1,j].^2 .+ v5dayeta[1:end-1,:,j].^2))
+        push!(tenday, sum(u10day[:,1:end-1,j].^2 .+ v10day[1:end-1,:,j].^2))
+
+    end
+
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 1095, 1098), kespec ./ (128^2), label="KE spectrum", 
+    lines(fig[1,1], LinRange(0, 365, 366),  cghr[1:366] ./ (128^2), label="Coarse-grained HR", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy"
         )
     )
-    lines!(fig[1,1], LinRange(0, 1095, 1098), noparam./ (128^2), label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 1095, 1098), zb./ (128^2), label="ZB closure")
-    lines!(fig[1,1], LinRange(0, 1095, 1098), oneday./ (128^2), label="Online closure, 1 day gelu")
-    lines!(fig[1,1], LinRange(0, 1095, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
-    lines!(fig[1,1], LinRange(0, 1095, 1098), hybrid./ (128^2), label="Hybrid")
-    lines!(fig[1,1], LinRange(0, 1095, 1098), kespecpd./ (128^2), label="KE spectrum pd")
-    lines!(fig[1,1], LinRange(0, 1095, 1098), fourier./ (128^2), label="Fourier")
+    lines!(fig[1,1], LinRange(0, 365, 366), noparam[1:366]./ (128^2), label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0, 365, 366), zb[1:366]./ (128^2), label="ZB closure")
+    # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
+    lines!(fig[1,1], LinRange(0, 365, 366), fiveday[1:366]./ (128^2), label="Online closure, 5 day gelu")
+    lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
+    lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
+    # lines!(fig[1,1], LinRange(0, 1095, 1098), hybrid./ (128^2), label="Hybrid")
+    # lines!(fig[1,1], LinRange(0, 1095, 1098), kespecpd./ (128^2), label="KE spectrum pd")
+    # lines!(fig[1,1], LinRange(0, 1095, 1098), fourier./ (128^2), label="Fourier")
     axislegend(position = (0,1))
-
 
     fig = Figure(size=(1000, 500), fontsize=15);
     lines(fig[1,1], LinRange(0, 365, 366), kespec[1:366] ./ (128^2), label="KE spectrum", 
@@ -920,6 +938,11 @@ function spectrum_plots()
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
+
+    # coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_30days_postspinup_8hoursaves_112125.jld2");
+    # uhrcg = coarse_grained_hrstates[1];
+    # vhrcg = coarse_grained_hrstates[2];
+    # etahrcg = coarse_grained_hrstates[3];
 
     filtered_hrstates = load_object("./offline_files/1024_filtered_uveta_imfilter_30days_postspinup_8hoursaves_112125.jld2");
     uhrfilter= filtered_hrstates[1];
@@ -960,6 +983,11 @@ function spectrum_plots()
     up_gelufourier = zeros(65,totalstates)
     vp_gelufourier = zeros(65,totalstates)
 
+    up_5dayeta = zeros(65, 366)
+    vp_5dayeta = zeros(65, 366)
+
+    up_10day = zeros(65, 366)
+    vp_10day = zeros(65, 366)
 
     # up_relu1day = zeros(65,totalstates)
     # vp_relu1day = zeros(65,totalstates)
@@ -993,17 +1021,17 @@ function spectrum_plots()
         up_gelu5day[:,t] = power(periodogram(u5daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_gelu5day[:,t] = power(periodogram(v5daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_geluKEspecpd[:,t] = power(periodogram(ukespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_geluKEspecpd[:,t] = power(periodogram(vkespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # up_geluKEspecpd[:,t] = power(periodogram(ukespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_geluKEspecpd[:,t] = power(periodogram(vkespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_geluKEspec[:,t] = power(periodogram(ukespec[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_geluKEspec[:,t] = power(periodogram(vkespec[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # up_geluKEspec[:,t] = power(periodogram(ukespec[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_geluKEspec[:,t] = power(periodogram(vkespec[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_geluhybrid[:,t] = power(periodogram(uhybrid[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_geluhybrid[:,t] = power(periodogram(vhybrid[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # up_geluhybrid[:,t] = power(periodogram(uhybrid[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_geluhybrid[:,t] = power(periodogram(vhybrid[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_gelufourier[:,t] = power(periodogram(ufourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_gelufourier[:,t] = power(periodogram(vfourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # up_gelufourier[:,t] = power(periodogram(ufourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_gelufourier[:,t] = power(periodogram(vfourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
 
         # up_relu1day[:,t] = power(periodogram(u1daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
@@ -1014,6 +1042,16 @@ function spectrum_plots()
 
         # up_reluKEspecpd[:,t] = power(periodogram(ukespecpdrelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         # vp_reluKEspecpd[:,t] = power(periodogram(vkespecpdrelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+    end
+
+    for t = 1:366
+
+        up_5dayeta[:, t] = power(periodogram(u5dayeta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_5dayeta[:, t] = power(periodogram(v5dayeta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
+        up_10day[:, t] = power(periodogram(u10day[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_10day[:, t] = power(periodogram(v10day[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
     end
 
@@ -1028,7 +1066,7 @@ function spectrum_plots()
     hr_wl[1] = 1100
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    t = 385
+    t = 360
     lines(fig[1,1], hr_wl[2:65], up_hrcg[2:65,t] + vp_hrcg[2:65,t], label="Filtered, coarse-grained 3.75km resolution", axis=(
             xscale=log10,
             yscale=log10,
@@ -1040,7 +1078,7 @@ function spectrum_plots()
     )
     # lines!(fig[1,1], lr_wl[2:end], up_gelu1day[2:end,t] + vp_gelu1day[2:end,t], label="Online NN closure, 1 day")
     lines!(fig[1,1], lr_wl[2:end], up_gelu5day[2:end,t] + vp_gelu5day[2:end,t], label="Online NN closure, 1 + 5 day")
-    lines!(fig[1,1], lr_wl[2:end], up_geluKEspecpd[2:end,t] + up_geluKEspecpd[2:end,t], label="Online NN closure, KE spectrum PD")
+    # lines!(fig[1,1], lr_wl[2:end], up_geluKEspecpd[2:end,t] + up_geluKEspecpd[2:end,t], label="Online NN closure, KE spectrum PD")
     lines!(fig[1,1], lr_wl[2:end], up_noparam[2:end,t] + vp_noparam[2:end,t], label="30 km resolution, no closure")
     lines!(fig[1,1], lr_wl[2:end], up_zb[2:end,t] + vp_zb[2:end,t], label="ZB closure")
     axislegend(position = (0,0))
@@ -1052,6 +1090,12 @@ function spectrum_plots()
 
     up_zb_avg = zeros(65)
     vp_zb_avg = zeros(65)
+
+    up_10day_avg = zeros(65)
+    vp_10day_avg = zeros(65)
+
+    up_5dayeta_avg = zeros(65)
+    vp_5dayeta_avg = zeros(65)
 
     up_hr_avg = zeros(513)
     vp_hr_avg = zeros(513)
@@ -1068,17 +1112,17 @@ function spectrum_plots()
     up_gelu5day_avg = zeros(65)
     vp_gelu5day_avg = zeros(65)
 
-    up_geluKEspec_avg = zeros(65)
-    vp_geluKEspec_avg = zeros(65)
+    # up_geluKEspec_avg = zeros(65)
+    # vp_geluKEspec_avg = zeros(65)
 
-    up_geluKEspecpd_avg = zeros(65)
-    vp_geluKEspecpd_avg = zeros(65)
+    # up_geluKEspecpd_avg = zeros(65)
+    # vp_geluKEspecpd_avg = zeros(65)
 
-    up_geluhybrid_avg = zeros(65)
-    vp_geluhybrid_avg = zeros(65)
+    # up_geluhybrid_avg = zeros(65)
+    # vp_geluhybrid_avg = zeros(65)
 
-    up_gelufourier_avg = zeros(65)
-    vp_gelufourier_avg = zeros(65)
+    # up_gelufourier_avg = zeros(65)
+    # vp_gelufourier_avg = zeros(65)
 
     # up_relu1day_avg = zeros(65)
     # vp_relu1day_avg = zeros(65)
@@ -1089,7 +1133,7 @@ function spectrum_plots()
     # up_reluKEspec_avg = zeros(65)
     # vp_reluKEspec_avg = zeros(65)
 
-    for t = 700:1098
+    for t = 1:366
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
@@ -1112,17 +1156,22 @@ function spectrum_plots()
         up_gelu5day_avg += up_gelu5day[:,t]
         vp_gelu5day_avg += vp_gelu5day[:,t]
 
-        up_geluKEspec_avg += up_geluKEspec[:,t]
-        vp_geluKEspec_avg += vp_geluKEspec[:,t]
+        up_5dayeta_avg += up_5dayeta[:, t]
+        vp_5dayeta_avg += vp_5dayeta[:, t]
 
-        up_geluKEspecpd_avg += up_geluKEspecpd[:,t]
-        vp_geluKEspecpd_avg += vp_geluKEspecpd[:,t]
+        up_10day_avg += up_10day[:, t]
+        vp_10day_avg += vp_10day[:, t]
+        # up_geluKEspec_avg += up_geluKEspec[:,t]
+        # vp_geluKEspec_avg += vp_geluKEspec[:,t]
 
-        up_geluhybrid_avg += up_geluhybrid[:,t]
-        vp_geluhybrid_avg += vp_geluhybrid[:,t]
+        # up_geluKEspecpd_avg += up_geluKEspecpd[:,t]
+        # vp_geluKEspecpd_avg += vp_geluKEspecpd[:,t]
 
-        up_gelufourier_avg += up_gelufourier[:,t]
-        vp_gelufourier_avg += vp_gelufourier[:,t]
+        # up_geluhybrid_avg += up_geluhybrid[:,t]
+        # vp_geluhybrid_avg += vp_geluhybrid[:,t]
+
+        # up_gelufourier_avg += up_gelufourier[:,t]
+        # vp_gelufourier_avg += vp_gelufourier[:,t]
 
     end
 
@@ -1133,16 +1182,18 @@ function spectrum_plots()
         xlabel="Wavelength (km)",
         ylabel="KE(k)", xreversed=true,
         xticks=[700, 100, 30, 10, 2],
-        title="Time-averaged KE spectrum")
+        title="Time-averaged KE spectrum, first 365 days")
     )
     lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/31, label="ZB20")
     lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/31, label="30 km resolution, no closure")
     # lines!(fig[1,1], lr_wl[2:end], (up_relu1day_avg[2:end] + vp_gelu1day_avg[2:end])/totalstates, label="Online NN closure, 1 day")
     lines!(fig[1,1], lr_wl[2:end], (up_gelu5day_avg[2:end] + vp_gelu5day_avg[2:end])/31, label="Online NN closure, 1 + 5 days")
-    lines!(fig[1,1], lr_wl[2:end], (up_geluKEspec_avg[2:end] + vp_geluKEspec_avg[2:end])/31, label="Online NN closure, KE spec")
-    lines!(fig[1,1], lr_wl[2:end], (up_geluKEspecpd_avg[2:end] + vp_geluKEspecpd_avg[2:end])/31, label="Online NN closure, KE spec percent-diff")
-    lines!(fig[1,1], lr_wl[2:end], (up_geluhybrid_avg[2:end] + vp_geluhybrid_avg[2:end])/31, label="Online NN closure, Hybrid")
-    lines!(fig[1,1], lr_wl[2:end], (up_gelufourier_avg[2:end] + vp_gelufourier_avg[2:end])/31, label="Online NN closure, Fourier")
+    lines!(fig[1,1], lr_wl[2:end], (up_5dayeta_avg[2:end] + vp_5dayeta_avg[2:end])/31, label="Online NN closure, 5 day with eta")
+    lines!(fig[1,1], lr_wl[2:end], (up_10day_avg[2:end] + vp_10day_avg[2:end])/31, label="Online NN closure, 10 day")
+    # lines!(fig[1,1], lr_wl[2:end], (up_geluKEspec_avg[2:end] + vp_geluKEspec_avg[2:end])/31, label="Online NN closure, KE spec")
+    # lines!(fig[1,1], lr_wl[2:end], (up_geluKEspecpd_avg[2:end] + vp_geluKEspecpd_avg[2:end])/31, label="Online NN closure, KE spec percent-diff")
+    # lines!(fig[1,1], lr_wl[2:end], (up_geluhybrid_avg[2:end] + vp_geluhybrid_avg[2:end])/31, label="Online NN closure, Hybrid")
+    # lines!(fig[1,1], lr_wl[2:end], (up_gelufourier_avg[2:end] + vp_gelufourier_avg[2:end])/31, label="Online NN closure, Fourier")
     axislegend(position = (0,0))
 
     #############################################################################################
