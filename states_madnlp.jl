@@ -1,18 +1,24 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct multiks_Chkp{T1,T2}
-    S::ShallowWaters.ModelSetup{T1,T2}      # model structure
-    data::Array{Array{Float32, 3}, 1}       # computed data
+mutable struct statenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
+    meta::NLPModelMeta{T,S}
+    counters::Counters
+    S::ShallowWaters.ModelSetup{T,T}        # model structure
+    initial_cond::Array{Array{T,2}, 1}
+    # data::Array{Array{Array{T,2}, 1}, 1}    # computed data
+    data::Array{Array{T, 3}, 1}
     data_steps::StepRange{Int, Int}         # location of data points temporally
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
     i::Int                                  # timestep iterator
     t::Int64                                # model time
+    avg_eta::Array{T,2}                     # time-averaged eta from integration
+    data_avg_eta::Array{T,2}                # time-averaged eta from data
 end
 
 # for running with checkpointing
-function multiks_checkpointed_integration(chkp, scheme, truncate)
+function cpintegrate(chkp, scheme)::Float64
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -163,68 +169,64 @@ function multiks_checkpointed_integration(chkp, scheme, truncate)
         end
 
         if (chkp.i % chkp.S.grid.nstep_diff) == 0
-        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.add_drag_diff_tendencies!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S.Diag,
-            chkp.S
-        )
-        ShallowWaters.ghost_points_uv!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S
-        )
-    end
+            ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.add_drag_diff_tendencies!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S.Diag,
+                chkp.S
+            )
+            ShallowWaters.ghost_points_uv!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S
+            )
+        end
 
-    t += chkp.S.grid.dtint
+        t += chkp.S.grid.dtint
 
-    u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
-    v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
-    ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+        u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+        v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+        ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    if chkp.i in chkp.data_steps
+        if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-        chkp.S.Prog.u,
-        chkp.S.Prog.v,
-        chkp.S.Prog.η,
-        chkp.S.Prog.sst,
-        chkp.S
-        )...)
+            temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+                chkp.S.Prog.u,
+                chkp.S.Prog.v,
+                chkp.S.Prog.η,
+                chkp.S.Prog.sst,
+                chkp.S
+            )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
+            # time-average eta
+            chkp.avg_eta += temp.η
+            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
+                + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
+                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (127*128)
 
-        chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
+            chkp.j += 1
 
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        end
 
-        chkp.j += 1
-
-    end
-
-    ##### time-averaging the objective function #######
-    # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
-    ##########################################################
-
-    copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
-    copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
-    copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
+        copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
+        copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
+        copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
+
+    # add the time-averaged ssh to the loss function
+    # chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
 end
 
 # for running without checkpointing
-function multiks_integration(chkp, truncate)
+function integrate(chkp)::Float64
 
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(chkp.S.Diag.VolumeFluxes.h, chkp.S.Prog.η, chkp.S.forcing.H)
@@ -375,73 +377,70 @@ function multiks_integration(chkp, truncate)
         end
 
         if (chkp.i % chkp.S.grid.nstep_diff) == 0
-        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
-        ShallowWaters.add_drag_diff_tendencies!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S.Diag,
-            chkp.S
-        )
-        ShallowWaters.ghost_points_uv!(
-            chkp.S.Diag.RungeKutta.u0,
-            chkp.S.Diag.RungeKutta.v0,
-            chkp.S
-        )
-    end
+            ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.diffusion!(u0rhs, v0rhs, chkp.S.Diag, chkp.S)
+            ShallowWaters.add_drag_diff_tendencies!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S.Diag,
+                chkp.S
+            )
+            ShallowWaters.ghost_points_uv!(
+                chkp.S.Diag.RungeKutta.u0,
+                chkp.S.Diag.RungeKutta.v0,
+                chkp.S
+            )
+        end
 
-    t += chkp.S.grid.dtint
+        t += chkp.S.grid.dtint
 
-    u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
-    v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
-    ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+        u0rhs = chkp.S.Diag.PrognosticVarsRHS.u .= chkp.S.Diag.RungeKutta.u0
+        v0rhs = chkp.S.Diag.PrognosticVarsRHS.v .= chkp.S.Diag.RungeKutta.v0
+        ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    #### Energy objective function, time averaged
-    if chkp.i in chkp.data_steps
+        if chkp.i in chkp.data_steps
 
-        temp = ShallowWaters.PrognosticVars{Float32}(ShallowWaters.remove_halo(
-            chkp.S.Prog.u,
-            chkp.S.Prog.v,
-            chkp.S.Prog.η,
-            chkp.S.Prog.sst,
-            chkp.S
-        )...)
+            temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+                chkp.S.Prog.u,
+                chkp.S.Prog.v,
+                chkp.S.Prog.η,
+                chkp.S.Prog.sst,
+                chkp.S
+            )...)
 
-        ke_u_lr = power(periodogram(temp.u; radialavg=true))
-        ke_v_lr = power(periodogram(temp.v; radialavg=true))
+            # time-average eta
+            chkp.avg_eta += temp.η
+            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
-        ke_u_hr = power(periodogram(chkp.data[1][:,:,chkp.j]; radialavg=true))
-        ke_v_hr = power(periodogram(chkp.data[2][:,:,chkp.j]; radialavg=true))
+            chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
+                + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
+                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (127*128)
 
-        chkp.J += sum((ke_u_hr[1:truncate]- ke_u_lr[1:truncate]).^2 + (ke_v_hr[1:truncate] - ke_v_lr[1:truncate]).^2)
+            chkp.j += 1
 
-        # storing the objective function over time
-        # S.parameters.data[S.parameters.i] = S.parameters.J / length((S.grid.nt - 30*224):1:S.parameters.i)
+        end
 
-        chkp.j += 1
-
-    end
-
-    ##### time-averaging the objective function #######
-    # chkp.J = chkp.J / length((chkp.S.grid.nt - 7*224):1:chkp.S.grid.nt) # time-averaging
-    ##########################################################
-
-    copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
-    copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
-    copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
+        copyto!(chkp.S.Prog.u, chkp.S.Diag.RungeKutta.u0)
+        copyto!(chkp.S.Prog.v, chkp.S.Diag.RungeKutta.v0)
+        copyto!(chkp.S.Prog.η, chkp.S.Diag.RungeKutta.η0)
 
     end
+
+    # add the time-averaged ssh to the loss function
+    # chkp.J += sum((chkp.avg_eta .- chkp.data_avg_eta).^2) / (chkp.j * 128^2)
 
     return chkp.J
 
 end
 
-function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond, truncate)
+function NLPModels.obj(model, param_guess)
 
     # Type precision
-    T = Float32
+    T = model.S.parameters.T
 
-    S = ShallowWaters.model_setup(output=false,
+    # ensure that the model is reset
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -461,45 +460,50 @@ function multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=model.S.parameters.Ndays
     )
 
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
+    model.S = ShallowWaters.model_setup(P)
+    model.J = 0.
+    model.j = 1
+    model.i = 1
+    model.t = 0
+
+    data = model.data
+    data_steps = model.data_steps
+    initial_cond = model.initial_cond
+
+    model.S.Prog.u .= copy(initial_cond[1])
+    model.S.Prog.v .= copy(initial_cond[2])
+    model.S.Prog.η .= copy(initial_cond[3])
 
     current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
+    temp = 0.0
+    for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
             for array in layers
                 sz = prod(size(array))
+                temp += norm(param_guess[current:(current + sz - 1)])
                 array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
                 current += sz
             end
         end
     end
 
-    chkp = multiks_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0
-    )
+    model.J = integrate(model)
 
-    J = multiks_integration(chkp, truncate)
-
-    return J
+    return model.J
 
 end
 
-function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
+function NLPModels.grad!(model, param_guess, G)
 
     # Type precision
-    T = Float32
+    T = model.S.parameters.T
 
-    S = ShallowWaters.model_setup(output=false,
+    # ensure that the model is reset
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -519,79 +523,72 @@ function multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initi
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=model.S.parameters.Ndays
     )
+    model.S = ShallowWaters.model_setup(P)
+    model.J = 0.
+    model.j = 1
+    model.i = 1
+    model.t = 0
 
-    S.Prog.u .= initial_cond[1]
-    S.Prog.v .= initial_cond[2]
-    S.Prog.η .= initial_cond[3]
+    S = model.S
+    data = model.data
+    data_steps = model.data_steps
+    initial_cond = model.initial_cond
+
+    model.S.Prog.u .= copy(initial_cond[1])
+    model.S.Prog.v .= copy(initial_cond[2])
+    model.S.Prog.η .= copy(initial_cond[3])
 
     current = 1
-    for model in (S.Diag.NNVars.model_diag, S.Diag.NNVars.model_offdiag)
-        for layers in model[1]
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
             for array in layers
-                sz = prod(size(array))
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
+                    sz = prod(size(array))
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
             end
         end
     end
 
-    snaps = Int(floor(sqrt(S.grid.nt)))
+    dmodel = Enzyme.make_zero(model)
+
+    snaps = Int(floor(sqrt(model.S.grid.nt)))
     revolve = Revolve(
         snaps;
-        verbose=1,
+        verbose=0,
         gc=true,
-        write_checkpoints=false,
-        write_checkpoints_filename = "",
-        write_checkpoints_period = 224
+        write_checkpoints=false
     )
 
-    chkp = multiks_Chkp{T, T}(S,
-        data,
-        data_steps,
-        0.0,
-        1,
-        1,
-        0.0
-    )
-    dchkp = Enzyme.make_zero(chkp)
-
-    J = @time autodiff(
+    J = autodiff(
         set_runtime_activity(Enzyme.ReverseWithPrimal),
-        multiks_checkpointed_integration,
+        cpintegrate,
         Active,
-        Duplicated(chkp, dchkp),
-        Const(revolve),
-        Const(truncate)
+        Duplicated(model, dmodel),
+        Const(revolve)
     )[2]
-    println("Cost with AD: $J")
 
     # Get gradient
-    G .= [vec(dchkp.S.Diag.NNVars.model_diag[1][1][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][1][2]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2][1]);
-          vec(dchkp.S.Diag.NNVars.model_diag[1][2][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][1][2]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][1]);
-          vec(dchkp.S.Diag.NNVars.model_offdiag[1][2][2])]
+    current = 1
+    for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                sz = prod(size(array))
+                G[current:(current + sz - 1)] .= vec(array)
+                current += sz
+            end
+        end
+    end
 
     return nothing
 
 end
 
-function multiks_FG(F, G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
+function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
 
-    G === nothing || multiks_compute_gradient(G, param_guess, data, data_steps, Ndays, initial_cond, truncate)
-    F === nothing || return multiks_compute_loss(Ndays, param_guess, data, data_steps, initial_cond, truncate)
-
-end
-
-function run_multiks()
-
-    Ndays = 10
-    Slr = ShallowWaters.model_setup(output=false,
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -614,28 +611,161 @@ function run_multiks()
         Ndays=Ndays
     )
 
-    # hydra
-    hru = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/u.nc", "u")
-    hrv = ncread("./spinup_files/1024_30days_postspinup_noslip_071625/v.nc", "v")
+    Slr = ShallowWaters.model_setup(Plr)
 
-    # my laptop
-    # hru = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u")
-    # hrv = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v")
-    data_steps = 225:225:Slr.grid.nt
+    Phr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=Ndays
+    )
+    Shr = ShallowWaters.model_setup(Phr)
 
-    ufiltered = zeros(size(hru))
-    vfiltered = zeros(size(hrv))
+    # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
+    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2")
+    uhrcg = coarse_grained_hrstates[1]
+    vhrcg = coarse_grained_hrstates[2]
+    etahrcg = coarse_grained_hrstates[3]
+    data_steps = 75:74:Slr.grid.nt
+    data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
-    for j = 2:(Ndays+1)
+    initial_cond = [u0, v0, eta0]
 
-        ufiltered[:,:,j] = imfilter(hru[:,:,j], reflect(ker))
-        vfiltered[:,:,j] = imfilter(hrv[:,:,j], reflect(ker))
+    lvar = lower_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
+    uvar = upper_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
+    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess,
+        lvar=lvar,
+        uvar=uvar
+    )
+    counters = Counters()
 
-    end
+    return statenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
-    data = [ufiltered[:, :, 2:(Ndays+1)], vfiltered[:, :, 2:(Ndays+1)]]
+end
+
+function run_state()
+
+    T = Float64
+    Ndays = 10
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    );
+
+    Slr = ShallowWaters.model_setup(Plr);
+
+    # param_guess = load_object("./tuned_weights/result_offline_150iterations_reluactivation_111925.jld2").solution
+    # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_reluactivation.jld2").solution;
+    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_geluactivation_112125.jld2").solution;
+    param_guess = load_object("./tuned_weights/result_online_state_witheta_5dayoptimization_startfrom5daystate_50iterations.jld2")
+
+    # lvar is by default -Inf * ones(Float64, nvar)
+    # uvar is by default Inf * ones(Float64, nvar)
+    lower_bound = -10000
+    upper_bound = 10000
+    nlp = statenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+
+    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
+    result = madnlp(
+        nlp;
+        # linear_solver=LapackCPUSolver,
+        hessian_approximation=MadNLP.CompactLBFGS,
+        quasi_newton_options=qn_options,
+        max_iter=50
+    )
+
+    # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
+
+    jldsave("result_online_state_witheta_10dayoptimzation_startfrom5daywitheta_50iterations_8hourdata_result_200maxhistory.jld2", result=result)
+
+    return nothing
+
+end
+
+function finite_difference_withnlp(Ndays, xcoord, ycoord)
+
+    # Type precision
+    T = Float64
+
+    P = ShallowWaters.Parameter(T=T;
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    )
+
+    S0 = ShallowWaters.model_setup(P)
+
+    snaps = Int(floor(sqrt(S0.grid.nt)))
+    revolve = Revolve(
+        snaps;
+        verbose=0,
+        gc=true,
+        write_checkpoints=false,
+        write_checkpoints_filename = "",
+        write_checkpoints_period = 2274
+    )
+
+    coarse_grained_hrstates = load_object("./hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_102825")
+    uhrcg = coarse_grained_hrstates[1]
+    vhrcg = coarse_grained_hrstates[2]
+    etahrcg = coarse_grained_hrstates[3]
+    data_steps = 75:75:S0.grid.nt
+    data = [uhrcg[:,:,8:8:end], vhrcg[:,:,8:8:end], etahrcg[:,:,8:8:end]]
 
     u0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[1]
     v0 = load_object("./spinup_files/coarsegrained_1024_10yearstate_061925.jld2")[2]
@@ -643,23 +773,134 @@ function run_multiks()
 
     initial_cond = [u0, v0, eta0]
 
-    init = load_object("./tuned_weights/multistate_dailydata_1:2:10daysintegration_result_071725.jld2").minimizer
-    param_guess = init
+    param_guess = load_object("./offlineresult_3-25-25_1e-3objective.jld2").solution
 
-    truncate = 40
+    meta = NLPModelMeta(Lux.parameterlength(S0.Diag.CNNVars.model_Su) + Lux.parameterlength(S0.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess
+    )
 
-    result = nothing
-    for ndays = 1:2:10
+    S1 = deepcopy(S0)
+    chkp1 = statenlp_Chkp{T, typeof(param_guess)}(meta,
+        Counters(),
+        S1,
+        initial_cond,
+        data,
+        data_steps,
+        0.0,
+        1,
+        1,
+        0.0,
+        zeros(128,128),
+        zeros(128,128)
+    )
+    dchkp1 = Enzyme.make_zero(chkp1)
 
-        fg!_closure(F, G, param_guess) = multiks_FG(F, G, param_guess, data, data_steps, ndays, initial_cond, truncate)
-        obj_fg = Optim.only_fg!(fg!_closure)
-        result = Optim.optimize(obj_fg, param_guess, Optim.LBFGS(), Optim.Options(show_trace=true, store_trace=true, iterations=5))
+    # Enzyme deriv
+    J = autodiff(
+        set_runtime_activity(Enzyme.ReverseWithPrimal),
+        state_checkpointed_integration,
+        Active,
+        Duplicated(chkp1, dchkp1),
+        Const(revolve)
+    )[2]
 
-        param_guess = result.minimizer
+    enzyme_deriv = dchkp1.S.Diag.CNNVars.model_Su[1][1][1][3, 2, 2, 25] 
+    println("Loss when using Enzyme + Checkpointing: $J")
+    println("Enzyme derivative: $enzyme_deriv")
+
+    S2 = deepcopy(S0)
+    chkp2 = statenlp_Chkp{T, typeof(param_guess)}(meta,
+        Counters(),
+        S2,
+        initial_cond,
+        data,
+        data_steps,
+        0.0,
+        1,
+        1,
+        0.0,
+        zeros(128,128),
+        zeros(128,128)
+    )
+
+    @time unperturbed_loss = state_checkpointed_integration(chkp2, revolve)
+    println("Loss when not using Enzyme: $unperturbed_loss")
+
+    steps = [100, 50, 30, 20, 10, 1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    diffs = []
+    for s in steps
+
+        S3 = deepcopy(S0)
+        chkp3 = statenlp_Chkp{T, typeof(param_guess)}(meta,
+            Counters(),
+            S3,
+            initial_cond,
+            data,
+            data_steps,
+            0.0,
+            1,
+            1,
+            0.0,
+            zeros(128,128),
+            zeros(128,128)
+        )
+
+        chkp3.S.Diag.CNNVars.model_Su[1][1][1][3, 2, 2, 25] += s
+
+        J = state_checkpointed_integration(chkp3, revolve)
+        push!(diffs, (J - unperturbed_loss) / s)
 
     end
 
-    return result
+    println("Finite difference result: $diffs")
+
+end
+
+function checking_loss()
+
+    T = Float64
+    Ndays = 1
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    );
+
+    Slr = ShallowWaters.model_setup(Plr);
+
+    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+
+
+    # lvar is by default -Inf * ones(Float64, nvar)
+    # uvar is by default Inf * ones(Float64, nvar)
+    lower_bound = -10000
+    upper_bound = 10000
+    nlp = statenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+
+    nlp.S.Prog.u .= copy(initial_cond[1])
+    nlp.S.Prog.v .= copy(initial_cond[2])
+    nlp.S.Prog.η .= copy(initial_cond[3])
+
 
 end
 
@@ -671,3 +912,14 @@ end
 #     eta = reshape(result.minimizer[34585:end-1], 130, 130),
 #     Fx0 = result.minimizer[end]
 # )
+
+# temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
+#                 S.Prog.u,
+#                 S.Prog.v,
+#                 S.Prog.η,
+#                 S.Prog.sst,
+#                 S
+#             )...)
+# fig = Figure();
+# ax, hm = heatmap(fig[1,1],temp.v, colormap=:balance)
+# Colorbar(fig[1,2], hm)

@@ -9,6 +9,7 @@ mutable struct multistatenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
     # data::Array{Array{Array{T,2}, 1}, 1}    # computed data
     data::Array{Array{T, 3}, 1}
     data_steps::StepRange{Int, Int}         # location of data points temporally
+    days::Array{Int,1}
     J::Float64                              # objective function value
     j::Int                                  # for keeping track of location in data
     i::Int                                  # timestep iterator
@@ -435,62 +436,73 @@ end
 
 function NLPModels.obj(model, param_guess)
 
+    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+
     # Type precision
     T = model.S.parameters.T
+    model.J = 0
+    days = model.days
+    for n in days
 
-    # ensure that the model is reset
-    P = ShallowWaters.Parameter(T=T;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=model.S.parameters.Ndays
-    )
+        # ensure that the model is reset
+        P = ShallowWaters.Parameter(T=T;
+            output=false,
+            L_ratio=1,
+            g=9.81,
+            H=500,
+            wind_forcing_x="double_gyre",
+            Lx=3840e3,
+            seasonal_wind_x=false,
+            topography="flat",
+            bc="nonperiodic",
+            bottom_drag="quadratic",
+            tracer_advection=false,
+            tracer_relaxation=false,
+            zb_forcing_momentum=false,
+            zb_forcing_dissipation=false,
+            zb_filtered=true,
+            nn_forcing_momentum=false,
+            nn_forcing_dissipation=true,
+            N=1,
+            α=2,
+            nx=128,
+            Ndays=model.S.parameters.Ndays
+        )
 
-    model.S = ShallowWaters.model_setup(P)
-    model.J = 0.
-    model.j = 1
-    model.i = 1
-    model.t = 0
+        model.S = ShallowWaters.model_setup(P)
+        model.j = 1
+        model.i = 1
+        model.t = 0
 
-    data = model.data
-    data_steps = model.data_steps
-    initial_cond = model.initial_cond
+        data_steps = model.data_steps
 
-    model.S.Prog.u .= copy(initial_cond[1])
-    model.S.Prog.v .= copy(initial_cond[2])
-    model.S.Prog.η .= copy(initial_cond[3])
+        u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128,128),model.S)
 
-    current = 1
-    temp = 0.0
-    for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
-        for layers in m[1]
-            for array in layers
-                sz = prod(size(array))
-                temp += norm(param_guess[current:(current + sz - 1)])
-                array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
-                current += sz
+        model.data = [uhrcg[:,:,(n+1):end], vhrcg[:,:,(n+1):end], etahrcg[:,:,(n+1):end]];
+
+        model.S.Prog.u .= copy(u0)
+        model.S.Prog.v .= copy(v0)
+        model.S.Prog.η .= copy(eta0)
+
+        current = 1
+        temp = 0.0
+        for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
+            for layers in m[1]
+                for array in layers
+                    sz = prod(size(array))
+                    temp += norm(param_guess[current:(current + sz - 1)])
+                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    current += sz
+                end
             end
         end
-    end
 
-    model.J = integrate(model)
+        model.J += integrate(model)
+
+    end
 
     return model.J
 
@@ -498,87 +510,99 @@ end
 
 function NLPModels.grad!(model, param_guess, G)
 
+    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+
     # Type precision
     T = model.S.parameters.T
+    model.J = 0
 
-    # ensure that the model is reset
-    P = ShallowWaters.Parameter(T=T;
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=model.S.parameters.Ndays
-    )
-    model.S = ShallowWaters.model_setup(P)
-    model.J = 0.
-    model.j = 1
-    model.i = 1
-    model.t = 0
+    days = model.days
+    for n in days
 
-    S = model.S
-    data = model.data
-    data_steps = model.data_steps
-    initial_cond = model.initial_cond
+        # ensure that the model is reset
+        P = ShallowWaters.Parameter(T=T;
+            output=false,
+            L_ratio=1,
+            g=9.81,
+            H=500,
+            wind_forcing_x="double_gyre",
+            Lx=3840e3,
+            seasonal_wind_x=false,
+            topography="flat",
+            bc="nonperiodic",
+            bottom_drag="quadratic",
+            tracer_advection=false,
+            tracer_relaxation=false,
+            zb_forcing_momentum=false,
+            zb_forcing_dissipation=false,
+            zb_filtered=true,
+            nn_forcing_momentum=false,
+            nn_forcing_dissipation=true,
+            N=1,
+            α=2,
+            nx=128,
+            Ndays=model.S.parameters.Ndays
+        )
 
-    model.S.Prog.u .= copy(initial_cond[1])
-    model.S.Prog.v .= copy(initial_cond[2])
-    model.S.Prog.η .= copy(initial_cond[3])
+        model.S = ShallowWaters.model_setup(P)
+        model.j = 1
+        model.i = 1
+        model.t = 0
 
-    current = 1
-    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
-        for layers in m[1]
-            for array in layers
+        data_steps = model.data_steps
+
+        u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128,128),model.S)
+
+        model.data = [uhrcg[:,:,(n+1):end], vhrcg[:,:,(n+1):end], etahrcg[:,:,(n+1):end]];
+
+        model.S.Prog.u .= copy(u0)
+        model.S.Prog.v .= copy(v0)
+        model.S.Prog.η .= copy(eta0)
+
+        current = 1
+        for m in (model.S.Diag.CNNVars.model_Su, model.S.Diag.CNNVars.model_Sv)
+            for layers in m[1]
+                for array in layers
+                        sz = prod(size(array))
+                        array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                        current += sz
+                end
+            end
+        end
+
+        dmodel = Enzyme.make_zero(model)
+
+        snaps = Int(floor(sqrt(model.S.grid.nt)))
+        revolve = Revolve(
+            snaps;
+            verbose=0,
+            gc=true,
+            write_checkpoints=false
+        )
+
+        J = autodiff(
+            set_runtime_activity(Enzyme.ReverseWithPrimal),
+            cpintegrate,
+            Active,
+            Duplicated(model, dmodel),
+            Const(revolve)
+        )[2]
+
+        # Get gradient
+        current = 1
+        for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
+            for layers in m[1]
+                for array in layers
                     sz = prod(size(array))
-                    array .= reshape(param_guess[current:(current + sz - 1)], size(array)...)
+                    G[current:(current + sz - 1)] += vec(array)
                     current += sz
+                end
             end
         end
-    end
 
-    dmodel = Enzyme.make_zero(model)
-
-    snaps = Int(floor(sqrt(model.S.grid.nt)))
-    revolve = Revolve(
-        snaps;
-        verbose=0,
-        gc=true,
-        write_checkpoints=false
-    )
-
-    J = autodiff(
-        set_runtime_activity(Enzyme.ReverseWithPrimal),
-        cpintegrate,
-        Active,
-        Duplicated(model, dmodel),
-        Const(revolve)
-    )[2]
-
-    # Get gradient
-    current = 1
-    for m in (dmodel.S.Diag.CNNVars.model_Su, dmodel.S.Diag.CNNVars.model_Sv)
-        for layers in m[1]
-            for array in layers
-                sz = prod(size(array))
-                G[current:(current + sz - 1)] .= vec(array)
-                current += sz
-            end
-        end
     end
 
     return nothing
@@ -662,7 +686,6 @@ end
 
 function run_multistate()
 
-    result = nothing
     T = Float64
     Ndays = 1
 
@@ -671,137 +694,71 @@ function run_multistate()
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    )
+
+    Slr = ShallowWaters.model_setup(Plr)
+    param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
+
+    data_steps = 75:74:Slr.grid.nt;
+    data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
+
+    initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
+
     days = [3, 10, 15, 25, 30, 35, 40] .* 3 .+ 1
-    for n ∈ days
 
-        if n === 10
+    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+        ncon=0,
+        nnzh=0,
+        x0=param_guess
+    )
 
-            Plr = ShallowWaters.Parameter(T=T,
-                output=false,
-                L_ratio=1,
-                g=9.81,
-                H=500,
-                wind_forcing_x="double_gyre",
-                Lx=3840e3,
-                seasonal_wind_x=false,
-                topography="flat",
-                bc="nonperiodic",
-                bottom_drag="quadratic",
-                tracer_advection=false,
-                tracer_relaxation=false,
-                zb_forcing_momentum=false,
-                zb_forcing_dissipation=false,
-                zb_filtered=true,
-                nn_forcing_momentum=false,
-                nn_forcing_dissipation=true,
-                N=1,
-                α=2,
-                nx=128,
-                Ndays=1
-            )
+    nlp = multistatenlp_Chkp{T, typeof(param_guess)}(
+        meta,
+        Counters(),
+        Slr,
+        initial_cond,
+        data,
+        data_steps,
+        days,
+        0.0,
+        1,
+        1,
+        0.0,
+        zeros(128,128),
+        zeros(128,128)
+    )
 
-            Slr = ShallowWaters.model_setup(Plr)
-            param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
+    qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
+    result = madnlp(
+        nlp;
+        # linear_solver=LapackCPUSolver,
+        hessian_approximation=MadNLP.CompactLBFGS,
+        quasi_newton_options=qn_options,
+        max_iter=20
+    )
 
-            u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128,128),Slr)
-
-            data_steps = 75:74:Slr.grid.nt;
-            data = [uhrcg[:,:,(n+1):end], vhrcg[:,:,(n+1):end], etahrcg[:,:,(n+1):end]];
-
-            initial_cond = [u0, v0, eta0]
-
-            meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
-                ncon=0,
-                nnzh=0,
-                x0=param_guess
-            )
-
-            nlp = multistatenlp_Chkp{T, typeof(param_guess)}(
-                meta,
-                Counters(),
-                Slr,
-                initial_cond,
-                data,
-                data_steps,
-                0.0,
-                1,
-                1,
-                0.0,
-                zeros(128,128),
-                zeros(128,128)
-            )
-
-        else
-
-            Plr = ShallowWaters.Parameter(T=T,
-                output=false,
-                L_ratio=1,
-                g=9.81,
-                H=500,
-                wind_forcing_x="double_gyre",
-                Lx=3840e3,
-                seasonal_wind_x=false,
-                topography="flat",
-                bc="nonperiodic",
-                bottom_drag="quadratic",
-                tracer_advection=false,
-                tracer_relaxation=false,
-                zb_forcing_momentum=false,
-                zb_forcing_dissipation=false,
-                zb_filtered=true,
-                nn_forcing_momentum=false,
-                nn_forcing_dissipation=true,
-                N=1,
-                α=2,
-                nx=128,
-                Ndays=1
-            )
-            Slr = ShallowWaters.model_setup(Plr)
-            param_guess = result.solution
-
-            u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128,128),Slr)
-
-            data_steps = 75:74:Slr.grid.nt;
-            data = [uhrcg[:,:,(n+1):end], vhrcg[:,:,(n+1):end], etahrcg[:,:,(n+1):end]];
-
-            initial_cond = [u0, v0, eta0]
-
-            meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
-                ncon=0,
-                nnzh=0,
-                x0=param_guess
-            )
-
-            nlp = multistatenlp_Chkp{T, typeof(param_guess)}(
-                meta,
-                Counters(),
-                Slr,
-                initial_cond,
-                data,
-                data_steps,
-                0.0,
-                1,
-                1,
-                0.0,
-                zeros(128,128),
-                zeros(128,128)
-            )
-        end
-
-        qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
-        result = madnlp(
-            nlp;
-            # linear_solver=LapackCPUSolver,
-            hessian_approximation=MadNLP.CompactLBFGS,
-            quasi_newton_options=qn_options,
-            max_iter=20
-        )
-
-    end
-
-    # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
-
-    days = [3, 10, 15, 25, 30, 35, 40]
     jldsave("result_multistate_witheta_3-10-15-25-30-35-40daystart_1dayoptimization_initialweights5daystate_20iterations.jld2", result=result)
 
     return nothing
