@@ -510,12 +510,13 @@ end
 
 function NLPModels.grad!(model, param_guess, G)
 
+    G .= 0
+    println("Norm of G: ", norm(G))
+
     coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
-
-    println("Norm of G: ", norm(G))
 
     # Type precision
     T = model.S.parameters.T
@@ -598,13 +599,15 @@ function NLPModels.grad!(model, param_guess, G)
             for layers in m[1]
                 for array in layers
                     sz = prod(size(array))
-                    G[current:(current + sz - 1)] += vec(array)
+                    G[current:(current + sz - 1)] .= G[current:(current + sz - 1)] + vec(array)
                     current += sz
                 end
             end
         end
 
     end
+
+    println("Norm of G after integrations: ", norm(G))
 
     return nothing
 
@@ -700,7 +703,7 @@ function run_multistate()
     )
 
     Slr = ShallowWaters.model_setup(Plr)
-    param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
+    param_guess = load_object("./tuned_weights/states_noetainloss/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution;
 
     data_steps = 75:74:Slr.grid.nt;
     data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
