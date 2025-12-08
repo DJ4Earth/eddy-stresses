@@ -637,26 +637,6 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    # Phr = ShallowWaters.Parameter(T=T,
-    #     output=false,
-    #     L_ratio=1,
-    #     g=9.81,
-    #     H=500,
-    #     wind_forcing_x="double_gyre",
-    #     Lx=3840e3,
-    #     seasonal_wind_x=false,
-    #     topography="flat",
-    #     bc="nonperiodic",
-    #     bottom_drag="quadratic",
-    #     tracer_advection=false,
-    #     tracer_relaxation=false,
-    #     N=1,
-    #     α=2,
-    #     nx=1024,
-    #     Ndays=Ndays
-    # )
-    # Shr = ShallowWaters.model_setup(Phr)
-
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
     coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
     uhrcg = coarse_grained_hrstates[1];
@@ -726,7 +706,7 @@ function run_multistate()
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    days = [3, 10, 15, 25, 30, 35, 40] .* 3 .+ 1
+    days = [3, 10] .* 3 .+ 1 #, 15, 25, 30, 35, 40] .* 3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -762,55 +742,6 @@ function run_multistate()
     jldsave("result_multistate_witheta_3-10-15-25-30-35-40daystart_1dayoptimization_initialweights5daystate_20iterations.jld2", result=result)
 
     return nothing
-
-end
-
-function run_oneintegration()
-
-    T = Float64
-    Ndays = 5
-    Plr = ShallowWaters.Parameter(T=T,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=Ndays
-    );
-
-    Slr = ShallowWaters.model_setup(Plr);
-
-    param_guess = load_object("./tuned_weights/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution;
-
-    # lvar is by default -Inf * ones(Float64, nvar)
-    # uvar is by default Inf * ones(Float64, nvar)
-    lower_bound = -10000
-    upper_bound = 10000
-    nlp = multistatenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
-
-    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
-    result = madnlp(
-        nlp;
-        # linear_solver=LapackCPUSolver,
-        hessian_approximation=MadNLP.CompactLBFGS,
-        quasi_newton_options=qn_options,
-        max_iter=50
-    )
 
 end
 
