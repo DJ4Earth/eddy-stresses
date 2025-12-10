@@ -3,6 +3,100 @@ Mostly figure generation, I just wanted to be able to run include("technical_pap
 without all of this also running.
 """
 
+function paddingu(x, Su, n1)
+
+    T = Real
+    nfft = nextfastfft(size(x))
+    out = zeros(DSP.Util.fftabs2type(T), n1>>1 + 1)
+
+    if prod(nfft) == length(x) && isa(x, StridedArray)
+        input1 = x[:,:,t] # no need to pad
+        input2 = Su
+    else
+        input1 = zeros(fftintype(T), nfft)
+        input1[1:size(x,1), 1:size(x,2)] = x
+        input2 = zeros(fftintype(T), nfft)
+        input2[1:size(Su,1), 1:size(Su,2)] = Su
+    end
+
+    return out, input1, input2
+
+end
+
+function paddingv(x, Sv, n1)
+
+    T = Real
+    nfft = nextfastfft(size(x))
+    out = zeros(DSP.Util.fftabs2type(T), n1>>1 + 1)
+
+    if prod(nfft) == length(x) && isa(x, StridedArray)
+        input1 = x # no need to pad
+        input2 = Sv
+    else
+        input1 = zeros(fftintype(T), nfft)
+        input1[1:size(x,1), 1:size(x,2)] = x
+        input2 = zeros(fftintype(T), nfft)
+        input2[1:size(Sv,1), 1:size(Sv,2)] = Sv
+    end
+
+    return out, input1, input2, nfft
+
+end
+
+function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, u_fft::Matrix{Complex{T}}, n1, n2; ptype=2) where T
+    println("Size n1, n2: ", [n1, n2])
+    r = length(s_fft)
+    nmin = min(n1, n2)
+
+    n1max = n1 >> 1 + 1  # since rfft is used
+    n1max != size(s_fft, 1) && throw(ArgumentError("fft size incorrect"))
+    m1 = convert(T, 1/r)
+    m2 = convert(T, 2/r)
+    wavenum = 0          # wavenumber index
+    kmax = length(out)   # the highest wavenumber
+    wc = zeros(Int, kmax) # wave count for radial average
+    if n1 == nmin        # scale the wavevector for non-square s_fft
+        c2 = n1/n2
+        c1 = one(c2)
+    else
+        c1 = n2/n1
+        c2 = one(c1)
+    end
+
+    sqrt_muladd(a, k) = sqrt(muladd(a, a, k))
+
+    @inbounds begin
+        for j = 1:n2
+            kj1 = ifelse(j <= n2>>1 + 1, j-1, -n2+j-1)
+            kj2 = (kj1 * c2)^2
+
+            wavenum = round(Int, sqrt_muladd(c1 * (1 - 1), kj2)) + 1
+            if wavenum<=kmax
+                out[wavenum] = muladd(real(conj(s_fft[1, j]) * u_fft[1, j]), m1, out[wavenum])
+                wc[wavenum] += 1
+            end
+            for i = 2:n1max-1
+                wavenum = round(Int, sqrt_muladd(c1 * (i - 1), kj2)) + 1
+                if wavenum<=kmax
+                    out[wavenum] = muladd(real(conj(s_fft[i, j]) * u_fft[i, j]), m2, out[wavenum])
+                    wc[wavenum] += 2
+                end
+            end
+            wavenum = round(Int, sqrt_muladd(c1 * (n1max - 1), kj2)) + 1
+            if wavenum<=kmax
+                out[wavenum] = muladd(real(conj(s_fft[n1max, j]) * u_fft[n1max, j]), ifelse(iseven(n1), m1, m2), out[wavenum])
+                wc[wavenum] += ifelse(iseven(n1), 1, 2)
+            end
+        end
+    end
+    if ptype == 2
+        for i = 1:kmax
+            @inbounds out[i] /= wc[i]
+        end
+    end
+    out
+end
+
 function load_and_create_models()
 
     T = Float64
@@ -128,7 +222,7 @@ function load_and_create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 3*365
+    Ndays = 2*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=24,
@@ -156,7 +250,7 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./result_online_state_witheta_5dayoptimization_startfrom5daystate_gelu_50iterations.jld2").solution
+    onlineweights = load_object("./tuned_weights/result_multistate_witheta_3-25-30-40-50-60-80daystart_1dayoptimization_initialweights10daystate_20iterations.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -205,13 +299,17 @@ function load_and_create_models()
     v5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
     eta5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
 
-    u10day = ncread("./10daystate/u.nc", "u");
-    v10day = ncread("./10daystate/v.nc", "v");
-    eta10day = ncread("./10daystate/eta.nc", "eta");
+    u10day = ncread("./results/10daystate_noeta_oneyear/u.nc", "u");
+    v10day = ncread("./results/10daystate_noeta_oneyear/v.nc", "v");
+    eta10day = ncread("./results/10daystate_noeta_oneyear/eta.nc", "eta");
 
-    u5dayeta = ncread("./5daystate_witheta/u.nc", "u");
-    v5dayeta = ncread("./5daystate_witheta/v.nc", "v");
-    eta5dayeta = ncread("./5daystate_witheta/eta.nc", "eta");
+    u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta/u.nc", "u");
+    v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta/v.nc", "v");
+    eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta/eta.nc", "eta");
+
+    umulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/u.nc", "u");
+    vmulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/v.nc", "v");
+    etamulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/eta.nc", "eta");
 
     ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
     vkespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
@@ -350,7 +448,7 @@ function prognostic_plots()
 
 
     # just u fields
-    t = 365
+    t = 91
     fig = Figure(size=(700, 550), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -363,7 +461,7 @@ function prognostic_plots()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    u5dayeta[:,:,t],
+    u[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u(30 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -381,7 +479,7 @@ function prognostic_plots()
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    u5daystategelu[:,:,t],
+    u5dayeta[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(30 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -402,7 +500,7 @@ function prognostic_plots()
 
     # looking at u fields to see if additional state optimization helped
     # just u fields
-    t = 91
+    t = 366
     fig = Figure(size=(700, 550), fontsize=15);
 
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
@@ -425,7 +523,7 @@ function prognostic_plots()
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonline1daygelu[:,:,t],
+    umulti1[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u_1(15 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -434,7 +532,7 @@ function prognostic_plots()
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uonline5daygelu[:,:,t],
+    u5dayeta[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(15 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -1240,6 +1338,132 @@ function spectrum_plots()
     lines!(figeta[1,1], cg_wl[2:end], etap_hrcg[2:end,t], label="Coarse-grained HR")
     lines!(figeta[1,1], cg_wl[2:end], etap_hrfilter[2:end,t], label="Filtered HR")
     axislegend()
+
+end
+
+# using the definition 
+#       T(k_x, k_y) = Re( F(u)^* F(S_x) + F(v)^* F(S_y) )
+# where ^* is the complex conjugate. It's not clear to me if S should come from the same
+# timestep or the prior, because the prior is what when into computing u and v
+function ketransfer_plots()
+
+    T = Float64
+    Ponline = ShallowWaters.Parameter(T=T,
+        output=true,
+        output_dt=24,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    );
+
+    T = Float64
+    PZB = ShallowWaters.Parameter(T=T,
+        output=true,
+        output_dt=24,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    );
+
+    S10 = ShallowWaters.model_setup(Ponline);
+    S5 = ShallowWaters.model_setup(Ponline);
+    Shrcg = ShallowWaters.model_setup(Ponline);
+    SZB = ShallowWaters.model_setup(PZB);
+
+    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+
+    u10day = ncread("./results/10daystate_noeta_oneyear/u.nc", "u");
+    v10day = ncread("./results/10daystate_noeta_oneyear/v.nc", "v");
+    eta10day = ncread("./results/10daystate_noeta_oneyear/eta.nc", "eta");
+
+    u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
+    v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
+    eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/eta.nc", "eta");
+
+    uzb_ = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vzb_ = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etazb_ = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+
+    t = 10
+
+    u10, v10, eta10 = ShallowWaters.add_halo(Float64.(u10day[:,:,t]), Float64.(v10day[:,:,t]), Float64.(eta10day[:,:,t]), zeros(128,128), S10);
+    u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5dayeta[:,:,t]), Float64.(v5dayeta[:,:,t]), Float64.(eta5dayeta[:,:,t]), zeros(128,128), S5);
+    u, v, eta = ShallowWaters.add_halo(uhrcg[:,:,t], vhrcg[:,:,t], etahrcg[:,:,t], zeros(128,128), Shrcg);
+    uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
+
+    ShallowWaters.CNN_momentum(u, v, Shrcg);
+    ShallowWaters.CNN_momentum(u10, v10, S10);
+    ShallowWaters.CNN_momentum(u5, v5, S5);
+    ShallowWaters.ZB_momentum(uzb, vzb, SZB, SZB.Diag);
+
+    lr_freq = 1/30 .* freq(periodogram(u10day[:,:,10]; radialavg=true, radialsum=false));
+
+    nfft = nextfastfft(size(uhrcg[:,:,1]))
+
+    outu_5, inputu_5, inputSu_5 = paddingu(u5dayeta[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
+    fft2pow2radial!(outu_5, rfft(inputu_5), rfft(inputSu_5), nfft...)
+    outv_5, inputv_5, inputSv_5 = paddingv(v5dayeta[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
+    fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
+
+    outu_10, inputu_10, inputSu_10 = paddingu(u10day[:, :, t], S10.Diag.CNNVars.S_u, nfft[1])
+    fft2pow2radial!(outu_10, rfft(inputu_10), rfft(inputSu_10), nfft...)
+    outv_10, inputv_10, inputSv_10 = paddingv(v10day[:, :, t], S10.Diag.CNNVars.S_v, nfft[1])
+    fft2pow2radial!(outv_10, rfft(inputv_10), rfft(inputSv_10), nfft...)
+
+    outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb_[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
+    fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
+    outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb_[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
+    fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
+
+    fig = Figure(size=(800, 300), fontsize=15);
+    lines(fig[1,1], lr_freq.*(outu_ZB + outv_ZB),
+        label="ZB20", 
+        axis=(
+            xscale=log10,
+            xlabel="Wavenumber (1/km)",
+            ylabel="KE(k)",
+        title="Kinetic Energy transfer")
+    )
+    lines!(fig[1,1], lr_freq.*(outu_5 + outv_5), label="5 day optimization with eta")
+    # lines!(fig[1,1], lr_freq.*(outu_10 + outv_10), label="10 day state optimization")
+
 
 end
 
