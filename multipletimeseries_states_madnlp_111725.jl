@@ -671,7 +671,7 @@ end
 function run_multistate()
 
     T = Float64
-    Ndays = 1
+    Ndays = 5
 
     coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
@@ -710,7 +710,7 @@ function run_multistate()
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    days = [3, 25, 30, 40, 50, 60, 80] .* 3 .+ 1
+    days = [3, 30, 50, 80] .* 3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -740,10 +740,10 @@ function run_multistate()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=20
+        max_iter=30
     )
 
-    jldsave("result_multistate_witheta_3-25-30-40-50-60-80daystart_1dayoptimization_initialweights5daystate_20iterations.jld2", result=result)
+    jldsave("result_multistate_witheta_3-30-50-80daystart_5dayoptimization_initialweights10daystate_30iterations.jld2", result=result)
 
     return nothing
 
