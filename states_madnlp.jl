@@ -663,7 +663,7 @@ end
 function run_state()
 
     T = Float64
-    Ndays = 5
+    Ndays = 10
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -708,7 +708,7 @@ function run_state()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=50
+        max_iter=30
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
