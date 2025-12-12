@@ -7,10 +7,10 @@
 *.jld2
 *.nc
 *.mp4
+/old_dissipation
 /spinup_files
 /results
-/offlinefiles
-/technicalpaper_datafiles
+/tuned_weights
 /notusinganymore
 
 
