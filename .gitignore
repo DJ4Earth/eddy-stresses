@@ -5,6 +5,8 @@
 *.bash
 *.h5
 *.jld2
+*.nc
+*.mp4
 /spinup_files
 /results
 /offlinefiles
