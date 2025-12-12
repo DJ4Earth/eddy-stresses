@@ -11,7 +11,6 @@ Enzyme.@import_rrule(typeof(*), AbstractFFTs.Plan, AbstractArray)
 Enzyme.@import_rrule(typeof(*), AbstractFFTs.ScaledPlan, AbstractArray)
 
 using Parameters
-using Optim
 using LaTeXStrings
 
 Random.seed!(8)
