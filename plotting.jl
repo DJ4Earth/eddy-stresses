@@ -6,7 +6,7 @@ without all of this also running.
 function load_and_create_models()
 
     T = Float64
-    Ndays = 365
+    Ndays = 3*365
     coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
@@ -14,7 +14,7 @@ function load_and_create_models()
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=24,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -24,6 +24,7 @@ function load_and_create_models()
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -34,7 +35,9 @@ function load_and_create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
+        initial_cond="ncfile",
+        initpath="./spinup_files_newdissipation/128_3yearspinup_smag_noslipbc"
     );
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);

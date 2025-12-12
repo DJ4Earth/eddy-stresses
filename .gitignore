@@ -8,9 +8,9 @@
 *.nc
 *.mp4
 /old_dissipation
-/spinup_files
-/results
-/tuned_weights
+/spinup_files_newdissipation
+/results_with_parameterization
+/tuned_weights_newdissipation
 /notusinganymore
 
 

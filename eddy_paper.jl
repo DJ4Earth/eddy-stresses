@@ -21,12 +21,4 @@ if !Base.isdefined(@__MODULE__, :ShallowWaters)
 end
 
 include("making_tensorT_figures.jl")
-# include("initial_weights.jl")
-# include("timeavgenergy_10dayintegration_nnrun.jl")
-# include("kespectrum_weightsandbias_10dayintegration_nnrun.jl")
-# include("kespectrum_percentdiff_weightsandbias_10dayintegration_nnrun.jl")
-# include("multipletimeseries_kespectrum_10dayintegration_weightandbias.jl")
-# include("multipletimeseries_states_10dayintegration_weightandbias.jl")
-# include("multipletimeseries_states_witheta_10dayintegration_weightsandbias.jl")
-# include("kespectrum_percentdiff_mycg_weightsandbias_nnrun.jl")
-# include("multipletimeseries_kespecpd_10dayintegration_weightandbias.jl")
+include("helper_functions.jl")
