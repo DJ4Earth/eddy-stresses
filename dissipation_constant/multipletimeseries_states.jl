@@ -206,8 +206,6 @@ function cpintegrate(chkp, scheme)::Float64
             chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-            chkp.J += sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
-
 
             chkp.j += 1
 
@@ -415,8 +413,6 @@ function integrate(chkp)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
-            chkp.J += sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
-
             chkp.j += 1
 
         end
@@ -436,7 +432,7 @@ end
 
 function NLPModels.obj(model, param_guess)
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -513,7 +509,7 @@ function NLPModels.grad!(model, param_guess, G)
     G .= 0
     println("Norm of G: ", norm(G))
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -642,7 +638,7 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
     Slr = ShallowWaters.model_setup(Plr)
 
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -671,9 +667,9 @@ end
 function run_multistate()
 
     T = Float64
-    Ndays = 5
+    Ndays = 3
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -699,18 +695,19 @@ function run_multistate()
         N=1,
         α=2,
         nx=128,
-        Ndays=1
+        Ndays=Ndays
     )
 
     Slr = ShallowWaters.model_setup(Plr)
-    param_guess = load_object("./tuned_weights/states_noetainloss/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution;
+    param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution;
 
     data_steps = 75:74:Slr.grid.nt;
     data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    days = [3, 30, 50, 80] .* 3 .+ 1
+    days = [3, 15, 30, 40, 50, 60, 80, 85] .* 3 .+ 1
+    # days = [3, 30, 50, 80] .*3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -734,16 +731,18 @@ function run_multistate()
         zeros(128,128)
     )
 
-    qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
+    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
         nlp;
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=30
+        max_iter=60
     )
 
-    jldsave("result_multistate_witheta_3-30-50-80daystart_5dayoptimization_initialweights10daystate_30iterations.jld2", result=result)
+    # jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_60iterations.jld2", result=result)
+    jldsave("result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights10daystate_60iterations.jld2", result=result)
+
 
     return nothing
 

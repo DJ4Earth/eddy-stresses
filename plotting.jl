@@ -14,7 +14,7 @@ function load_and_create_models()
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=8,
+        # output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -34,10 +34,10 @@ function load_and_create_models()
         nn_forcing_dissipation=false,
         N=1,
         α=2,
-        nx=128,
+        nx=1024,
         Ndays=Ndays,
         initial_cond="ncfile",
-        initpath="./spinup_files_newdissipation/128_3yearspinup_smag_noslipbc"
+        initpath="./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearspinup_smag_noslipbc_dailysaves"
     );
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);
