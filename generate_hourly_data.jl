@@ -192,23 +192,23 @@ end
 
 function filter()
 
-    u = ncread("./spinup_files/1024_postspinup_90days_8hoursaves/u.nc", "u");
-    v = ncread("./spinup_files/1024_postspinup_90days_8hoursaves/v.nc", "v");
-    eta = ncread("./spinup_files/1024_postspinup_90days_8hoursaves/eta.nc", "eta");
+    u = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/u.nc", "u");
+    v = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/v.nc", "v");
+    eta = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    ufiltered = zeros(1023, 1024, 271)
-    vfiltered = zeros(1024, 1023, 271)
-    etafiltered = zeros(1024, 1024, 271)
+    ufiltered = zeros(1023, 1024, 273)
+    vfiltered = zeros(1024, 1023, 273)
+    etafiltered = zeros(1024, 1024, 273)
 
-    for j = 1:271
+    for j = 1:273
         ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
         vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
         etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
     end
 
-    jldsave("1024_filtered_uveta_imfilter_90days_postspinup_8hoursaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    jldsave("1024_filtered_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
 
 end
 
@@ -257,7 +257,7 @@ end
 
 function downsize()
 
-    cgstates = load_object("./spinup_files/1024_filtered_uveta_imfilter_90days_postspinup_8hoursaves.jld2");
+    cgstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2");
 
     ucg = cgstates[1];
     vcg = cgstates[2];
@@ -266,6 +266,8 @@ function downsize()
     ucgdownsized = (ucg[8:8:end, 4:8:end, :] .+ ucg[8:8:end, 5:8:end, :]) ./ 2;
     vcgdownsized = (vcg[4:8:end, 8:8:end, :] .+ vcg[5:8:end, 8:8:end, :]) ./ 2;
     etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4;
+
+    jldsave("1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ucgdownsized, vcgdownsized, etacgdownsized])
 
     # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
@@ -291,7 +293,7 @@ end
 function hourly_Ts()
 
     T = Float64
-    S_true = ShallowWaters.model_setup(T=T; output=true,
+    S_true = ShallowWaters.model_setup(T=T; output=false,
         output_dt = 8,
         L_ratio=1,
         g=9.81,
@@ -302,30 +304,31 @@ function hourly_Ts()
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         N=1,
         α=2,
         nx=1024,
         Ndays=30,
-        initial_cond="ncfile",
+        initial_cond="rest",
         initpath="./spinup_files/1024_spinup_noslip"
     );
     halo = S_true.grid.halo
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    T11true = zeros(1024, 1024, 241)
-    T22true = zeros(1024, 1024, 241)
-    T12true = zeros(1025, 1025, 241)
+    T11true = zeros(1024, 1024, 273)
+    T22true = zeros(1024, 1024, 273)
+    T12true = zeros(1025, 1025, 273)
 
-    u = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/u.nc", "u")
-    v = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/v.nc", "v")
-    eta = ncread("./spinup_files/1024_postspinup_10days_hourlysaves/eta.nc", "eta")
+    u = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/u.nc", "u")
+    v = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/v.nc", "v")
+    eta = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/eta.nc", "eta")
 
     # cgstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_111925.jld2")
 
-    for j = 1:241
+    for j = 1:273
 
         # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
@@ -365,26 +368,30 @@ function hourly_Ts()
 
     end
 
+    jldsave("trueTs_90days_8hoursaves_T11T22T12.jld2", Ts=[T11true, T22true, T12true])
+
     return T11true, T22true, T12true
 
 end
 
 function coarsen_Ts()
 
-    Ts = load_object("./offline_files/trueTs_onlyfiltered_hourlysaves_T11T22T12_111925.jld2")
+    Ts = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/trueTs_90days_8hoursaves_T11T22T12.jld2")
 
     T11 = Ts[1]
     T22 = Ts[2]
     T12 = Ts[3]
 
-    T11downsized = zeros(128, 128, 241)
-    T22downsized = zeros(128, 128, 241)
-    T12downsized = zeros(129, 129, 241)
-    for j = 1:241
+    T11downsized = zeros(128, 128, 273)
+    T22downsized = zeros(128, 128, 273)
+    T12downsized = zeros(129, 129, 273)
+    for j = 1:273
         T11downsized[:,:,j] = (T11[4:8:end,4:8:end,j] .+ T11[5:8:end,5:8:end,j] .+ T11[4:8:end,5:8:end,j] .+ T11[5:8:end,4:8:end,j]) ./ 4
         T22downsized[:,:,j] = (T22[4:8:end,4:8:end,j] .+ T22[5:8:end,5:8:end,j] .+ T22[4:8:end,5:8:end,j] .+ T22[5:8:end,4:8:end,j]) ./ 4
         T12downsized[:,:,j] = T12[1:8:end,1:8:end,j]
     end
+
+    jldsave("trueTs_downsized_90days_8hoursaves_T11T22T12.jld2", Ts=[T11downsized, T22downsized, T12downsized])
 
 end
 

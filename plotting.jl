@@ -7,14 +7,14 @@ function load_and_create_models()
 
     T = Float64
     Ndays = 3*365
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
-        # output_dt=24,
+        output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -34,9 +34,9 @@ function load_and_create_models()
         nn_forcing_dissipation=false,
         N=1,
         α=2,
-        nx=1024,
+        nx=128,
         Ndays=Ndays,
-        initial_cond="ncfile",
+        initial_cond="rest",
         initpath="./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearspinup_smag_noslipbc_dailysaves"
     );
 
