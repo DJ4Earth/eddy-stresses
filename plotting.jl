@@ -6,25 +6,27 @@ without all of this also running.
 function load_and_create_models()
 
     T = Float64
-    Ndays = 3*365
-    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2");
+    Ndays = 90
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
+    # coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
-    Pnoparam = ShallowWaters.Parameter(T=T,
+    Pnoparamhr = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=8,
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
+        # diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -36,11 +38,11 @@ function load_and_create_models()
         α=2,
         nx=128,
         Ndays=Ndays,
-        initial_cond="rest",
-        initpath="./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearspinup_smag_noslipbc_dailysaves"
+        initial_cond="rest"
+        # initpath="./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearspinup_smag_noslipbc_dailysaves"
     );
 
-    Snoparam = ShallowWaters.model_setup(Pnoparam);
+    Snoparamhr = ShallowWaters.model_setup(Pnoparam);
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Snoparam);
     initial_cond = [u0, v0, eta0];
@@ -144,6 +146,7 @@ function load_and_create_models()
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="constant",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -159,7 +162,7 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./tuned_weights/states_withetainloss/result_online_madnlp_states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations.jld2").solution
+    onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_states_20dayoptimization_startfrom10daystate_noeta_10iterations.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]

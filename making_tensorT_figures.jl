@@ -1,5 +1,4 @@
-function compute_Ts(j, Ndays)
-
+function compute_Ts(j)
 
     PNN = ShallowWaters.Parameter(T=Float64;
         output=false,
@@ -23,13 +22,11 @@ function compute_Ts(j, Ndays)
         α=2,
         nx=128,
         Ndays=1,
-        initial_cond="ncfile",
-        initpath="./spinup_files/128_postspinup_cginitcond_noforcing_1year/",
-        init_starti=1
+        initial_cond="rest",
     );
     SNN = ShallowWaters.model_setup(PNN);
 
-    cgstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
+    cgstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
     ucg = cgstates[1]
     vcg = cgstates[2]
     etacg = cgstates[3]
@@ -37,7 +34,7 @@ function compute_Ts(j, Ndays)
     u, v, eta = ShallowWaters.add_halo(ucg[:,:,j], vcg[:,:,j], etacg[:,:,j], zeros(128,128), SNN)
     snapshot = [u, v]
 
-    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_geluactivation_smag.jld2").solution;
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -56,46 +53,12 @@ function compute_Ts(j, Ndays)
     T12_NN = SNN.Diag.CNNVars.T12;
     T22_NN = SNN.Diag.CNNVars.T22;
 
-    # PZB = ShallowWaters.Parameter(T=Float64;
-    #     output=false,
-    #     L_ratio=1,
-    #     g=9.81,
-    #     H=500,
-    #     wind_forcing_x="double_gyre",
-    #     Lx=3840e3,
-    #     seasonal_wind_x=false,
-    #     topography="flat",
-    #     bc="nonperiodic",
-    #     bottom_drag="quadratic",
-    #     tracer_advection=false,
-    #     tracer_relaxation=false,
-    #     zb_forcing_momentum=false,
-    #     zb_forcing_dissipation=true,
-    #     zb_filtered=true,
-    #     nn_forcing_momentum=false,
-    #     nn_forcing_dissipation=false,
-    #     N=1,
-    #     α=2,
-    #     nx=128,
-    #     Ndays=1,
-    #     initial_cond="ncfile",
-    #     initpath="./spinup_files/128_postspinup_noforcing_cginitcondition_oneyear_071825",
-    #     init_starti=1
-    # );
-    # SZB = ShallowWaters.model_setup(PZB);
-    # ShallowWaters.ZB_momentum(snapshot[1], snapshot[2], SZB, SZB.Diag);
-
     # high-resolution T's
-
-    true_Ts = load_object("./offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
+    true_Ts = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/trueTs_downsized_90days_8hoursaves_T11T22T12.jld2")
 
     T11_true = true_Ts[1][:,:,j];
     T22_true = true_Ts[2][:,:,j];
     T12_true = true_Ts[3][:,:,j];
-
-    ζD_filtered = SZB.Diag.ZBVars.ζD_filtered;
-    ζDhat_filtered = SZB.Diag.ZBVars.ζDhat_filtered;
-    trace_filtered = SZB.Diag.ZBVars.trace_filtered;
 
     return T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN
 
@@ -126,16 +89,16 @@ PZB = ShallowWaters.Parameter(T=Float64;
     nx=128,
     Ndays=1,
     initial_cond="ncfile",
-    initpath="./spinup_files/128_postspinup_cginitcond_noforcing_1year",
+    initpath="./dissipation_smagorinsky/spinup_files_newdissipation/128_3yearpostspinup_cginitcond_smag_noslipbc_8hoursaves",
     init_starti=1
 );
 SZB = ShallowWaters.model_setup(PZB);
 
-# snapshot to use, can be anything within j = 3:3:241
+# j is the snapshot to use, can be anything within j = 1:273
 # these are the values the offline weights were trained on
-Ndays = 1
-j = 6
-T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN = compute_Ts(j, Ndays);
+# (every 8 hours for 90 days)
+j = 25
+T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN = compute_Ts(j);
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
 ## True versus NN T's

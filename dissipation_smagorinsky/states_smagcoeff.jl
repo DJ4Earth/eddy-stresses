@@ -1,7 +1,7 @@
 # New structure with variables related to checkpointing,
 # will also make it so that the parameters in S.Parameters
 # are all constant, nothing changes in time
-mutable struct statenlp_Chkp{T, S} <: AbstractNLPModel{T,S}
+mutable struct statecoeffnlp_Chkp{T, S} <: AbstractNLPModel{T,S}
     meta::NLPModelMeta{T,S}
     counters::Counters
     S::ShallowWaters.ModelSetup{T,T}        # model structure
@@ -444,6 +444,7 @@ function NLPModels.obj(model, param_guess)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -490,6 +491,7 @@ function NLPModels.obj(model, param_guess)
             end
         end
     end
+    model.S.constants.cSmag = param_guess[end]
 
     model.J = integrate(model)
 
@@ -508,6 +510,7 @@ function NLPModels.grad!(model, param_guess, G)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -552,6 +555,7 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
+    model.S.constants.cSmag = param_guess[end]
 
     dmodel = Enzyme.make_zero(model)
 
@@ -582,18 +586,20 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
+    G[end] = dmodel.S.constants.cSmag
 
     return nothing
 
 end
 
-function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
+function statecoeffnlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:AbstractFloat}
 
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -616,42 +622,21 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    Phr = ShallowWaters.Parameter(T=T,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays
-    )
-    Shr = ShallowWaters.model_setup(Phr)
-
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
     coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:74:Slr.grid.nt
+    data_steps = 76:75:Slr.grid.nt
     data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
 
     initial_cond = [u0, v0, eta0]
 
-    lvar = lower_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
-    uvar = upper_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
-    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+    lvar = lower_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv) + 1)
+    uvar = upper_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv) + 1)
+    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv) + 1;
         ncon=0,
         nnzh=0,
         x0=param_guess,
@@ -660,7 +645,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
     )
     counters = Counters()
 
-    return statenlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
+    return statecoeffnlp_Chkp{T, typeof(param_guess)}(meta, Counters(), Slr, initial_cond, data, data_steps, 0.0, 1, 1, 0.0, zeros(128,128), zeros(128,128))
 
 end
 
@@ -673,6 +658,7 @@ function run_state()
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -695,14 +681,13 @@ function run_state()
 
     Slr = ShallowWaters.model_setup(Plr);
 
-    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_reluactivation_smag.jld2").solution
-    # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_geluactivation_smag.jld2").solution;
+    param_guess = [load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_geluactivation_smag.jld2").solution; Slr.constants.cSmag]
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
     lower_bound = -10000
     upper_bound = 10000
-    nlp = statenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+    nlp = statecoeffnlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
 
     qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
@@ -715,7 +700,7 @@ function run_state()
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag_relu.jld2", result=result)
+    jldsave("result_online_state_smagcoeff_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag_relu.jld2", result=result)
 
     return nothing
 
@@ -859,24 +844,3 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
     println("Finite difference result: $diffs")
 
 end
-
-
-# how to save with jld2
-
-# jldsave("exp3_minimizer_initcond_forcing_adjoint_042925.jld2",
-#     u = reshape(result.minimizer[1:17292], 131, 132),
-#     v = reshape(result.minimizer[17293:34584], 132, 131),
-#     eta = reshape(result.minimizer[34585:end-1], 130, 130),
-#     Fx0 = result.minimizer[end]
-# )
-
-# temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
-#                 S.Prog.u,
-#                 S.Prog.v,
-#                 S.Prog.η,
-#                 S.Prog.sst,
-#                 S
-#             )...)
-# fig = Figure();
-# ax, hm = heatmap(fig[1,1],temp.v, colormap=:balance)
-# Colorbar(fig[1,2], hm)

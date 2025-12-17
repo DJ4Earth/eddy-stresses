@@ -206,7 +206,6 @@ function cpintegrate(chkp, scheme)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                # + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -414,7 +413,6 @@ function integrate(chkp)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                # + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -450,7 +448,7 @@ function NLPModels.obj(model, param_guess)
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
+        diffusion="constant",
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -490,6 +488,7 @@ function NLPModels.obj(model, param_guess)
             end
         end
     end
+    model.S.parameters.cD = param_guess[end]
 
     model.J = integrate(model)
 
@@ -514,7 +513,7 @@ function NLPModels.grad!(model, param_guess, G)
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
+        diffusion="constant",
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -552,6 +551,7 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
+    model.S.parameters.cD = param_guess[end]
 
     dmodel = Enzyme.make_zero(model)
 
@@ -582,6 +582,11 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
+    G[end] = dmodel.S.parameters.cD
+
+    if norm(dmodel.S.parameters.cD) === 0.0
+        error("Derivative is zero")
+    end
 
     return nothing
 
@@ -600,7 +605,6 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="Smagorinsky",            # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -627,7 +631,6 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         N=1,
@@ -638,7 +641,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
     Shr = ShallowWaters.model_setup(Phr)
 
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
@@ -649,9 +652,9 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
 
     initial_cond = [u0, v0, eta0]
 
-    lvar = lower_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
-    uvar = upper_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv))
-    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
+    lvar = lower_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv) + 1)
+    uvar = upper_bound .* ones(Float64, Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv) + 1)
+    meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv) + 1;
         ncon=0,
         nnzh=0,
         x0=param_guess,
@@ -667,7 +670,7 @@ end
 function run_state()
 
     T = Float64
-    Ndays = 3
+    Ndays = 20
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -675,11 +678,12 @@ function run_state()
         H=500,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
+        cfl=.898,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
+        diffusion="constant",
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -695,8 +699,7 @@ function run_state()
 
     Slr = ShallowWaters.model_setup(Plr);
 
-    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_reluactivation_smag.jld2").solution
-    # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_geluactivation_smag.jld2").solution;
+    param_guess = [load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_states_20dayoptimization_startfrom10daystate_noeta_10iterations.jld2").solution; Slr.parameters.cD]
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -710,12 +713,12 @@ function run_state()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=100
+        max_iter=15
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag_relu.jld2", result=result)
+    jldsave("result_online_state_bdcoeff_20dayoptimzation_startfrom20day_constantdissipation_15iterations_8hourdata.jld2", result=result)
 
     return nothing
 
@@ -860,6 +863,51 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
 
 end
 
+function checking_loss()
+
+    T = Float64
+    Ndays = 1
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    );
+
+    Slr = ShallowWaters.model_setup(Plr);
+
+    param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+
+
+    # lvar is by default -Inf * ones(Float64, nvar)
+    # uvar is by default Inf * ones(Float64, nvar)
+    lower_bound = -10000
+    upper_bound = 10000
+    nlp = statenlp_Chkp{Float64}(Ndays,param_guess,lower_bound,upper_bound);
+
+    nlp.S.Prog.u .= copy(initial_cond[1])
+    nlp.S.Prog.v .= copy(initial_cond[2])
+    nlp.S.Prog.η .= copy(initial_cond[3])
+
+
+end
 
 # how to save with jld2
 
