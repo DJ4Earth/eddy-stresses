@@ -206,7 +206,7 @@ function cpintegrate(chkp, scheme)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
+                # + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -414,7 +414,7 @@ function integrate(chkp)::Float64
 
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
+                # + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -450,6 +450,7 @@ function NLPModels.obj(model, param_guess)
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -513,6 +514,7 @@ function NLPModels.grad!(model, param_guess, G)
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -598,6 +600,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -624,6 +627,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         N=1,
@@ -675,6 +679,7 @@ function run_state()
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
