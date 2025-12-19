@@ -200,13 +200,8 @@ function cpintegrate(chkp, scheme)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                # + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -408,13 +403,8 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-                # + sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -444,6 +434,7 @@ function NLPModels.obj(model, param_guess)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -508,6 +499,7 @@ function NLPModels.grad!(model, param_guess, G)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -594,6 +586,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -616,33 +609,12 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    Phr = ShallowWaters.Parameter(T=T,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays
-    )
-    Shr = ShallowWaters.model_setup(Phr)
-
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
     coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:74:Slr.grid.nt
+    data_steps = 76:75:Slr.grid.nt
     data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
@@ -667,12 +639,13 @@ end
 function run_state()
 
     T = Float64
-    Ndays = 3
+    Ndays = 5
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -695,8 +668,9 @@ function run_state()
 
     Slr = ShallowWaters.model_setup(Plr);
 
-    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_reluactivation_smag.jld2").solution
+    # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_reluactivation_smag.jld2").solution
     # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_geluactivation_smag.jld2").solution;
+    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -710,12 +684,12 @@ function run_state()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=100
+        max_iter=50
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag_relu.jld2", result=result)
+    jldsave("result_online_state_5dayoptimzation_startfrom3day_50iterations_8hourdata_smag.jld2", result=result)
 
     return nothing
 
