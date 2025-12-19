@@ -407,10 +407,6 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127)
                 + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
@@ -442,13 +438,13 @@ function NLPModels.obj(model, param_guess)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="constant",
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -506,13 +502,13 @@ function NLPModels.grad!(model, param_guess, G)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="constant",
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -592,6 +588,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -613,32 +610,12 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
 
     Slr = ShallowWaters.model_setup(Plr)
 
-    Phr = ShallowWaters.Parameter(T=T,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=Ndays
-    )
-    Shr = ShallowWaters.model_setup(Phr)
-
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:74:Slr.grid.nt
+    data_steps = 76:75:Slr.grid.nt
     data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
@@ -669,13 +646,13 @@ function run_state()
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        diffusion="constant",
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -714,7 +691,7 @@ function run_state()
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_witheta_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_result_200maxhistory.jld2", result=result)
+    jldsave("result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2", result=result)
 
     return nothing
 

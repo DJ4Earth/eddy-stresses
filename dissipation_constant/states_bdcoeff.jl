@@ -444,6 +444,7 @@ function NLPModels.obj(model, param_guess)
         H=500,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
+        cfl=.898,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
@@ -488,7 +489,7 @@ function NLPModels.obj(model, param_guess)
             end
         end
     end
-    model.S.parameters.cD = param_guess[end]
+    model.S.constants.cD = param_guess[end]
 
     model.J = integrate(model)
 
@@ -509,6 +510,7 @@ function NLPModels.grad!(model, param_guess, G)
         H=500,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
+        cfl=.898,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
@@ -551,7 +553,7 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
-    model.S.parameters.cD = param_guess[end]
+    model.S.constants.cD = param_guess[end]
 
     dmodel = Enzyme.make_zero(model)
 
@@ -582,9 +584,9 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
-    G[end] = dmodel.S.parameters.cD
+    G[end] = dmodel.S.constants.cD
 
-    if norm(dmodel.S.parameters.cD) === 0.0
+    if norm(dmodel.S.constants.cD) === 0.0
         error("Derivative is zero")
     end
 
@@ -599,6 +601,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -645,7 +648,7 @@ function statenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where {T<:A
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
     etahrcg = coarse_grained_hrstates[3]
-    data_steps = 75:74:Slr.grid.nt
+    data_steps = 76:75:Slr.grid.nt
     data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]]
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
@@ -718,7 +721,7 @@ function run_state()
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_bdcoeff_20dayoptimzation_startfrom20day_constantdissipation_15iterations_8hourdata.jld2", result=result)
+    jldsave("result_online_state_bdcoeff_20dayoptimzation_startfrom20day_cfladjusted_constantdissipation_15iterations_8hourdata.jld2", result=result)
 
     return nothing
 

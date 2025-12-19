@@ -201,10 +201,6 @@ function cpintegrate(chkp, scheme)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
             chkp.j += 1
@@ -407,10 +403,6 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
 
             chkp.j += 1
@@ -449,6 +441,7 @@ function NLPModels.obj(model, param_guess)
             L_ratio=1,
             g=9.81,
             H=500,
+            cfl=.898,
             wind_forcing_x="double_gyre",
             Lx=3840e3,
             seasonal_wind_x=false,
@@ -525,6 +518,7 @@ function NLPModels.grad!(model, param_guess, G)
             L_ratio=1,
             g=9.81,
             H=500,
+            cfl=.898,
             wind_forcing_x="double_gyre",
             Lx=3840e3,
             seasonal_wind_x=false,
@@ -616,6 +610,7 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -638,11 +633,11 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
     Slr = ShallowWaters.model_setup(Plr)
 
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./dissipation_constant/offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
-    data_steps = 75:74:Slr.grid.nt;
+    data_steps = 76:75:Slr.grid.nt;
     data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]];
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
@@ -667,7 +662,7 @@ end
 function run_multistate()
 
     T = Float64
-    Ndays = 3
+    Ndays = 5
 
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
@@ -679,6 +674,7 @@ function run_multistate()
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -699,15 +695,15 @@ function run_multistate()
     )
 
     Slr = ShallowWaters.model_setup(Plr)
-    param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution;
+    param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_states_20dayoptimization_startfrom10daystate_noeta_10iterations.jld2").solution;
 
-    data_steps = 75:74:Slr.grid.nt;
+    data_steps = 76:75:Slr.grid.nt;
     data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    days = [3, 15, 30, 40, 50, 60, 80, 85] .* 3 .+ 1
-    # days = [3, 30, 50, 80] .*3 .+ 1
+    # days = [3, 15, 30, 40, 50, 60, 80, 85] .* 3 .+ 1
+    days = [3, 30, 50, 80] .* 3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -737,12 +733,11 @@ function run_multistate()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=60
+        max_iter=20
     )
 
-    # jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_60iterations.jld2", result=result)
-    jldsave("result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights10daystate_60iterations.jld2", result=result)
-
+    jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
+    # jldsave("result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights10daystate_30iterations.jld2", result=result)
 
     return nothing
 
@@ -758,6 +753,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,

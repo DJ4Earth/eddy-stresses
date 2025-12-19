@@ -586,7 +586,11 @@ function NLPModels.grad!(model, param_guess, G)
             end
         end
     end
-    G[end] = dmodel.S.constants.cSmag
+    G[end] .= dmodel.S.constants.cSmag
+
+    if norm(dmodel.S.constants.cSmag) === 0.0
+        error("Derivative is zero")
+    end
 
     return nothing
 
