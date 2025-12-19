@@ -180,7 +180,7 @@ function load_and_create_models()
 
     ShallowWaters.time_integration(Sonline)
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -197,23 +197,27 @@ function load_and_create_models()
     vofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
     etaofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
 
-    unoparam = ncread("./results/128_noparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    vnoparam = ncread("./results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    etanoparam = ncread("./results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    unoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vnoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etanoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
     # gelu activation function
 
-    u1daystategelu = ncread("./results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
-    v1daystategelu = ncread("./results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
-    eta1daystategelu = ncread("./results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
+    u1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
+    v1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
+    eta1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
 
-    u5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
-    v5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
-    eta5daystategelu = ncread("./results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
+    u5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
+    v5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
+    eta5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
 
-    u10day = ncread("./results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
-    v10day = ncread("./results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
-    eta10day = ncread("./results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
+    u10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
+    v10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
+    eta10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
+
+    u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
+    v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
+    eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
 
     u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
     v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
@@ -267,9 +271,9 @@ function load_and_create_models()
 
     # zanna bolton
 
-    uzb = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    vzb = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    etazb = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    uzb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vzb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etazb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
@@ -372,7 +376,7 @@ function prognostic_plots()
 
 
     # just u fields
-    t = 91
+    t = 1098
     fig = Figure(size=(700, 550), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -385,7 +389,7 @@ function prognostic_plots()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    u[:,:,t],
+    unoparam[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u(30 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -403,7 +407,7 @@ function prognostic_plots()
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    u5dayeta[:,:,t],
+    u20day[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(30 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
@@ -760,7 +764,7 @@ function energy_plots()
     Colorbar(fig[1,4], hm1)
 
     # cg, zb, nn, no param
-    t = 91
+    t = 1098
     fig = Figure(size=(900, 1000), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -794,7 +798,7 @@ function energy_plots()
 
     ax1, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (uonline5daygelu[:,1:end-1,t].^2 .+ vonline5daygelu[1:end-1,:,t].^2),
+    (u20day[:,1:end-1,t].^2 .+ v20day[1:end-1,:,t].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30 km resolution E, online closure"),
     colorrange=(0,
@@ -876,11 +880,11 @@ function energy_plots()
     hybrid = []
     fourier = []
     kespecpd = []
+    twentyday = []
     # relu1day = []
     # relu5day = []
     # reluKEspec = []
     noparam = []
-    fivedayeta = []
     tenday = []
     tendayeta = []
     tendaynoeta = []
@@ -890,6 +894,7 @@ function energy_plots()
     for j = 1:1098
         push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
         push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
+        push!(twentyday, sum(u20day[:,1:end-1,j].^2 .+ v20day[1:end-1,:,j].^2))
         # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
         # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
         # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
@@ -900,35 +905,36 @@ function energy_plots()
         push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
         push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
         push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
-        push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
+        # push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
     end
 
     for j = 1:366
 
         # push!(fivedayeta, sum(u5dayeta[:,1:end-1,j].^2 .+ v5dayeta[1:end-1,:,j].^2))
         push!(tenday, sum(u10day[:,1:end-1,j].^2 .+ v10day[1:end-1,:,j].^2))
-        push!(tendayeta, sum(u10eta[:,1:end-1,j].^2 .+ v10eta[1:end-1,:,j].^2))
-        push!(tendaynoeta, sum(u10noeta[:,1:end-1,j].^2 .+ v10noeta[1:end-1,:,j].^2))
+        # push!(tendayeta, sum(u10eta[:,1:end-1,j].^2 .+ v10eta[1:end-1,:,j].^2))
+        # push!(tendaynoeta, sum(u10noeta[:,1:end-1,j].^2 .+ v10noeta[1:end-1,:,j].^2))
 
     end
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 365, 366),  cghr[1:366] ./ (128^2), label="Coarse-grained HR", 
+    lines(fig[1,1], LinRange(0, 3 * 365, 1098),  cghr ./ (128^2), label="Coarse-grained HR", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy"
         )
     )
-    lines!(fig[1,1], LinRange(0, 365, 366), noparam[1:366]./ (128^2), label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 365, 366), zb[1:366]./ (128^2), label="ZB closure")
+    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), noparam./ (128^2), label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), zb./ (128^2), label="ZB closure")
     # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
-    lines!(fig[1,1], LinRange(0, 365, 366), fiveday[1:366]./ (128^2), label="Online closure, 5 day gelu")
+    # lines!(fig[1,1], LinRange(0, 365, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
     # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
-    lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(fig[1,1], LinRange(0, 365, 366), tendayeta./ (128^2), label="Online closure, 10 day with eta")
-    # lines!(fig[1,1], LinRange(0, 365, 366), tendaynoeta./ (128^2), label="Online closure, 10 day without eta")
-    lines!(fig[1,1], LinRange(0,365,366), multi3[1:366] ./ (128^2), label="Multi state 3 day integrations")
+    # lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
+    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), twentyday./ (128^2), label="Online closure, 20 day")
+    # lines!(fig[1,1], LinRange(0, 3 * 365, 366), tendayeta./ (128^2), label="Online closure, 10 day with eta")
+    # lines!(fig[1,1], LinRange(0, 3 * 365, 366), tendaynoeta./ (128^2), label="Online closure, 10 day without eta")
+    # lines!(fig[1,1], LinRange(0,365,366), multi3[1:366] ./ (128^2), label="Multi state 3 day integrations")
     # lines!(fig[1,1], LinRange(0, 1095, 1098), hybrid./ (128^2), label="Hybrid")
     # lines!(fig[1,1], LinRange(0, 1095, 1098), kespecpd./ (128^2), label="KE spectrum pd")
     # lines!(fig[1,1], LinRange(0, 1095, 1098), fourier./ (128^2), label="Fourier")
@@ -1002,6 +1008,9 @@ function spectrum_plots()
     up_gelu5day = zeros(65,totalstates)
     vp_gelu5day = zeros(65,totalstates)
 
+    up_20day = zeros(65, totalstates)
+    vp_20day = zeros(65, totalstates)
+
     up_geluKEspecpd = zeros(65,totalstates)
     vp_geluKEspecpd = zeros(65,totalstates)
 
@@ -1046,6 +1055,9 @@ function spectrum_plots()
         up_hrcg[:,t] = power(periodogram(uhrcg[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_hrcg[:,t] = power(periodogram(vhrcg[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
+        up_20day[:,t] = power(periodogram(u20day[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        vp_20day[:,t] = power(periodogram(v20day[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+
         up_noparam[:,t] = power(periodogram(unoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_noparam[:,t] = power(periodogram(vnoparam[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
@@ -1081,14 +1093,14 @@ function spectrum_plots()
 
     for t = 1:366
 
-        up_5dayeta[:, t] = power(periodogram(u5dayeta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_5dayeta[:, t] = power(periodogram(v5dayeta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # up_5dayeta[:, t] = power(periodogram(u5dayeta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_5dayeta[:, t] = power(periodogram(v5dayeta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
         up_10day[:, t] = power(periodogram(u10day[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         vp_10day[:, t] = power(periodogram(v10day[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_10dayeta[:, t] = power(periodogram(u10eta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_10dayeta[:, t] = power(periodogram(v10eta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # up_10dayeta[:, t] = power(periodogram(u10eta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        # vp_10dayeta[:, t] = power(periodogram(v10eta[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
     end
 
@@ -1115,6 +1127,7 @@ function spectrum_plots()
     )
     # lines!(fig[1,1], lr_wl[2:end], up_gelu1day[2:end,t] + vp_gelu1day[2:end,t], label="Online NN closure, 1 day")
     lines!(fig[1,1], lr_wl[2:end], up_gelu5day[2:end,t] + vp_gelu5day[2:end,t], label="Online NN closure, 1 + 5 day")
+    lines!(fig[1,1], lr_wl[2:end], up_20day[2:end,t] + vp_20day[2:end,t], label="Online NN closure, 1 + 5 + 10 + 20 day")
     # lines!(fig[1,1], lr_wl[2:end], up_geluKEspecpd[2:end,t] + up_geluKEspecpd[2:end,t], label="Online NN closure, KE spectrum PD")
     lines!(fig[1,1], lr_wl[2:end], up_noparam[2:end,t] + vp_noparam[2:end,t], label="30 km resolution, no closure")
     lines!(fig[1,1], lr_wl[2:end], up_zb[2:end,t] + vp_zb[2:end,t], label="ZB closure")
@@ -1136,6 +1149,9 @@ function spectrum_plots()
 
     up_5dayeta_avg = zeros(65)
     vp_5dayeta_avg = zeros(65)
+
+    up_20day_avg = zeros(65)
+    vp_20day_avg = zeros(65)
 
     up_hr_avg = zeros(513)
     vp_hr_avg = zeros(513)
@@ -1173,13 +1189,16 @@ function spectrum_plots()
     # up_reluKEspec_avg = zeros(65)
     # vp_reluKEspec_avg = zeros(65)
 
-    for t = 1:366
+    for t = 1:totalstates
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
 
         up_zb_avg += up_zb[:,t]
         vp_zb_avg += vp_zb[:,t]
+
+        up_20day_avg += up_20day[:, t]
+        vp_20day_avg += vp_20day[:, t]
 
         # up_hr_avg += up_hr[:,t]
         # vp_hr_avg += vp_hr[:,t]
@@ -1196,14 +1215,14 @@ function spectrum_plots()
         up_gelu5day_avg += up_gelu5day[:,t]
         vp_gelu5day_avg += vp_gelu5day[:,t]
 
-        up_5dayeta_avg += up_5dayeta[:, t]
-        vp_5dayeta_avg += vp_5dayeta[:, t]
+        # up_5dayeta_avg += up_5dayeta[:, t]
+        # vp_5dayeta_avg += vp_5dayeta[:, t]
 
-        up_10day_avg += up_10day[:, t]
-        vp_10day_avg += vp_10day[:, t]
+        # up_10day_avg += up_10day[:, t]
+        # vp_10day_avg += vp_10day[:, t]
 
-        up_10dayeta_avg += up_10dayeta[:, t]
-        vp_10dayeta_avg += vp_10dayeta[:, t]
+        # up_10dayeta_avg += up_10dayeta[:, t]
+        # vp_10dayeta_avg += vp_10dayeta[:, t]
         # up_geluKEspec_avg += up_geluKEspec[:,t]
         # vp_geluKEspec_avg += vp_geluKEspec[:,t]
 
@@ -1219,21 +1238,21 @@ function spectrum_plots()
     end
 
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], lr_wl[2:65], (up_cghr_avg[2:65] + vp_cghr_avg[2:65])/366, label="Filtered, coarse-grained 3.75km resolution", axis=(
+    lines(fig[1,1], lr_wl[2:65], (up_cghr_avg[2:65] + vp_cghr_avg[2:65])/1098, label="Filtered, coarse-grained 3.75km resolution", axis=(
         xscale=log10,
         yscale=log10,
         xlabel="Wavelength (km)",
         ylabel="KE(k)", xreversed=true,
         xticks=[700, 100, 30, 10, 2],
-        title="Time-averaged KE spectrum, first 365 days")
+        title="Time-averaged KE spectrum, 3 year spinup")
     )
-    lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/366, label="ZB20")
-    lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/366, label="30 km resolution, no closure")
+    lines!(fig[1,1], lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/1098, label="ZB20")
+    lines!(fig[1,1], lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/1098, label="30 km resolution, no closure")
     # lines!(fig[1,1], lr_wl[2:end], (up_relu1day_avg[2:end] + vp_gelu1day_avg[2:end])/totalstates, label="Online NN closure, 1 day")
-    lines!(fig[1,1], lr_wl[2:end], (up_gelu5day_avg[2:end] + vp_gelu5day_avg[2:end])/366, label="Online NN closure, 1 + 5 days")
-    lines!(fig[1,1], lr_wl[2:end], (up_5dayeta_avg[2:end] + vp_5dayeta_avg[2:end])/366, label="Online NN closure, 5 day with eta")
-    lines!(fig[1,1], lr_wl[2:end], (up_10day_avg[2:end] + vp_10day_avg[2:end])/366, label="Online NN closure, 10 day")
-    lines!(fig[1,1], lr_wl[2:end], (up_10dayeta_avg[2:end] + vp_10dayeta_avg[2:end])/366, label="Online NN closure, 10 day with eta")
+    lines!(fig[1,1], lr_wl[2:end], (up_gelu5day_avg[2:end] + vp_gelu5day_avg[2:end])/1098, label="Online NN closure, 1 + 5 days")
+    # lines!(fig[1,1], lr_wl[2:end], (up_5dayeta_avg[2:end] + vp_5dayeta_avg[2:end])/1098, label="Online NN closure, 5 day with eta")
+    # lines!(fig[1,1], lr_wl[2:end], (up_10day_avg[2:end] + vp_10day_avg[2:end])/366, label="Online NN closure, 1 + 5 + 10 day")
+    lines!(fig[1,1], lr_wl[2:end], (up_20day_avg[2:end] + vp_20day_avg[2:end])/1098, label="Online NN closure, 1 + 5 + 10 + 20 day")
 
     # lines!(fig[1,1], lr_wl[2:end], (up_geluKEspec_avg[2:end] + vp_geluKEspec_avg[2:end])/31, label="Online NN closure, KE spec")
     # lines!(fig[1,1], lr_wl[2:end], (up_geluKEspecpd_avg[2:end] + vp_geluKEspecpd_avg[2:end])/31, label="Online NN closure, KE spec percent-diff")
@@ -1347,34 +1366,36 @@ function ketransfer_plots()
     );
 
     S10 = ShallowWaters.model_setup(Ponline);
+    S20 = ShallowWaters.model_setup(Ponline);
     S5 = ShallowWaters.model_setup(Ponline);
     Shrcg = ShallowWaters.model_setup(Ponline);
     SZB = ShallowWaters.model_setup(PZB);
     S3 = ShallowWaters.model_setup(Ponline);
 
-    uhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
-    vhr = ncread("./spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
+    uhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
+    vhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
 
     coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
-    u10day = ncread("./results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
-    v10day = ncread("./results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
-    eta10day = ncread("./results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
+    u10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
+    v10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
+    eta10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
 
-    u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
-    v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
-    eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/eta.nc", "eta");
+    u5day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
+    v5day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
+    eta5day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
 
-    uzb_ = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    vzb_ = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    etazb_ = ncread("./results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
+    v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
+    eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
 
-    umulti3 = ncread("./multi3day/u.nc", "u");
-    vmulti3 = ncread("./multi3day/v.nc", "v");
-    etamulti3 = ncread("./multi3day/eta.nc", "eta");
+    uzb_ = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vzb_ = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etazb_ = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+
 
     lr_freq = 1/30 .* freq(periodogram(u10day[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcg[:,:,1]))
@@ -1388,27 +1409,29 @@ function ketransfer_plots()
     totalu_10 = zeros(65)
     totalv_10 = zeros(65)
 
+    totalu_20 = zeros(65)
+    totalv_20 = zeros(65)
+
     totalu_ZB = zeros(65)
     totalv_ZB = zeros(65)
 
     totalu_3 = zeros(65)
     totalv_3 = zeros(65)
 
-    for t = 1:366
+    totalstates = 1098
+    for t = 1:totalstates
 
         Suhr, Svhr = compute_hrS(uhr[:,:,t], vhr[:,:, t])
 
-        u10, v10, eta10 = ShallowWaters.add_halo(Float64.(u10day[:,:,t]), Float64.(v10day[:,:,t]), Float64.(eta10day[:,:,t]), zeros(128,128), S10);
-        u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5dayeta[:,:,t]), Float64.(v5dayeta[:,:,t]), Float64.(eta5dayeta[:,:,t]), zeros(128,128), S5);
+        u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
         u, v, eta = ShallowWaters.add_halo(uhrcg[:,:,t], vhrcg[:,:,t], etahrcg[:,:,t], zeros(128,128), Shrcg);
         uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
-        u3, v3, eta3 = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), S3);
+        u20, v20, eta20 = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
 
 
         ShallowWaters.CNN_momentum(u, v, Shrcg);
-        ShallowWaters.CNN_momentum(u10, v10, S10);
         ShallowWaters.CNN_momentum(u5, v5, S5);
-        ShallowWaters.CNN_momentum(u3, v3, S3);
+        ShallowWaters.CNN_momentum(u20, v20, S20);
         ShallowWaters.ZB_momentum(uzb, vzb, SZB, SZB.Diag);
 
         outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcg[:, :, t], Suhr, nfft[1])
@@ -1419,29 +1442,29 @@ function ketransfer_plots()
         totalu_hrcg += outu_hrcg
         totalv_hrcg += outv_hrcg
 
-        outu_5, inputu_5, inputSu_5 = paddingu(u5dayeta[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
+        outu_5, inputu_5, inputSu_5 = paddingu(u5day[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
         fft2pow2radial!(outu_5, rfft(inputu_5), rfft(inputSu_5), nfft...)
-        outv_5, inputv_5, inputSv_5 = paddingv(v5dayeta[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
+        outv_5, inputv_5, inputSv_5 = paddingv(v5day[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
         fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
 
         totalu_5 += outu_5
         totalv_5 += outv_5
 
-        outu_10, inputu_10, inputSu_10 = paddingu(u10day[:, :, t], S10.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_10, rfft(inputu_10), rfft(inputSu_10), nfft...)
-        outv_10, inputv_10, inputSv_10 = paddingv(v10day[:, :, t], S10.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_10, rfft(inputv_10), rfft(inputSv_10), nfft...)
+        outu_20, inputu_20, inputSu_20 = paddingu(u20day[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
+        outv_20, inputv_20, inputSv_20 = paddingv(v20day[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
 
-        totalu_10 += outu_10
-        totalv_10 += outv_10
+        totalu_20 += outu_20
+        totalv_20 += outv_20
 
-        outu_3, inputu_3, inputSu_3 = paddingu(umulti3[:, :, t], S3.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_3, rfft(inputu_3), rfft(inputSu_3), nfft...)
-        outv_3, inputv_3, inputSv_3 = paddingv(vmulti3[:, :, t], S3.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_3, rfft(inputv_3), rfft(inputSv_3), nfft...)
+        # outu_3, inputu_3, inputSu_3 = paddingu(umulti3[:, :, t], S3.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_3, rfft(inputu_3), rfft(inputSu_3), nfft...)
+        # outv_3, inputv_3, inputSv_3 = paddingv(vmulti3[:, :, t], S3.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_3, rfft(inputv_3), rfft(inputSv_3), nfft...)
 
-        totalu_3 += outu_3
-        totalv_3 += outv_3
+        # totalu_3 += outu_3
+        # totalv_3 += outv_3
 
         outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb_[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
         fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
@@ -1453,8 +1476,23 @@ function ketransfer_plots()
 
     end
 
+    for t=1:366
+
+        u10, v10, eta10 = ShallowWaters.add_halo(Float64.(u10day[:,:,t]), Float64.(v10day[:,:,t]), Float64.(eta10day[:,:,t]), zeros(128,128), S10);
+        ShallowWaters.CNN_momentum(u10, v10, S10);
+
+        outu_10, inputu_10, inputSu_10 = paddingu(u10day[:, :, t], S10.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_10, rfft(inputu_10), rfft(inputSu_10), nfft...)
+        outv_10, inputv_10, inputSv_10 = paddingv(v10day[:, :, t], S10.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_10, rfft(inputv_10), rfft(inputSv_10), nfft...)
+
+        totalu_10 += outu_10
+        totalv_10 += outv_10
+
+    end
+
     fig = Figure(size=(800, 300), fontsize=15);
-    lines(fig[1,1], lr_freq.*(totalu_hrcg + totalv_hrcg) / 366,
+    lines(fig[1,1], lr_freq.*(totalu_hrcg + totalv_hrcg) / 1098,
         label="Subgrid forcing", 
         axis=(
             xscale=log10,
@@ -1462,9 +1500,9 @@ function ketransfer_plots()
             ylabel="KE(k)",
         title="Kinetic Energy transfer")
     )
-    lines!(fig[1,1], lr_freq.*(totalu_ZB + totalv_ZB) / 366, label="ZB20")
-    # lines!(fig[1,1], lr_freq.*(totalu_10 + totalv_10) / 366, label="10 day optimization")
-    lines!(fig[1,1], lr_freq.*(totalu_5 + totalv_5) / 366, label="5 day state optimization with eta")
+    lines!(fig[1,1], lr_freq.*(totalu_ZB + totalv_ZB) / 1098, label="ZB20")
+    # lines!(fig[1,1], lr_freq.*(totalu_20 + totalv_20) / 1098, label="20 day optimization")
+    # lines!(fig[1,1], lr_freq.*(totalu_5 + totalv_5) / 1098, label="5 day state optimization with eta")
     # lines!(fig[1,1], lr_freq.*(totalu_3 + totalv_3) / 366, label="Multi 3 day state optimization with eta")
     axislegend(position = (0,1))
 

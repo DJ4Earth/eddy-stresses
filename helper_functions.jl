@@ -20,7 +20,7 @@ function compute_hrS(u, v)
         nx=1024,
         Ndays=30,
         initial_cond="ncfile",
-        initpath="./spinup_files/1024_spinup_noslip"
+        initpath="./dissipation_constant/spinup_files/1024_spinup_noslip"
     );
     halo = S_true.grid.halo
 
