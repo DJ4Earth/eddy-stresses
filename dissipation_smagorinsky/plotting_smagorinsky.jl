@@ -139,6 +139,7 @@ function load_and_create_models()
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -161,7 +162,11 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_3dayoptimzation_startfromoffline_100iterations_8hourdata.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag.jld2").solution
+    onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_5dayoptimzation_startfrom3day_50iterations_8hourdata_smag.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_5dayoptimzation_startfrom3day_50iterations_8hourdata.jld2").solution
+
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -172,6 +177,7 @@ function load_and_create_models()
             end
         end
     end
+    # Sonline.constants.cSmag = onlineweights[end]
 
     Sonline.Prog.u .= copy(initial_cond[1]);
     Sonline.Prog.v .= copy(initial_cond[2]);

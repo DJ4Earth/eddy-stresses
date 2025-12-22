@@ -8,12 +8,11 @@ function load_and_create_models()
     T = Float64
     Ndays = 90
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2");
-    # coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
-    Pnoparamhr = ShallowWaters.Parameter(T=T,
+    Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=8,
         L_ratio=1,
@@ -42,7 +41,7 @@ function load_and_create_models()
         # initpath="./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearspinup_smag_noslipbc_dailysaves"
     );
 
-    Snoparamhr = ShallowWaters.model_setup(Pnoparam);
+    Snoparam = ShallowWaters.model_setup(Pnoparam);
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Snoparam);
     initial_cond = [u0, v0, eta0];
@@ -93,6 +92,7 @@ function load_and_create_models()
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -133,13 +133,14 @@ function load_and_create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 365
+    Ndays = 3*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -162,7 +163,7 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_states_20dayoptimization_startfrom10daystate_noeta_10iterations.jld2").solution
+    onlineweights=load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -173,12 +174,16 @@ function load_and_create_models()
             end
         end
     end
+    # Sonline.constants.cD = onlineweights[end]
 
     Sonline.Prog.u .= copy(initial_cond[1]);
     Sonline.Prog.v .= copy(initial_cond[2]);
     Sonline.Prog.η .= copy(initial_cond[3]);
 
     ShallowWaters.time_integration(Sonline)
+
+    # name for run
+    # result_online_state_pluscD_weights_constdiffusion_20dayoptimization_startfrom20day_3years_dailysaves
 
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];

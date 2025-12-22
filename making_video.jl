@@ -12,10 +12,11 @@ u10daynoeta = ncread("./dissipation_constant/results/128_online_stateweights_10d
 v = ncread("./multi5day/v.nc", "v");
 eta = ncread("./multi5day/eta.nc", "eta");
 
-u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
-v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
-eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
+# u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
+# v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
+# eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
 
+u3smag = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_3dayoptimization_smagorinskydiffusion_startfromoffline/u.nc", "u")
 
 fig = Figure(fontsize=15);
 
@@ -24,7 +25,7 @@ timestamps = range(1, 1098, step=1)
 ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "η(x, y)")
 
 record(fig, "output.mp4", 1:1098) do t
-    tempframe = eta20day[:, :, t]
+    tempframe = u3smag[:, :, t]
     hm =heatmap!(ax,
         LinRange(0, 3840, 128),
         LinRange(0, 3840, 128),
