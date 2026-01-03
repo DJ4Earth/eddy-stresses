@@ -166,11 +166,11 @@ function load_and_create_models()
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_5dayoptimzation_startfrom3day_50iterations_8hourdata_smag.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_5dayoptimzation_startfrom3day_50iterations_8hourdata.jld2").solution
-    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_10dayoptimzation_startfrom5day_30iterations_8hourdata_smag.jld2").solution
+    onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_10dayoptimzation_startfrom5day_30iterations_8hourdata_smag.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_10dayoptimzation_startfrom5day_30iterations_8hourdata.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_20dayoptimzation_startfrom10day_15iterations_8hourdata_smag.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_20dayoptimzation_startfrom10day_15iterations_8hourdata.jld2").solution
-    onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_30dayoptimzation_startfrom20day_7iterations_8hourdata.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_30dayoptimzation_startfrom20day_7iterations_8hourdata.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
