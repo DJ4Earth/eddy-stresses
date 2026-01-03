@@ -9,10 +9,9 @@ u5eta = ncread("./5daystatewitheta/u.nc", "u");
 u3 = ncread("./multi3day/u.nc", "u");
 u10daynoeta = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u")
 
-v = ncread("./multi5day/v.nc", "v");
-eta = ncread("./multi5day/eta.nc", "eta");
-
 u = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/u.nc", "u")
+
+umulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/u.nc", "u")
 
 # u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
 # v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
@@ -24,16 +23,16 @@ fig = Figure(fontsize=15);
 
 framerate = 40
 timestamps = range(1, 1096, step=1)
-ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "η(x, y)")
+ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "u(x, y)")
 
-record(fig, "output.mp4", 1:1096) do t
-    tempframe = u[:, :, t]
+record(fig, "uhr.mp4", 1:1096) do t
+    tempframe = uhr[:, :, t]
     hm =heatmap!(ax,
         LinRange(0, 3840, 128),
         LinRange(0, 3840, 128),
         tempframe,
         colormap = :balance,
-        colorrange=(-maximum(abs.(etahrcg[:,:,365])),maximum(abs.(etahrcg[:,:,365])))
+        colorrange=(-maximum(abs.(uhr[:,:,365])),maximum(abs.(uhr[:,:,365])))
     )
-    Colorbar(fig[1,2], hm, label="m")
+    Colorbar(fig[1,2], hm, label="m/s")
 end

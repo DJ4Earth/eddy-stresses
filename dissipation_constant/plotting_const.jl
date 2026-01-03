@@ -133,10 +133,10 @@ function load_and_create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 3*365
+    Ndays = 10*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=24,
+        output_dt=168,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -163,8 +163,10 @@ function load_and_create_models()
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
-    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights20daystate_30iterations.jld2").solution
+    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights20daystate_30iterations.jld2").solution
     # onlineweights=load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
+    # onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_30dayoptimzation_startfrom20day_constantdissipation_6iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
+    onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -191,9 +193,9 @@ function load_and_create_models()
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
-    uhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u");
-    vhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v");
-    etahr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta");
+    uhr = ncread("./dissipation_const/spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u");
+    vhr = ncread("./dissipation_const/spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v");
+    etahr = ncread("./dissipation_const/spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta");
 
     uofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/u.nc", "u");
     vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
@@ -221,9 +223,21 @@ function load_and_create_models()
     v10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
     eta10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
 
-    u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
-    v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
-    eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
+    u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
+    v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
+    eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
+
+    u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/u.nc", "u");
+    v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/v.nc", "v");
+    eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
+
+    # u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/u.nc", "u");
+    # v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/v.nc", "v");
+    # eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/eta.nc", "eta");
+
+    u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/u.nc", "u");
+    v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/v.nc", "v");
+    eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
 
     u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
     v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
@@ -887,6 +901,7 @@ function energy_plots()
     fourier = []
     kespecpd = []
     twentyday = []
+    thirtyday = []
     # relu1day = []
     # relu5day = []
     # reluKEspec = []
@@ -897,10 +912,11 @@ function energy_plots()
     multi3 = []
     zb = []
     cghr = []
-    for j = 1:1098
-        push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
-        push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
-        push!(twentyday, sum(u20day[:,1:end-1,j].^2 .+ v20day[1:end-1,:,j].^2))
+    for j = 1:522
+        # push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
+        # push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
+        # push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
+        push!(thirtyday, sum(u30s[:,1:end-1,j].^2 .+ v30s[1:end-1,:,j].^2))
         # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
         # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
         # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
@@ -908,42 +924,28 @@ function energy_plots()
         # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
-        push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
-        push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
-        push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
+        # push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
+        # push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
+        # push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
         # push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
     end
 
-    for j = 1:366
-
-        # push!(fivedayeta, sum(u5dayeta[:,1:end-1,j].^2 .+ v5dayeta[1:end-1,:,j].^2))
-        push!(tenday, sum(u10day[:,1:end-1,j].^2 .+ v10day[1:end-1,:,j].^2))
-        # push!(tendayeta, sum(u10eta[:,1:end-1,j].^2 .+ v10eta[1:end-1,:,j].^2))
-        # push!(tendaynoeta, sum(u10noeta[:,1:end-1,j].^2 .+ v10noeta[1:end-1,:,j].^2))
-
-    end
-
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 3 * 365, 1098),  cghr ./ (128^2), label="Coarse-grained HR", 
+    lines(fig[1,1], LinRange(0, 365, 366),  cghr[1:366] ./ (128^2), label="Coarse-grained HR", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy"
         )
     )
-    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), noparam./ (128^2), label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), zb./ (128^2), label="ZB closure")
+    # lines!(fig[1,1], LinRange(0, 3 * 365, 1096), noparam./ (128^2), label="30km resolution, no closure")
+    # lines!(fig[1,1], LinRange(0, 3 * 365, 1098), zb./ (128^2), label="ZB closure")
     # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
     # lines!(fig[1,1], LinRange(0, 365, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
     # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
     # lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), twentyday./ (128^2), label="Online closure, 20 day")
-    # lines!(fig[1,1], LinRange(0, 3 * 365, 366), tendayeta./ (128^2), label="Online closure, 10 day with eta")
-    # lines!(fig[1,1], LinRange(0, 3 * 365, 366), tendaynoeta./ (128^2), label="Online closure, 10 day without eta")
-    # lines!(fig[1,1], LinRange(0,365,366), multi3[1:366] ./ (128^2), label="Multi state 3 day integrations")
-    # lines!(fig[1,1], LinRange(0, 1095, 1098), hybrid./ (128^2), label="Hybrid")
-    # lines!(fig[1,1], LinRange(0, 1095, 1098), kespecpd./ (128^2), label="KE spectrum pd")
-    # lines!(fig[1,1], LinRange(0, 1095, 1098), fourier./ (128^2), label="Fourier")
+    lines!(fig[1,1], LinRange(0, 365, 366), twentyday[1:366]./ (128^2), label="Online closure, 20 day")
+    lines!(fig[1,1], LinRange(0, 3650, 522), thirtyday[1:366]./ (128^2), label="Online closure, 30 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);

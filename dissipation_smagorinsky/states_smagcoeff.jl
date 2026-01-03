@@ -656,7 +656,7 @@ end
 function run_state()
 
     T = Float64
-    Ndays = 10
+    Ndays = 30
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -686,7 +686,9 @@ function run_state()
     Slr = ShallowWaters.model_setup(Plr);
 
     # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_3dayoptimzation_startfromoffline_100iterations_8hourdata.jld2").solution
-    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_5dayoptimzation_startfrom3day_50iterations_8hourdata.jld2").solution
+    # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_5dayoptimzation_startfrom3day_50iterations_8hourdata.jld2").solution
+    # param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_10dayoptimzation_startfrom5day_30iterations_8hourdata.jld2").solution
+    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_20dayoptimzation_startfrom10day_15iterations_8hourdata.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
@@ -700,12 +702,12 @@ function run_state()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=30
+        max_iter=7
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_plus_smagcoeff_10dayoptimzation_startfrom5day_30iterations_8hourdata.jld2", result=result)
+    jldsave("result_online_state_plus_smagcoeff_30dayoptimzation_startfrom20day_7iterations_8hourdata.jld2", result=result)
 
     return nothing
 

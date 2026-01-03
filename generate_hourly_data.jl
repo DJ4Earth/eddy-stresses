@@ -192,23 +192,23 @@ end
 
 function filter()
 
-    u = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/u.nc", "u");
-    v = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/v.nc", "v");
-    eta = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_1yearpostspinup_smag_noslipbc_8hoursaves/eta.nc", "eta");
+    u = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/u.nc", "u");
+    v = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/v.nc", "v");
+    eta = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    ufiltered = zeros(1023, 1024, 273)
-    vfiltered = zeros(1024, 1023, 273)
-    etafiltered = zeros(1024, 1024, 273)
+    ufiltered = zeros(1023, 1024, 1096)
+    vfiltered = zeros(1024, 1023, 1096)
+    etafiltered = zeros(1024, 1024, 1096)
 
-    for j = 1:273
+    for j = 1:1096
         ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
         vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
         etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
     end
 
-    jldsave("1024_filtered_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
 
 end
 
@@ -257,7 +257,7 @@ end
 
 function downsize()
 
-    cgstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2");
+    cgstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
 
     ucg = cgstates[1];
     vcg = cgstates[2];
@@ -267,7 +267,7 @@ function downsize()
     vcgdownsized = (vcg[4:8:end, 8:8:end, :] .+ vcg[5:8:end, 8:8:end, :]) ./ 2;
     etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4;
 
-    jldsave("1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ucgdownsized, vcgdownsized, etacgdownsized])
+    jldsave("1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ucgdownsized, vcgdownsized, etacgdownsized])
 
     # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 

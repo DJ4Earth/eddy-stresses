@@ -132,7 +132,7 @@ function load_and_create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 3*365
+    Ndays = 5*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_dt=24,
@@ -164,9 +164,13 @@ function load_and_create_models()
 
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_3dayoptimzation_startfromoffline_100iterations_8hourdata.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_3dayoptimzation_startfromoffline_100iterations_8hourdata_smag.jld2").solution
-    onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_5dayoptimzation_startfrom3day_50iterations_8hourdata_smag.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_5dayoptimzation_startfrom3day_50iterations_8hourdata_smag.jld2").solution
     # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_5dayoptimzation_startfrom3day_50iterations_8hourdata.jld2").solution
-
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_10dayoptimzation_startfrom5day_30iterations_8hourdata_smag.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_10dayoptimzation_startfrom5day_30iterations_8hourdata.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_20dayoptimzation_startfrom10day_15iterations_8hourdata_smag.jld2").solution
+    # onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_20dayoptimzation_startfrom10day_15iterations_8hourdata.jld2").solution
+    onlineweights = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states_plus_coeff/result_online_state_plus_smagcoeff_30dayoptimzation_startfrom20day_7iterations_8hourdata.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -177,7 +181,8 @@ function load_and_create_models()
             end
         end
     end
-    # Sonline.constants.cSmag = onlineweights[end]
+    Sonline.constants.cSmag = onlineweights[end]
+    Sonline.parameters.cSmag = onlineweights[end]
 
     Sonline.Prog.u .= copy(initial_cond[1]);
     Sonline.Prog.v .= copy(initial_cond[2]);
@@ -185,100 +190,78 @@ function load_and_create_models()
 
     ShallowWaters.time_integration(Sonline)
 
-    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
 
-    uhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/u.nc", "u");
-    vhr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/v.nc", "v");
-    etahr = ncread("./spinup_files/1024_postspinup_30days_8hoursaves/eta.nc", "eta");
+    uhr = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/u.nc", "u");
+    vhr = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/v.nc", "v");
+    etahr = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/eta.nc", "eta");
 
-    uofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/u.nc", "u");
-    vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
-    etaofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/eta.nc", "eta");
+    # still need to respinup for offline files
 
-    uofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/u.nc", "u");
-    vofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
-    etaofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
+    # uofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/u.nc", "u");
+    # vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
+    # etaofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/eta.nc", "eta");
 
-    unoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    vnoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    etanoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    # uofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/u.nc", "u");
+    # vofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
+    # etaofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
+
+    unoparam = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/128_noparam_3yearpostspinup_cginitcond_smag_noslipbc_8hoursaves/u.nc", "u");
+    vnoparam = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/128_noparam_3yearpostspinup_cginitcond_smag_noslipbc_8hoursaves/v.nc", "v");
+    etanoparam = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/128_noparam_3yearpostspinup_cginitcond_smag_noslipbc_8hoursaves/eta.nc", "eta");
 
     # gelu activation function
 
-    u1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
-    v1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
-    eta1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
+    u3s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_3dayoptimization_smagorinskydiffusion_startfromoffline/u.nc", "u");
+    v3s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_3dayoptimization_smagorinskydiffusion_startfromoffline/v.nc", "v");
+    eta3s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_3dayoptimization_smagorinskydiffusion_startfromoffline/eta.nc", "eta");
 
-    u5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
-    v5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
-    eta5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
+    u3sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_3dayoptimization_smagorinskydiffusion_startfromoffline/u.nc", "u")
+    v3sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_3dayoptimization_smagorinskydiffusion_startfromoffline/v.nc", "v")
+    eta3sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_3dayoptimization_smagorinskydiffusion_startfromoffline/eta.nc", "eta")
 
-    u10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
-    v10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
-    eta10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
+    u5s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_5dayoptimization_startfrom3daystate_smagdiss_3years_dailysaves/u.nc", "u");
+    v5s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_5dayoptimization_startfrom3daystate_smagdiss_3years_dailysaves/v.nc", "v");
+    eta5s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_5dayoptimization_startfrom3daystate_smagdiss_3years_dailysaves/eta.nc", "eta");
 
-    u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
-    v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
-    eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
+    u5sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_5dayoptimization_startfrom3day_smagdiss_3years_dailysaves/u.nc", "u");
+    v5sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_5dayoptimization_startfrom3day_smagdiss_3years_dailysaves/v.nc", "v");
+    eta5sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_5dayoptimization_startfrom3day_smagdiss_3years_dailysaves/eta.nc", "eta");
 
-    u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
-    v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
-    eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/eta.nc", "eta");
+    u10s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_10dayoptimization_startfrom5daystate_smagdiss_3year_dailysaves/u.nc", "u");
+    v10s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_10dayoptimization_startfrom5daystate_smagdiss_3year_dailysaves/v.nc", "v");
+    eta10s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_10dayoptimization_startfrom5daystate_smagdiss_3year_dailysaves/eta.nc", "eta");
 
-    # umulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/u.nc", "u");
-    # vmulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/v.nc", "v");
-    # etamulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/eta.nc", "eta");
+    u10sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_10dayoptimization_startfrom5day_smagdiss_dailysaves/u.nc", "u");
+    v10sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_10dayoptimization_startfrom5day_smagdiss_dailysaves/v.nc", "v");
+    eta10sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_10dayoptimization_startfrom5day_smagdiss_dailysaves/eta.nc", "eta");
 
-    umulti3 = ncread("./multi3day/u.nc", "u");
-    vmulti3 = ncread("./multi3day/v.nc", "v");
-    etamulti3 = ncread("./multi3day/eta.nc", "eta");
+    u20s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_20dayoptimization_smagorinskydiffusion_5year_dailysaves/u.nc", "u");
+    v20s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_20dayoptimization_smagorinskydiffusion_5year_dailysaves/v.nc", "v");
+    eta20s = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_20dayoptimization_smagorinskydiffusion_5year_dailysaves/eta.nc", "eta");
 
-    u10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/u.nc", "u");
-    v10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/v.nc", "v");
-    eta10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/eta.nc", "eta");
-
-    u10noeta = ncread("./states_noeta_10dayoptimization_startfrom5daystate_noeta_gelu_30iterations/u.nc", "u");
-    v10noeta = ncread("./states_noeta_10dayoptimization_startfrom5daystate_noeta_gelu_30iterations/v.nc", "v");
-    eta10noeta = ncread("./states_noeta_10dayoptimization_startfrom5daystate_noeta_gelu_30iterations/eta.nc", "eta");
-
-    ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vkespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etakespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
-    ukespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vkespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etakespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
-    ufourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vfourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etafourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
-    uhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etahybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+    u20sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_20dayoptimization_smagdiss_startfrom10day_5years_dailysaves/u.nc", "u");
+    v20sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_20dayoptimization_smagdiss_startfrom10day_5years_dailysaves/v.nc", "v");
+    eta20sc = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_pluscSmag_20dayoptimization_smagdiss_startfrom10day_5years_dailysaves/eta.nc", "eta");
 
     # relu activation function
 
-    u1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
-    v1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
-    eta1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
+    # u1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
+    # v1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
+    # eta1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
 
-    u5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    v5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    eta5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
-
-    ukespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    vkespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    etakespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
+    # u5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
+    # v5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
+    # eta5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
 
     # zanna bolton
 
-    uzb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    vzb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    etazb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    uzb = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/128_postspinup_ZB20param_smagorinksydiffusion/u.nc", "u");
+    vzb = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/128_postspinup_ZB20param_smagorinksydiffusion/v.nc", "v");
+    etazb = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/128_postspinup_ZB20param_smagorinksydiffusion/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
@@ -299,7 +282,7 @@ function offline_plots()
 
     ###################################################################################
 
-     # for showing offline instability
+    # for showing offline instability
     t = 10
     fig = Figure(size=(950, 250), fontsize=15);
 
@@ -379,9 +362,8 @@ function prognostic_plots()
         halign = :right)
     end
 
-
     # just u fields
-    t = 1098
+    t = 1826
     fig = Figure(size=(700, 550), fontsize=15);
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -412,9 +394,9 @@ function prognostic_plots()
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    u20day[:,:,t],
+    u20sc[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{1 + 5}(30 \; \text{days}, x, y)"),
+    axis=(xlabel="km", ylabel="km", title=L"u_{20}(30 \; \text{days}, x, y)"),
     colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
     );
     Colorbar(fig[2,4], hm4, label="m/s")
@@ -879,70 +861,41 @@ function energy_plots()
 
     # spatially averaged energy over integration (3 year integrations on all)
 
-    oneday = []
-    fiveday = []
-    kespec = []
-    hybrid = []
-    fourier = []
-    kespecpd = []
-    twentyday = []
+    threedayc = []
+    fivedayc = []
+    tendayc = []
+    twentydayc = []
     # relu1day = []
     # relu5day = []
     # reluKEspec = []
     noparam = []
-    tenday = []
-    tendayeta = []
-    tendaynoeta = []
-    multi3 = []
     zb = []
     cghr = []
-    for j = 1:1098
-        push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
-        push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
-        push!(twentyday, sum(u20day[:,1:end-1,j].^2 .+ v20day[1:end-1,:,j].^2))
-        # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
-        # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
-        # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
-        # push!(kespecpd, sum(ukespecpd[:,1:end-1,j].^2 .+ vkespecpd[1:end-1,:,j].^2))
-        # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
-        # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
-        # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
+    for j = 1:1096
+        push!(threedayc, sum(u3sc[:,1:end-1,j].^2 .+ v3sc[1:end-1,:,j].^2))
+        push!(fivedayc, sum(u5sc[:,1:end-1,j].^2 .+ v5sc[1:end-1,:,j].^2))
+        push!(tendayc, sum(u10sc[:,1:end-1,j].^2 .+ v10sc[1:end-1,:,j].^2))
+        push!(twentydayc, sum(u20sc[:,1:end-1,j].^2 .+ v20sc[1:end-1,:,j].^2))
         push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
         push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
         push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
         # push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
     end
 
-    for j = 1:366
-
-        # push!(fivedayeta, sum(u5dayeta[:,1:end-1,j].^2 .+ v5dayeta[1:end-1,:,j].^2))
-        push!(tenday, sum(u10day[:,1:end-1,j].^2 .+ v10day[1:end-1,:,j].^2))
-        # push!(tendayeta, sum(u10eta[:,1:end-1,j].^2 .+ v10eta[1:end-1,:,j].^2))
-        # push!(tendaynoeta, sum(u10noeta[:,1:end-1,j].^2 .+ v10noeta[1:end-1,:,j].^2))
-
-    end
-
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 3 * 365, 1098),  cghr ./ (128^2), label="Coarse-grained HR", 
+    lines(fig[1,1], LinRange(0, 3*365, 1096), cghr ./ (128^2), label="Coarse-grained HR", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy"
         )
     )
-    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), noparam./ (128^2), label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), zb./ (128^2), label="ZB closure")
-    # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
-    # lines!(fig[1,1], LinRange(0, 365, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
-    # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
-    # lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(fig[1,1], LinRange(0, 3 * 365, 1098), twentyday./ (128^2), label="Online closure, 20 day")
-    # lines!(fig[1,1], LinRange(0, 3 * 365, 366), tendayeta./ (128^2), label="Online closure, 10 day with eta")
-    # lines!(fig[1,1], LinRange(0, 3 * 365, 366), tendaynoeta./ (128^2), label="Online closure, 10 day without eta")
-    # lines!(fig[1,1], LinRange(0,365,366), multi3[1:366] ./ (128^2), label="Multi state 3 day integrations")
-    # lines!(fig[1,1], LinRange(0, 1095, 1098), hybrid./ (128^2), label="Hybrid")
-    # lines!(fig[1,1], LinRange(0, 1095, 1098), kespecpd./ (128^2), label="KE spectrum pd")
-    # lines!(fig[1,1], LinRange(0, 1095, 1098), fourier./ (128^2), label="Fourier")
+    lines!(fig[1,1], LinRange(0, 3*365, 1096), noparam ./ (128^2), label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0, 3*365, 1096), zb ./ (128^2), label="ZB closure")
+    lines!(fig[1,1], LinRange(0, 3 * 365, 1096), threeday ./ (128^2), label="Online closure, 3 day")
+    lines!(fig[1,1], LinRange(0, 3 * 365, 1096), fiveday ./ (128^2), label="Online closure, 5 day")
+    lines!(fig[1,1], LinRange(0, 3 * 365, 1096), tenday./ (128^2), label="Online closure, 10 day")
+    lines!(fig[1,1], LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);
