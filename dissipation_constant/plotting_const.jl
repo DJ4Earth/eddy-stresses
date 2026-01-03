@@ -223,9 +223,9 @@ function load_and_create_models()
     v10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
     eta10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
 
-    u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
-    v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
-    eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
+    # u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
+    # v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
+    # eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
 
     u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/u.nc", "u");
     v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/v.nc", "v");
@@ -915,7 +915,7 @@ function energy_plots()
     for j = 1:522
         # push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
         # push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
-        # push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
+        push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
         push!(thirtyday, sum(u30s[:,1:end-1,j].^2 .+ v30s[1:end-1,:,j].^2))
         # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
         # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
@@ -944,8 +944,8 @@ function energy_plots()
     # lines!(fig[1,1], LinRange(0, 365, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
     # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
     # lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(fig[1,1], LinRange(0, 365, 366), twentyday[1:366]./ (128^2), label="Online closure, 20 day")
-    lines!(fig[1,1], LinRange(0, 3650, 522), thirtyday[1:366]./ (128^2), label="Online closure, 30 day")
+    lines(fig[1,1], LinRange(0, 3650, 522), twentyday ./ (128^2), label="Online closure, 20 day")
+    lines!(fig[1,1], LinRange(0, 3650, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);

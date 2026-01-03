@@ -32,7 +32,7 @@ record(fig, "uhr.mp4", 1:1096) do t
         LinRange(0, 3840, 128),
         tempframe,
         colormap = :balance,
-        colorrange=(-maximum(abs.(uhr[:,:,365])),maximum(abs.(uhr[:,:,365])))
+        colorrange=(-maximum(abs.(uhrcg[:,:,365])),maximum(abs.(uhrcg[:,:,365])))
     )
     Colorbar(fig[1,2], hm, label="m/s")
 end
