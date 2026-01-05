@@ -1384,12 +1384,15 @@ function ketransfer_plots()
     S5 = ShallowWaters.model_setup(Ponline);
     Shrcg = ShallowWaters.model_setup(Ponline);
     SZB = ShallowWaters.model_setup(PZB);
-    S3 = ShallowWaters.model_setup(Ponline);
+    S30 = ShallowWaters.model_setup(Ponline);
+
+    Smulti3 = ShallowWaters.model_setup(Ponline);
+    Smulti5 = ShallowWaters.model_setup(Ponline);
 
     uhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
     vhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -1402,16 +1405,27 @@ function ketransfer_plots()
     v5day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
     eta5day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
 
-    u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
-    v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
-    eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
+    u20day = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
+    v20day = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
+    eta20day = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
+
+    u30day = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/u.nc", "u");
+    v30day = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/v.nc", "v");
+    eta30day = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/eta.nc", "eta");
 
     uzb_ = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
     vzb_ = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
     etazb_ = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
+    umulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    vmulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    etamulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    lr_freq = 1/30 .* freq(periodogram(u10day[:,:,10]; radialavg=true, radialsum=false));
+    umulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u")
+    vmulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v")
+    etamulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta")
+
+    lr_freq = 1/30 .* freq(periodogram(u20day[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcg[:,:,1]))
 
     totalu_hrcg = zeros(65)
@@ -1425,6 +1439,15 @@ function ketransfer_plots()
 
     totalu_20 = zeros(65)
     totalv_20 = zeros(65)
+    
+    totalu_30 = zeros(65)
+    totalv_30 = zeros(65)
+
+    totalu_multi3 = zeros(65)
+    totalv_multi3 = zeros(65)
+
+    totalu_multi5 = zeros(65)
+    totalv_multi5 = zeros(65)
 
     totalu_ZB = zeros(65)
     totalv_ZB = zeros(65)
@@ -1432,7 +1455,7 @@ function ketransfer_plots()
     totalu_3 = zeros(65)
     totalv_3 = zeros(65)
 
-    totalstates = 1098
+    totalstates = 1096
     for t = 1:totalstates
 
         Suhr, Svhr = compute_hrS(uhr[:,:,t], vhr[:,:, t])
