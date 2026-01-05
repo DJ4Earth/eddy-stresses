@@ -688,12 +688,12 @@ function run_state()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=20
+        max_iter=15
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_state_30dayoptimzation_startfrom30day6iterations_constantdissipation_20iterations_26totaliterations_8hourdata_200maxhistory_fixedcfl.jld2", result=result)
+    jldsave("result_online_state_30dayoptimzation_startfrom30day6iterations_constantdissipation_15iterations_21totaliterations_8hourdata_200maxhistory_fixedcfl.jld2", result=result)
 
     return nothing
 
