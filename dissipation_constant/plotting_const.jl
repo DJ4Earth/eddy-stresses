@@ -3,7 +3,7 @@ Mostly figure generation, I just wanted to be able to run include("technical_pap
 without all of this also running.
 """
 
-function load_and_create_models()
+function create_models()
 
     T = Float64
     Ndays = 90
@@ -192,6 +192,11 @@ function load_and_create_models()
     # name for run
     # result_online_state_pluscD_weights_constdiffusion_20dayoptimization_startfrom20day_3years_dailysaves
 
+end
+
+function load_models()
+
+
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
@@ -219,13 +224,13 @@ function load_and_create_models()
     v1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
     eta1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
 
-    u5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
-    v5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
-    eta5daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
+    u5s = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
+    v5s = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
+    eta5s = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
 
-    u10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
-    v10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
-    eta10day = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
+    u10s = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/u.nc", "u");
+    v10s = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/v.nc", "v");
+    eta10s = ncread("./dissipation_constant/results/128_online_stateweights_10dayoptimization_startfrom5daystate_noeta_oneyear/eta.nc", "eta");
 
     # u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
     # v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
@@ -247,13 +252,13 @@ function load_and_create_models()
     v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
     eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/eta.nc", "eta");
 
-    # umulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/u.nc", "u");
-    # vmulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/v.nc", "v");
-    # etamulti1 = ncread("./results/128_online_gelu_multistateweights_1dayoptimization_3-25-30-40-50-60-80initcond_startfrom10daystate_20iterations/eta.nc", "eta");
+    umulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    vmulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    etamulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    umulti3 = ncread("./multi3day/u.nc", "u");
-    vmulti3 = ncread("./multi3day/v.nc", "v");
-    etamulti3 = ncread("./multi3day/eta.nc", "eta");
+    umulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u")
+    vmulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v")
+    etamulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta")
 
     u10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/u.nc", "u");
     v10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/v.nc", "v");
@@ -918,11 +923,12 @@ function energy_plots()
     multi3 = []
     zb = []
     cghr = []
-    for j = 1:522
+    for j = 1:366
         # push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
-        # push!(fiveday, sum(u5daystategelu[:,1:end-1,j].^2 .+ v5daystategelu[1:end-1,:,j].^2))
-        push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
-        push!(thirtyday, sum(u30s[:,1:end-1,j].^2 .+ v30s[1:end-1,:,j].^2))
+        # push!(fiveday, sum(u5s[:,1:end-1,j].^2 .+ v5s[1:end-1,:,j].^2))
+        push!(tenday, sum(u10s[:,1:end-1,j].^2 .+ v10s[1:end-1,:,j].^2))
+        # push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
+        # push!(thirtyday, sum(u30s[:,1:end-1,j].^2 .+ v30s[1:end-1,:,j].^2))
         # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
         # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
         # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
@@ -945,13 +951,14 @@ function energy_plots()
         )
     )
     # lines!(fig[1,1], LinRange(0, 3 * 365, 1096), noparam./ (128^2), label="30km resolution, no closure")
-    # lines!(fig[1,1], LinRange(0, 3 * 365, 1098), zb./ (128^2), label="ZB closure")
+    lines(fig[1,1], LinRange(0, 365, 366), zb[1:366]./ (128^2), label="ZB closure")
     # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
-    # lines!(fig[1,1], LinRange(0, 365, 1098), fiveday./ (128^2), label="Online closure, 5 day gelu")
+    lines!(fig[1,1], LinRange(0, 365, 366), fiveday[1:366]./ (128^2), label="Online closure, 5 day")
+    lines!(fig[1,1], LinRange(0, 365, 366), multi3[1:366]./ (128^2), label="Online closure, multi 3 day")
     # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
-    # lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
-    lines(fig[1,1], LinRange(0, 3650, 522), twentyday ./ (128^2), label="Online closure, 20 day")
-    lines!(fig[1,1], LinRange(0, 3650, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
+    lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
+    # lines(fig[1,1], LinRange(0, 3650, 522), twentyday ./ (128^2), label="Online closure, 20 day")
+    # lines!(fig[1,1], LinRange(0, 3650, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);
@@ -1460,10 +1467,13 @@ function ketransfer_plots()
 
         Suhr, Svhr = compute_hrS(uhr[:,:,t], vhr[:,:, t])
 
-        u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
-        u, v, eta = ShallowWaters.add_halo(uhrcg[:,:,t], vhrcg[:,:,t], etahrcg[:,:,t], zeros(128,128), Shrcg);
-        uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
+        # u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
+        # u, v, eta = ShallowWaters.add_halo(uhrcg[:,:,t], vhrcg[:,:,t], etahrcg[:,:,t], zeros(128,128), Shrcg);
+        # uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
         u20, v20, eta20 = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
+        u30, v30, eta30 = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
+        umulti3, vmulti3, etamulti3 = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
+        umulti5, vmulti5, etamulti5 = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
 
 
         ShallowWaters.CNN_momentum(u, v, Shrcg);
