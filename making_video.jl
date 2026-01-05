@@ -13,7 +13,7 @@ u = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20
 
 umulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/u.nc", "u")
 
-# u20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/u.nc", "u");
+u20day = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
 # v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
 # eta20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/eta.nc", "eta");
 
@@ -25,8 +25,8 @@ framerate = 40
 timestamps = range(1, 1096, step=1)
 ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "u(x, y)")
 
-record(fig, "uhr.mp4", 1:1096) do t
-    tempframe = uhr[:, :, t]
+record(fig, "u20day.mp4", 1:1096) do t
+    tempframe = u20day[:, :, t]
     hm =heatmap!(ax,
         LinRange(0, 3840, 128),
         LinRange(0, 3840, 128),

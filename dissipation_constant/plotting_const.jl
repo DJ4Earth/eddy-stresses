@@ -248,17 +248,17 @@ function load_models()
     v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/v.nc", "v");
     eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
 
-    u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
-    v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
-    eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/eta.nc", "eta");
+    # u5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/u.nc", "u");
+    # v5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/v.nc", "v");
+    # eta5dayeta = ncread("./results/5daystate_witheta_startedfrom5daystatenoeta_1year_dailysaves/eta.nc", "eta");
 
     umulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
     vmulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
     etamulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    umulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u")
-    vmulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v")
-    etamulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta")
+    umulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u");
+    vmulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v");
+    etamulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta");
 
     u10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/u.nc", "u");
     v10eta = ncread("./states_witheta_10dayoptimization_startfrom5daystate_noeta_40iterations/v.nc", "v");
@@ -860,10 +860,10 @@ function energy_plots()
 
     # same as the above but without the coarse-grained energy
     # cg, zb, nn, no param
-    t = 31
+    t = 366
     fig = Figure(size=(900, 800), fontsize=15);
 
-    ax1, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
     colormap=:amp,
@@ -873,7 +873,7 @@ function energy_plots()
     );
     Colorbar(fig[1,2], hm1)
 
-    ax1, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2),
     colormap=:amp,
@@ -881,27 +881,27 @@ function energy_plots()
     colorrange=(0,
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
-    Colorbar(fig[1,4], hm1)
+    Colorbar(fig[1,4], hm2)
 
-    ax1, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (uonlinegelu[:,1:end-1,t].^2 .+ vonlinegelu[1:end-1,:,t].^2),
+    (u20s[:,1:end-1,t].^2 .+ v20s[1:end-1,:,t].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30 km resolution E(10 days, x, y), online closure"),
     colorrange=(0,
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
-    Colorbar(fig[2,2], hm1)
+    Colorbar(fig[2,2], hm3)
 
     ax1, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (uofflinegelu[:,1:end-1,10].^2 .+ vofflinegelu[1:end-1,:,10].^2),
+    (u30s[:,1:end-1,t].^2 .+ v30s[1:end-1,:,t].^2),
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30 km resolution E(3 days, x, y), offline closure"),
     colorrange=(0,
     maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
     );
-    Colorbar(fig[2,4], hm1)
+    Colorbar(fig[2,4], hm5)
 
     # spatially averaged energy over integration (3 year integrations on all)
 
@@ -921,14 +921,15 @@ function energy_plots()
     tendayeta = []
     tendaynoeta = []
     multi3 = []
+    multi5 = []
     zb = []
     cghr = []
     for j = 1:366
         # push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
-        # push!(fiveday, sum(u5s[:,1:end-1,j].^2 .+ v5s[1:end-1,:,j].^2))
+        push!(fiveday, sum(u5s[:,1:end-1,j].^2 .+ v5s[1:end-1,:,j].^2))
         push!(tenday, sum(u10s[:,1:end-1,j].^2 .+ v10s[1:end-1,:,j].^2))
-        # push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
-        # push!(thirtyday, sum(u30s[:,1:end-1,j].^2 .+ v30s[1:end-1,:,j].^2))
+        push!(twentyday, sum(u20s[:,1:end-1,j].^2 .+ v20s[1:end-1,:,j].^2))
+        push!(thirtyday, sum(u30s[:,1:end-1,j].^2 .+ v30s[1:end-1,:,j].^2))
         # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
         # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
         # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
@@ -936,10 +937,11 @@ function energy_plots()
         # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
-        # push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
-        # push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
-        # push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
-        # push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
+        push!(zb, sum(uzb[:,1:end-1,j].^2 .+ vzb[1:end-1,:,j].^2))
+        push!(cghr, sum(uhrcg[:,1:end-1,j].^2 .+ vhrcg[1:end-1,:,j].^2))
+        push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
+        push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
+        push!(multi5, sum(umulti5[:,1:end-1,j].^2 .+ vmulti5[1:end-1,:,j].^2))
     end
 
     fig = Figure(size=(1000, 500), fontsize=15);
@@ -950,15 +952,16 @@ function energy_plots()
             title="Spatially averaged energy"
         )
     )
-    # lines!(fig[1,1], LinRange(0, 3 * 365, 1096), noparam./ (128^2), label="30km resolution, no closure")
-    lines(fig[1,1], LinRange(0, 365, 366), zb[1:366]./ (128^2), label="ZB closure")
+    lines!(fig[1,1], LinRange(0, 365, 366), noparam./ (128^2), label="30km resolution, no closure")
+    lines!(fig[1,1], LinRange(0, 365, 366), zb./ (128^2), label="ZB closure")
     # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
     lines!(fig[1,1], LinRange(0, 365, 366), fiveday[1:366]./ (128^2), label="Online closure, 5 day")
     lines!(fig[1,1], LinRange(0, 365, 366), multi3[1:366]./ (128^2), label="Online closure, multi 3 day")
+    lines!(fig[1,1], LinRange(0, 365, 366), multi5[1:366]./ (128^2), label="Online closure, multi 5 day")
     # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
     lines!(fig[1,1], LinRange(0, 365, 366), tenday./ (128^2), label="Online closure, 10 day")
-    # lines(fig[1,1], LinRange(0, 3650, 522), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(fig[1,1], LinRange(0, 3650, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
+    lines!(fig[1,1], LinRange(0, 365, 366), twentyday ./ (128^2), label="Online closure, 20 day")
+    lines!(fig[1,1], LinRange(0, 365, 366), thirtyday ./ (128^2), label="Online closure, 30 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);
@@ -1469,33 +1472,38 @@ function ketransfer_plots()
 
         # u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
         # u, v, eta = ShallowWaters.add_halo(uhrcg[:,:,t], vhrcg[:,:,t], etahrcg[:,:,t], zeros(128,128), Shrcg);
-        # uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
-        u20, v20, eta20 = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
-        u30, v30, eta30 = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
-        umulti3, vmulti3, etamulti3 = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
-        umulti5, vmulti5, etamulti5 = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
+        uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
+        u20, v20, _ = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
+        u30, v30, _ = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
+        umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
+        umulti5_, vmulti5_, _ = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
 
 
-        ShallowWaters.CNN_momentum(u, v, Shrcg);
-        ShallowWaters.CNN_momentum(u5, v5, S5);
-        ShallowWaters.CNN_momentum(u20, v20, S20);
-        ShallowWaters.ZB_momentum(uzb, vzb, SZB, SZB.Diag);
+        ShallowWaters.CNN_momentum(u20, v20, S20)
+        ShallowWaters.CNN_momentum(u30, v30, S30)
+        ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
+        ShallowWaters.CNN_momentum(umulti5_, vmulti5_, Smulti5)
 
-        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcg[:, :, t], Suhr, nfft[1])
-        fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
-        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcg[:, :, t], Svhr, nfft[1])
-        fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
+        # ShallowWaters.CNN_momentum(u, v, Shrcg);
+        # ShallowWaters.CNN_momentum(u5, v5, S5);
+        # ShallowWaters.CNN_momentum(u20, v20, S20);
+        # ShallowWaters.ZB_momentum(uzb, vzb, SZB, SZB.Diag);
 
-        totalu_hrcg += outu_hrcg
-        totalv_hrcg += outv_hrcg
+        # outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcg[:, :, t], Suhr, nfft[1])
+        # fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
+        # outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcg[:, :, t], Svhr, nfft[1])
+        # fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
 
-        outu_5, inputu_5, inputSu_5 = paddingu(u5day[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_5, rfft(inputu_5), rfft(inputSu_5), nfft...)
-        outv_5, inputv_5, inputSv_5 = paddingv(v5day[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
+        # totalu_hrcg += outu_hrcg
+        # totalv_hrcg += outv_hrcg
 
-        totalu_5 += outu_5
-        totalv_5 += outv_5
+        # outu_5, inputu_5, inputSu_5 = paddingu(u5day[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_5, rfft(inputu_5), rfft(inputSu_5), nfft...)
+        # outv_5, inputv_5, inputSv_5 = paddingv(v5day[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
+
+        # totalu_5 += outu_5
+        # totalv_5 += outv_5
 
         outu_20, inputu_20, inputSu_20 = paddingu(u20day[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
         fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
@@ -1505,6 +1513,30 @@ function ketransfer_plots()
         totalu_20 += outu_20
         totalv_20 += outv_20
 
+        outu_30, inputu_30, inputSu_30 = paddingu(u30day[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
+        outv_30, inputv_30, inputSv_30 = paddingv(v30day[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
+
+        totalu_30 += outu_30
+        totalv_30 += outv_30
+
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
+
+        totalu_multi3 += outu_multi3
+        totalv_multi3 += outv_multi3
+
+        outu_multi5, inputu_multi5, inputSu_multi5 = paddingu(umulti5[:, :, t], Smulti5.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi5, rfft(inputu_multi5), rfft(inputSu_multi5), nfft...)
+        outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[:, :, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi5, rfft(inputv_multi5), rfft(inputSv_multi5), nfft...)
+
+        totalu_multi5 += outu_multi5
+        totalv_multi5 += outv_multi5
+
         # outu_3, inputu_3, inputSu_3 = paddingu(umulti3[:, :, t], S3.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_3, rfft(inputu_3), rfft(inputSu_3), nfft...)
         # outv_3, inputv_3, inputSv_3 = paddingv(vmulti3[:, :, t], S3.Diag.CNNVars.S_v, nfft[1])
@@ -1513,13 +1545,13 @@ function ketransfer_plots()
         # totalu_3 += outu_3
         # totalv_3 += outv_3
 
-        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb_[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
-        fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
-        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb_[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
-        fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
+        # outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb_[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
+        # outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb_[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
 
-        totalu_ZB += outu_ZB
-        totalv_ZB += outv_ZB
+        # totalu_ZB += outu_ZB
+        # totalv_ZB += outv_ZB
 
     end
 
