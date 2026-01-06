@@ -662,7 +662,7 @@ end
 function run_multistate()
 
     T = Float64
-    Ndays = 20
+    Ndays = 3
 
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
@@ -695,18 +695,18 @@ function run_multistate()
     )
 
     Slr = ShallowWaters.model_setup(Plr)
-    param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution;
+    param_guess = load_object("./dissipation_constant/tuned_weights/result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights20daystate_30iterations.jld2").solution;
 
     data_steps = 76:75:Slr.grid.nt;
     data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    # days = [3, 15, 30, 40, 50, 60, 80, 85] .* 3 .+ 1
+    days = [1, 4, 8, 13, 18, 23, 28, 33, 38, 41, 44, 48, 53, 58, 63, 68, 73, 78, 83, 86] .* 3 .+ 1
     # days = [3, 30, 50, 80] .* 3 .+ 1
 
     # days = [5, 20, 35, 50, 65, 75] .* 3 .+ 1
-    days = [5, 25, 45, 65] .* 3 .+ 1
+    # days = [5, 25, 45, 65] .* 3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -736,13 +736,13 @@ function run_multistate()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=15
+        max_iter=20
     )
 
     # jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
-    # jldsave("result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights10daystate_30iterations.jld2", result=result)
+    jldsave("result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2", result=result)
     # jldsave("result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
-    jldsave("result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
+    # jldsave("result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
 
 
     return nothing
