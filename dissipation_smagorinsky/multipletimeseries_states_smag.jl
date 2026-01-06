@@ -201,13 +201,7 @@ function cpintegrate(chkp, scheme)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (128*127) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-            chkp.J += sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
-
 
             chkp.j += 1
 
@@ -409,13 +403,7 @@ function integrate(chkp)::Float64
                 chkp.S
             )...)
 
-            # time-average eta
-            chkp.avg_eta += temp.η
-            chkp.data_avg_eta += chkp.data[3][:,:,chkp.j]
-
             chkp.J += sum((temp.u .- chkp.data[1][:,:,chkp.j]).^2) / (127*128) + sum((temp.v .- chkp.data[2][:,:,chkp.j]).^2) / (127*128)
-
-            chkp.J += sum((temp.η .- chkp.data[3][:,:,chkp.j]).^2) / (128*128)
 
             chkp.j += 1
 
@@ -436,7 +424,7 @@ end
 
 function NLPModels.obj(model, param_guess)
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -453,12 +441,14 @@ function NLPModels.obj(model, param_guess)
             L_ratio=1,
             g=9.81,
             H=500,
+            cfl=.898,
             wind_forcing_x="double_gyre",
             Lx=3840e3,
             seasonal_wind_x=false,
             topography="flat",
             bc="nonperiodic",
             bottom_drag="quadratic",
+            diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
             tracer_advection=false,
             tracer_relaxation=false,
             zb_forcing_momentum=false,
@@ -513,7 +503,7 @@ function NLPModels.grad!(model, param_guess, G)
     G .= 0
     println("Norm of G: ", norm(G))
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -529,12 +519,14 @@ function NLPModels.grad!(model, param_guess, G)
             L_ratio=1,
             g=9.81,
             H=500,
+            cfl=.898,
             wind_forcing_x="double_gyre",
             Lx=3840e3,
             seasonal_wind_x=false,
             topography="flat",
             bc="nonperiodic",
             bottom_drag="quadratic",
+            diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
             tracer_advection=false,
             tracer_relaxation=false,
             zb_forcing_momentum=false,
@@ -620,12 +612,14 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -642,11 +636,11 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
     Slr = ShallowWaters.model_setup(Plr)
 
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
-    coarse_grained_hrstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_8hoursaves_112025.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
-    data_steps = 75:74:Slr.grid.nt;
+    data_steps = 76:75:Slr.grid.nt;
     data = [uhrcg[:,:,2:end], vhrcg[:,:,2:end], etahrcg[:,:,2:end]];
 
     u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Slr)
@@ -673,7 +667,7 @@ function run_multistate()
     T = Float64
     Ndays = 5
 
-    coarse_grained_hrstates = load_object("./spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    coarse_grained_hrstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -683,12 +677,14 @@ function run_multistate()
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -699,18 +695,24 @@ function run_multistate()
         N=1,
         α=2,
         nx=128,
-        Ndays=1
+        Ndays=Ndays
     )
 
     Slr = ShallowWaters.model_setup(Plr)
-    param_guess = load_object("./tuned_weights/states_noetainloss/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution;
+    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/states/result_online_state_10dayoptimzation_startfrom5day_30iterations_8hourdata_smag.jld2").solution;
 
-    data_steps = 75:74:Slr.grid.nt;
+    data_steps = 76:75:Slr.grid.nt;
     data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    days = [3, 30, 50, 80] .* 3 .+ 1
+    # days = [1, 4, 8, 13, 18, 23, 28, 33, 38, 41, 44, 48, 53, 58, 63, 68, 73, 78, 83, 86] .* 3 .+ 1
+    # days = [3, 30, 50, 80] .* 3 .+ 1
+
+    days = [10, 20, 30, 40, 50, 60, 70, 80] .* 3 .+ 1
+
+    # days = [5, 20, 35, 50, 65, 75] .* 3 .+ 1
+    # days = [5, 25, 45, 65] .* 3 .+ 1
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -734,16 +736,21 @@ function run_multistate()
         zeros(128,128)
     )
 
-    qn_options = MadNLP.QuasiNewtonOptions(;max_history=100)
+    qn_options = MadNLP.QuasiNewtonOptions(;max_history=200)
     result = madnlp(
         nlp;
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=30
+        max_iter=20
     )
 
-    jldsave("result_multistate_witheta_3-30-50-80daystart_5dayoptimization_initialweights10daystate_30iterations.jld2", result=result)
+    jldsave("result_multistate_smagdiss_10-20-30-40-50-60-70-80daystart_5dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
+    # jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
+    # jldsave("result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2", result=result)
+    # jldsave("result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
+    # jldsave("result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
+
 
     return nothing
 
@@ -759,6 +766,7 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
         L_ratio=1,
         g=9.81,
         H=500,
+        cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
