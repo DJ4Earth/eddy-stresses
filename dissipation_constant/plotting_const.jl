@@ -215,52 +215,73 @@ function load_models()
     vofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
     etaofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
 
+    # 3 year
+
     unoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
     vnoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
     etanoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
-
-    # gelu activation function
 
     u1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
     v1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
     eta1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
 
-    u5s = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
-    v5s = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
-    eta5s = ncread("./dissipation_constant/results/128_online_gelu_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
+    u5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
+    v5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
+    eta5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
 
     u10s = ncread("./dissipation_constant/results/result_online_stateweights_10dayoptimization_startfrom5day_3years_dailysaves/u.nc", "u");
     v10s = ncread("./dissipation_constant/results/result_online_stateweights_10dayoptimization_startfrom5day_3years_dailysaves/v.nc", "v");
     eta10s = ncread("./dissipation_constant/results/result_online_stateweights_10dayoptimization_startfrom5day_3years_dailysaves/eta.nc", "eta");
 
-    # u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
-    # v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
-    # eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
-
-    u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/u.nc", "u");
-    v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/v.nc", "v");
-    eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
+    u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
+    v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
+    eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
 
     u20scD = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/u.nc", "u");
     v20scD = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/v.nc", "v");
     eta20scD = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/eta.nc", "eta");
 
-    # u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/u.nc", "u");
-    # v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/v.nc", "v");
-    # eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/eta.nc", "eta");
-
-    u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/u.nc", "u");
-    v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/v.nc", "v");
-    eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
+    u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/u.nc", "u");
+    v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/v.nc", "v");
+    eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/eta.nc", "eta");
 
     umulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
     vmulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
     etamulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    umulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u");
-    vmulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v");
-    etamulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta");
+    umulti5 = ncread("./dissipation_constant/results/result_online_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u");
+    vmulti5 = ncread("./dissipation_constant/results/result_online_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v");
+    etamulti5 = ncread("./dissipation_constant/results/result_online_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta");
 
+    uzb = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    vzb = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    etazb = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+
+    # 10 year
+
+    u5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1day_10years_weeklysaves/u.nc", "u");
+    v5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1day_10years_weeklysaves/v.nc", "v");
+    eta5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1day_10years_weeklysaves/eta.nc", "eta");
+
+    u10s = ncread("./dissipation_constant/results/result_online_stateweights_10dayoptimization_startfrom5day_10years_weeklysaves/u.nc", "u");
+    v10s = ncread("./dissipation_constant/results/result_online_stateweights_10dayoptimization_startfrom5day_10years_weeklysaves/v.nc", "v");
+    eta10s = ncread("./dissipation_constant/results/result_online_stateweights_10dayoptimization_startfrom5day_10years_weeklysaves/eta.nc", "eta");
+
+    u20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/u.nc", "u");
+    v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/v.nc", "v");
+    eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
+
+    u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/u.nc", "u");
+    v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/v.nc", "v");
+    eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
+
+    umulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/u.nc", "u");
+    vmulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
+    etamulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/eta.nc", "eta");
+
+    uzb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/u.nc", "u");
+    vzb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/v.nc", "v");
+    etazb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/eta.nc", "eta");
     # the following didn't work as loss functions
 
     # ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
@@ -292,12 +313,6 @@ function load_models()
     ukespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
     vkespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
     etakespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
-
-    # zanna bolton
-
-    uzb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    vzb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    etazb = ncread("./dissipation_constant/results/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
@@ -918,7 +933,7 @@ function energy_plots()
     zb = []
     cghr = []
     twentydaycD = []
-    for j = 1:522
+    for j = 1:1096
         # push!(oneday, sum(u1daystategelu[:,1:end-1,j].^2 .+ v1daystategelu[1:end-1,:,j].^2))
         push!(fiveday, sum(u5s[:,1:end-1,j].^2 .+ v5s[1:end-1,:,j].^2))
         push!(tenday, sum(u10s[:,1:end-1,j].^2 .+ v10s[1:end-1,:,j].^2))
@@ -939,6 +954,7 @@ function energy_plots()
         push!(multi5, sum(umulti5[:,1:end-1,j].^2 .+ vmulti5[1:end-1,:,j].^2))
     end
 
+    # 3 year figure
     fig = Figure(size=(1000, 500), fontsize=15);
     lines(fig[1,1], LinRange(0, 3*365, 1096),  cghr ./ (128^2), label="Coarse-grained HR", 
         axis=(
@@ -948,16 +964,30 @@ function energy_plots()
         )
     )
     lines!(fig[1,1], LinRange(0, 3*365, 1096), noparam./ (128^2), label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB closure")
-    # lines!(fig[1,1], LinRange(0, 365, 366), oneday[1:366]./ (128^2), label="Online closure, 1 day gelu")
+    lines!(fig[1,1], LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
     # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
     lines!(fig[1,1], LinRange(0, 3*365, 1096), multi3 ./ (128^2), label="Online closure, multi 3 day")
     lines!(fig[1,1], LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, multi 5 day")
-    # lines!(fig[1,1], LinRange(0, 365, 366), fivedayeta./ (128^2), label="Online closure, 5 day with eta")
     lines!(fig[1,1], LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
     lines!(fig[1,1],LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
     lines!(fig[1,1],LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
     lines!(fig[1,1], LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
+    axislegend(position = (0,1))
+
+    # 10 year figure
+    fig = Figure(size=(1000, 500), fontsize=15);
+    lines(fig[1,1], LinRange(0, 10*365, 522),  fiveday ./ (128^2), label="Online closure, 5 day", 
+        axis=(
+            xlabel="Day",
+            ylabel="Energy",
+            title="Spatially averaged energy over 10 years"
+        )
+    )
+    lines!(fig[1,1], LinRange(0, 10*365, 522), zb ./ (128^2), label="ZB20")
+    lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, multi 3 day")
+    lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
+    lines!(fig[1,1],LinRange(0, 10*365, 522), twentyday ./ (128^2), label="Online closure, 20 day")
+    lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);
