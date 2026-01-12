@@ -134,11 +134,11 @@ function create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 3*365
+    Ndays = 10*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
-        # output_dt=168,
-        output_dt=24,
+        output_dt=168,
+        # output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -172,7 +172,8 @@ function create_models()
     # onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
 
     # onlineweights = load_object("./result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
-    onlineweights = load_object("./result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
+    # onlineweights = load_object("./result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
+    onlineweights = load_object("./result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
