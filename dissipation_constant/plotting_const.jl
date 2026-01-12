@@ -259,6 +259,10 @@ function load_models()
     vmulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
     etamulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
+    umulti20 = ncread("./dissipation_constant/results/result_online_multistateweights_20dayoptimization_5-25-45-65initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    vmulti20 = ncread("./dissipation_constant/results/result_online_multistateweights_20dayoptimization_5-25-45-65initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    etamulti20 = ncread("./dissipation_constant/results/result_online_multistateweights_20dayoptimization_5-25-45-65initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
+
     uzb = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
     vzb = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
     etazb = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
@@ -290,21 +294,21 @@ function load_models()
     etazb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/eta.nc", "eta");
     # the following didn't work as loss functions
 
-    # ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    # vkespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    # etakespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+    ukespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vkespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etakespec = ncread("./results/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
 
-    # ukespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    # vkespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    # etakespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+    ukespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vkespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etakespecpd = ncread("./results/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
 
-    # ufourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    # vfourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    # etafourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+    ufourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vfourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etafourier = ncread("./results/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
 
-    # uhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    # vhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    # etahybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
+    uhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
+    vhybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
+    etahybrid = ncread("./results/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
 
     # relu activation function
 
@@ -1433,6 +1437,9 @@ function ketransfer_plots()
     Smulti3 = ShallowWaters.model_setup(Ponline);
     Smulti5 = ShallowWaters.model_setup(Ponline);
 
+    Smulti10 = ShallowWaters.model_setup(Ponline);
+    Smulti20 = ShallowWaters.model_setup(Ponline);
+
     uhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
     vhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
 
@@ -1469,6 +1476,14 @@ function ketransfer_plots()
     vmulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v")
     etamulti5 = ncread("./dissipation_constant/results/128_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/eta.nc", "eta")
 
+    umulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    vmulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    etamulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
+
+    umulti20 = ncread("./dissipation_constant/results/result_online_multistateweights_20dayoptimization_5-25-45-65initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    vmulti20 = ncread("./dissipation_constant/results/result_online_multistateweights_20dayoptimization_5-25-45-65initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    etamulti20 = ncread("./dissipation_constant/results/result_online_multistateweights_20dayoptimization_5-25-45-65initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
+
     lr_freq = 1/30 .* freq(periodogram(u20day[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcg[:,:,1]))
 
@@ -1493,6 +1508,12 @@ function ketransfer_plots()
     totalu_multi5 = zeros(65)
     totalv_multi5 = zeros(65)
 
+    totalu_multi10 = zeros(65)
+    totalv_multi10 = zeros(65)
+
+    totalu_multi20 = zeros(65)
+    totalv_multi20 = zeros(65)
+
     totalu_ZB = zeros(65)
     totalv_ZB = zeros(65)
 
@@ -1502,21 +1523,25 @@ function ketransfer_plots()
     totalstates = 1096
     for t = 1:totalstates
 
-        Suhr, Svhr = compute_hrS(uhr[:,:,t], vhr[:,:, t])
+        # Suhr, Svhr = compute_hrS(uhr[:,:,t], vhr[:,:, t])
 
         # u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
         # u, v, eta = ShallowWaters.add_halo(uhrcg[:,:,t], vhrcg[:,:,t], etahrcg[:,:,t], zeros(128,128), Shrcg);
-        uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
-        u20, v20, _ = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
-        u30, v30, _ = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
-        umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
-        umulti5_, vmulti5_, _ = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
+        # uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
+        # u20, v20, _ = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
+        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
+        # umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
+        # umulti5_, vmulti5_, _ = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
 
+        umulti10_, vmulti10_, _ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), Smulti10);
+        umulti20_, vmulti20_, _ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), Smulti20);
 
-        ShallowWaters.CNN_momentum(u20, v20, S20)
-        ShallowWaters.CNN_momentum(u30, v30, S30)
-        ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
-        ShallowWaters.CNN_momentum(umulti5_, vmulti5_, Smulti5)
+        # ShallowWaters.CNN_momentum(u20, v20, S20)
+        # ShallowWaters.CNN_momentum(u30, v30, S30)
+        # ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
+        # ShallowWaters.CNN_momentum(umulti5_, vmulti5_, Smulti5)
+        ShallowWaters.CNN_momentum(umulti10_, vmulti10_, Smulti10)
+        ShallowWaters.CNN_momentum(umulti20_, vmulti20_, Smulti20)
 
         # ShallowWaters.CNN_momentum(u, v, Shrcg);
         # ShallowWaters.CNN_momentum(u5, v5, S5);
@@ -1539,37 +1564,53 @@ function ketransfer_plots()
         # totalu_5 += outu_5
         # totalv_5 += outv_5
 
-        outu_20, inputu_20, inputSu_20 = paddingu(u20day[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
-        outv_20, inputv_20, inputSv_20 = paddingv(v20day[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
+        # outu_20, inputu_20, inputSu_20 = paddingu(u20day[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
+        # outv_20, inputv_20, inputSv_20 = paddingv(v20day[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
 
-        totalu_20 += outu_20
-        totalv_20 += outv_20
+        # totalu_20 += outu_20
+        # totalv_20 += outv_20
 
-        outu_30, inputu_30, inputSu_30 = paddingu(u30day[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
-        outv_30, inputv_30, inputSv_30 = paddingv(v30day[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
+        # outu_30, inputu_30, inputSu_30 = paddingu(u30day[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
+        # outv_30, inputv_30, inputSv_30 = paddingv(v30day[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
 
-        totalu_30 += outu_30
-        totalv_30 += outv_30
+        # totalu_30 += outu_30
+        # totalv_30 += outv_30
 
-        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
-        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
+        # outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
+        # outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
 
-        totalu_multi3 += outu_multi3
-        totalv_multi3 += outv_multi3
+        # totalu_multi3 += outu_multi3
+        # totalv_multi3 += outv_multi3
 
-        outu_multi5, inputu_multi5, inputSu_multi5 = paddingu(umulti5[:, :, t], Smulti5.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_multi5, rfft(inputu_multi5), rfft(inputSu_multi5), nfft...)
-        outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[:, :, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_multi5, rfft(inputv_multi5), rfft(inputSv_multi5), nfft...)
+        # outu_multi5, inputu_multi5, inputSu_multi5 = paddingu(umulti5[:, :, t], Smulti5.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_multi5, rfft(inputu_multi5), rfft(inputSu_multi5), nfft...)
+        # outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[:, :, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_multi5, rfft(inputv_multi5), rfft(inputSv_multi5), nfft...)
 
-        totalu_multi5 += outu_multi5
-        totalv_multi5 += outv_multi5
+        # totalu_multi5 += outu_multi5
+        # totalv_multi5 += outv_multi5
+
+        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], Smulti10.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
+        outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], Smulti10.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
+
+        totalu_multi10 += outu_multi10
+        totalv_multi10 += outv_multi10
+
+        outu_multi20, inputu_multi20, inputSu_multi20 = paddingu(umulti20[:, :, t], Smulti20.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi20, rfft(inputu_multi20), rfft(inputSu_multi20), nfft...)
+        outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[:, :, t], Smulti20.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi20, rfft(inputv_multi20), rfft(inputSv_multi20), nfft...)
+
+        totalu_multi20 += outu_multi20
+        totalv_multi20 += outv_multi20
 
         # outu_3, inputu_3, inputSu_3 = paddingu(umulti3[:, :, t], S3.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_3, rfft(inputu_3), rfft(inputSu_3), nfft...)
@@ -1589,20 +1630,6 @@ function ketransfer_plots()
 
     end
 
-    for t=1:366
-
-        u10, v10, eta10 = ShallowWaters.add_halo(Float64.(u10day[:,:,t]), Float64.(v10day[:,:,t]), Float64.(eta10day[:,:,t]), zeros(128,128), S10);
-        ShallowWaters.CNN_momentum(u10, v10, S10);
-
-        outu_10, inputu_10, inputSu_10 = paddingu(u10day[:, :, t], S10.Diag.CNNVars.S_u, nfft[1])
-        fft2pow2radial!(outu_10, rfft(inputu_10), rfft(inputSu_10), nfft...)
-        outv_10, inputv_10, inputSv_10 = paddingv(v10day[:, :, t], S10.Diag.CNNVars.S_v, nfft[1])
-        fft2pow2radial!(outv_10, rfft(inputv_10), rfft(inputSv_10), nfft...)
-
-        totalu_10 += outu_10
-        totalv_10 += outv_10
-
-    end
 
     fig = Figure(size=(800, 300), fontsize=15);
     lines(fig[1,1], lr_freq.*(totalu_hrcg + totalv_hrcg) / 1098,
