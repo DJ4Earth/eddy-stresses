@@ -289,6 +289,10 @@ function load_models()
     vmulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
     etamulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/eta.nc", "eta");
 
+    umulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_10years_weeklysaves/u.nc", "u");
+    vmulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
+    etamulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_10years_weeklysaves/eta.nc", "eta");
+
     uzb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/u.nc", "u");
     vzb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/v.nc", "v");
     etazb = ncread("./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves/eta.nc", "eta");
@@ -941,6 +945,7 @@ function energy_plots()
     multi3 = []
     multi5 = []
     multi10 = []
+    multi20 = []
     zb = []
     cghr = []
     twentydaycD = []
@@ -964,6 +969,7 @@ function energy_plots()
         push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
         push!(multi5, sum(umulti5[:,1:end-1,j].^2 .+ vmulti5[1:end-1,:,j].^2))
         push!(multi10, sum(umulti10[:,1:end-1,j].^2 .+ vmulti10[1:end-1,:,j].^2))
+        push!(multi20, sum(umulti20[:,1:end-1,j].^2 .+ vmulti20[1:end-1,:,j].^2))
     end
 
     # 3 year figure
@@ -980,6 +986,7 @@ function energy_plots()
     lines!(ax, LinRange(0, 3*365, 1096), multi3 ./ (128^2), label="Online closure, multi 3 day")
     lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, multi 5 day")
     lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, multi 10 day")
+    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, multi 20 day")
     # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
     # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
     # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
@@ -988,7 +995,7 @@ function energy_plots()
 
     # 10 year figure
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 10*365, 522),  fiveday ./ (128^2), label="Online closure, 5 day", 
+    lines(fig[1,1], LinRange(0, 10*365, 522),  zb ./ (128^2), label="Online closure, 5 day", 
         axis=(
             xlabel="Day",
             ylabel="Energy",
@@ -997,9 +1004,10 @@ function energy_plots()
     )
     lines!(fig[1,1], LinRange(0, 10*365, 522), zb ./ (128^2), label="ZB20")
     lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, multi 3 day")
-    lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(fig[1,1],LinRange(0, 10*365, 522), twentyday ./ (128^2), label="Online closure, 20 day")
-    lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
+    lines!(fig[1,1], LinRange(0, 10*365, 522), multi10 ./ (128^2), label="Online closure, multi 10 day")
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
+    # lines!(fig[1,1],LinRange(0, 10*365, 522), twentyday ./ (128^2), label="Online closure, 20 day")
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday ./ (128^2), label="Online closure, 30 day")
     axislegend(position = (0,1))
 
     fig = Figure(size=(1000, 500), fontsize=15);
