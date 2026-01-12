@@ -222,9 +222,9 @@ function load_models()
     vnoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
     etanoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
-    u1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
-    v1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
-    eta1daystategelu = ncread("./dissipation_constant/results/128_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
+    u1daystategelu = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
+    v1daystategelu = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
+    eta1daystategelu = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
 
     u5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
     v5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
@@ -935,6 +935,7 @@ function energy_plots()
     tendaynoeta = []
     multi3 = []
     multi5 = []
+    multi10 = []
     zb = []
     cghr = []
     twentydaycD = []
@@ -957,27 +958,28 @@ function energy_plots()
         push!(noparam, sum(unoparam[:,1:end-1,j].^2 .+ vnoparam[1:end-1,:,j].^2))
         push!(multi3, sum(umulti3[:,1:end-1,j].^2 .+ vmulti3[1:end-1,:,j].^2))
         push!(multi5, sum(umulti5[:,1:end-1,j].^2 .+ vmulti5[1:end-1,:,j].^2))
+        push!(multi10, sum(umulti10[:,1:end-1,j].^2 .+ vmulti10[1:end-1,:,j].^2))
     end
 
     # 3 year figure
     fig = Figure(size=(1000, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 3*365, 1096),  cghr ./ (128^2), label="Coarse-grained HR", 
-        axis=(
+    ax = Axis(fig[1,1],
             xlabel="Day",
             ylabel="Energy",
-            title="Spatially averaged energy"
-        )
+            title="Spatially averaged energy over 3 years"
     )
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), noparam./ (128^2), label="30km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
+    lines!(ax, LinRange(0, 3*365, 1096),  cghr ./ (128^2), label="Coarse-grained HR")
+    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30km resolution, no closure")
+    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
     # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), multi3 ./ (128^2), label="Online closure, multi 3 day")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, multi 5 day")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(fig[1,1],LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    lines!(fig[1,1],LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
-    axislegend(position = (0,1))
+    lines!(ax, LinRange(0, 3*365, 1096), multi3 ./ (128^2), label="Online closure, multi 3 day")
+    lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, multi 5 day")
+    lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, multi 10 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
+    # lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
+    Legend(fig[1, 2], ax)
 
     # 10 year figure
     fig = Figure(size=(1000, 500), fontsize=15);
