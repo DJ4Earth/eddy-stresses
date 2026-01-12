@@ -122,6 +122,80 @@ function compute_hrS(u, v)
 
 end
 
+function compute_true_hrS()
+
+    uhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
+    vhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
+    etahr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta");
+
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    uhrcg = coarse_grained_hrstates[1];
+    vhrcg = coarse_grained_hrstates[2];
+    etahrcg = coarse_grained_hrstates[3];
+
+    Phr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=1
+    )
+    Shr = ShallowWaters.model_setup(Plr)
+
+    Plr = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    )
+    Slr = ShallowWaters.model_setup(Plr)
+
+    # this is where the total time derivative gets stored
+    # u0,v0,η0 = Diag.RungeKutta
+
+    for n = 1:1096
+
+        uhr_, vhr_, etahr_, _ = ShallowWaters.add_halo(uhr[:,:,n],vhr[:,:,n],etahr[:,:,n],zeros(1024,1024),Shr)
+        uhrcg_, vhrcg_, etahrcg_, _ = ShallowWaters.add_halo(uhrcg[:,:,n],vhrcg[:,:,n],etahrcg[:,:,n],zeros(128, 128),Shrcg)
+
+    end
+
+end
+
 function paddingu(x, Su, n1)
 
     T = Real
