@@ -11,7 +11,7 @@ u10daynoeta = ncread("./dissipation_constant/results/128_online_stateweights_10d
 
 u = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/u.nc", "u")
 
-umulti3 = ncread("./dissipation_constant/results/128_online_multistateweights_3dayoptimization_3-25-30-40-50-60-80initdays_startfrom20daystate_3years_dailysaves/u.nc", "u")
+umulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/u.nc", "u");
 
 u20day = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/u.nc", "u");
 # v20day = ncread("./dissipation_constant/results/128_online_gelu_stateweights_20dayoptimization_startfrom10daystate_3years_dailysaves/v.nc", "v");
@@ -22,11 +22,11 @@ u3smag = ncread("./dissipation_smagorinsky/results_with_parameterization/result_
 fig = Figure(fontsize=15);
 
 framerate = 40
-timestamps = range(1, 1096, step=1)
+timestamps = range(1, 522, step=1)
 ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "u(x, y)")
 
-record(fig, "u20day.mp4", 1:1096) do t
-    tempframe = u20day[:, :, t]
+record(fig, "umulti3_moreinitconds_weeklysnapshots_tenyears.mp4", 1:522) do t
+    tempframe = umulti3[:, :, t]
     hm =heatmap!(ax,
         LinRange(0, 3840, 128),
         LinRange(0, 3840, 128),

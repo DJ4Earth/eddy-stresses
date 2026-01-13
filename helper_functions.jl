@@ -318,6 +318,10 @@ end
 
 function single_step(S, t)
 
+    uold = copy(S.Prog.u)
+    vold = copy(S.Prog.v)
+    etaold = copy(S.Prog.η)
+
     # calculate layer thicknesses for initial conditions
     ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
     ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
@@ -479,10 +483,18 @@ function single_step(S, t)
 
     t += S.grid.dtint
 
-    P = ShallowWaters.PrognosticVars{S.parameters.Tprog}(ShallowWaters.remove_halo(u0rhs,
-        v0rhs,
-        η0rhs,
-        S.Prog.sst,
+    u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
+    v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+    # ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+
+    copyto!(S.Prog.u, S.Diag.RungeKutta.u0)
+    copyto!(S.Prog.v, S.Diag.RungeKutta.v0)
+    copyto!(S.Prog.η, S.Diag.RungeKutta.η0)
+
+    P = ShallowWaters.PrognosticVars{S.parameters.Tprog}(ShallowWaters.remove_halo((S.Prog.u .- uold)./S.grid.dtint,
+        (S.Prog.v .- vold)./S.grid.dtint,
+        (S.Prog.η .- etaold)./S.grid.dtint,
+        zeros(128,128),
         S)...
     )
 
