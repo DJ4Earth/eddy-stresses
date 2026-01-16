@@ -8,7 +8,7 @@ P1 = ShallowWaters.Parameter(T=T,
     L_ratio=1,
     g=9.81,
     H=500,
-    cfl=.898,
+    # cfl=.898,
     wind_forcing_x="double_gyre",
     Lx=3840e3,
     seasonal_wind_x=false,
@@ -21,12 +21,13 @@ P1 = ShallowWaters.Parameter(T=T,
     tracer_relaxation=false,
     zb_forcing_momentum=false,
     zb_forcing_dissipation=false,
-    zb_filtered=true,
+    zb_filtered=false,
     nn_forcing_momentum=false,
     nn_forcing_dissipation=false,
     N=1,
     α=2,
     nx=128,
+    ϕ=35,
     Ndays=Ndays,
     initial_cond="ncfile",
     initpath="./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog/"
@@ -43,9 +44,10 @@ P2 = ShallowWaters.Parameter(T=T,
     L_ratio=1,
     g=9.81,
     H=500,
-    cfl=.898,
+    # cfl=.898,
     wind_forcing_x="double_gyre",
     Lx=3840e3,
+    ϕ=35,
     seasonal_wind_x=false,
     adv_scheme="Sadourny",
     topography="flat",
@@ -56,7 +58,7 @@ P2 = ShallowWaters.Parameter(T=T,
     tracer_relaxation=false,
     zb_forcing_momentum=false,
     zb_forcing_dissipation=false,
-    zb_filtered=true,
+    zb_filtered=false,
     nn_forcing_momentum=false,
     nn_forcing_dissipation=false,
     N=1,
@@ -73,18 +75,24 @@ ShallowWaters.time_integration(S2)
 
 ah = []
 s = []
+amir = []
 
-uah = ncread("./run_0002/u.nc", "u");
-vah = ncread("./run_0002/v.nc", "v");
+uah = ncread("./run_0005/u.nc", "u");
+vah = ncread("./run_0005/v.nc", "v");
 
-us = ncread("./run_0003/u.nc", "u");
-vs = ncread("./run_0003/v.nc", "v");
+us = ncread("./run_0006/u.nc", "u");
+vs = ncread("./run_0006/v.nc", "v");
 
-for j = 1:2251
+uamir = ncread("./run_0004/u.nc", "u");
+vamir = ncread("./run_0004/v.nc", "v");
+
+for j = 1:2245
     push!(ah, sum(uah[:,1:end-1,j].^2 .+ vah[1:end-1,:,j].^2))
     push!(s, sum(us[:,1:end-1,j].^2 .+ vs[1:end-1,:,j].^2))
+    push!(amir, sum(uamir[:,1:end-1,j].^2 .+ vamir[1:end-1,:,j].^2))
 end
 
 fig = Figure();
 lines(fig[1,1], ah[1:24:end] ./ 128^2)
 lines!(fig[1,1], s[1:24:end] ./ 128^2)
+lines!(fig[1,1], amir[1:24:end] ./ 128^2)

@@ -6,7 +6,7 @@ without all of this also running.
 function create_models()
 
     T = Float64
-    Ndays = 5*365
+    Ndays = 90
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
@@ -14,8 +14,9 @@ function create_models()
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
+        output_dt = 1,
         # output_dt=168,
-        output_dt=12600,
+        # output_dt=12600,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -37,11 +38,11 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
         # initial_cond="rest"
         # initpath="./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog"
-        # initial_cond="ncfile",
-        # initpath = "./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/"
+        initial_cond="ncfile",
+        initpath = "./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog"
     );
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);
