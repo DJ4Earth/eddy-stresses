@@ -447,6 +447,7 @@ function NLPModels.obj(model, param_guess)
             seasonal_wind_x=false,
             topography="flat",
             bc="nonperiodic",
+            adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
             bottom_drag="quadratic",
             tracer_advection=false,
             tracer_relaxation=false,
@@ -525,6 +526,7 @@ function NLPModels.grad!(model, param_guess, G)
             topography="flat",
             bc="nonperiodic",
             bottom_drag="quadratic",
+            adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
             tracer_advection=false,
             tracer_relaxation=false,
             zb_forcing_momentum=false,
@@ -662,7 +664,7 @@ end
 function run_multistate()
 
     T = Float64
-    Ndays = 1
+    Ndays = 3
 
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
     uhrcg = coarse_grained_hrstates[1];
@@ -681,6 +683,7 @@ function run_multistate()
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
+        adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
@@ -695,16 +698,18 @@ function run_multistate()
     )
 
     Slr = ShallowWaters.model_setup(Plr)
-    param_guess = load_object("./dissipation_constant/tuned_weights/result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights20daystate_30iterations.jld2").solution;
+    # param_guess = load_object("./dissipation_constant/tuned_weights/result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights20daystate_30iterations.jld2").solution;
+    param_guess = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
 
     data_steps = 76:75:Slr.grid.nt;
     data = [uhrcg[:,:,1:2], vhrcg[:,:,1:2], etahrcg[:,:,1:2]];
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
+    days = [1,4,8,13,18,23,28,33,38,41,44,48,53,58,63,68,73,78,83,86] .* 3 .+ 1
     # days = [1, 4, 6, 8, 10, 13, 15, 18, 23, 28, 33, 38, 41, 44, 48, 51, 53, 58, 63, 65, 68, 73, 78, 83, 86, 88]
     # days = [1, 3, 4, 6, 8, 10, 13, 15, 18, 23, 28, 30, 33, 35, 38, 41, 44, 46, 48, 51, 52, 53, 55, 58, 60, 63, 64, 65, 68, 73, 78, 83, 86, 88, 89] .* 3 .+ 1
-    days = (1:2:89) .* 3 .+ 1 
+    # days = (1:2:89) .* 3 .+ 1 
     # days = [3, 30, 50, 80] .* 3 .+ 1
     # days = [5, 20, 35, 50, 65, 75] .* 3 .+ 1
     # days = [5, 25, 45, 65] .* 3 .+ 1
@@ -741,9 +746,9 @@ function run_multistate()
     )
 
     # jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
-    # jldsave("result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2", result=result)
+    jldsave("result_multistate_SADOURNY_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystateARAKAWA_15iterations.jld2", result=result)
     # jldsave("result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2", result=result)
-    jldsave("result_multistate_1:2:89initdaystart_1dayoptimization_initialweightsmulti3daystate_fewerinitconds_15iterations.jld2", result=result)
+    # jldsave("result_multistate_1:2:89initdaystart_1dayoptimization_initialweightsmulti3daystate_fewerinitconds_15iterations.jld2", result=result)
     # jldsave("result_multistate_1-3-4-6-8-10-13-15-18-23-28-30-33-35-38-41-44-46-48-51-52-53-55-58-60-63-64-65-68-73-78-83-86-88-89daystart_1dayoptimizationinitialweightsmulti3daystate_20iterations.jld2", result=result)
     # jldsave("result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
     # jldsave("result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)

@@ -36,12 +36,12 @@ function create_models()
         nn_forcing_dissipation=false,
         N=1,
         α=2,
-        nx=1024,
-        Ndays=Ndays,
+        nx=128,
+        Ndays=Ndays
         # initial_cond="rest"
         # initpath="./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog"
-        initial_cond="ncfile",
-        initpath = "./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/"
+        # initial_cond="ncfile",
+        # initpath = "./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/"
     );
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);
@@ -176,7 +176,8 @@ function create_models()
 
     # onlineweights = load_object("./result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
     # onlineweights = load_object("./result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
-    onlineweights = load_object("./result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
+    # onlineweights = load_object("./result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
+    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-3-4-6-8-10-13-15-18-23-28-30-33-35-38-41-44-46-48-51-52-53-55-58-60-63-64-65-68-73-78-83-86-88-89daystart_1dayoptimizationinitialweightsmulti3daystate_20iterations.jld2").solution
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
