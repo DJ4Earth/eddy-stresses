@@ -447,7 +447,7 @@ function NLPModels.obj(model, param_guess)
             seasonal_wind_x=false,
             topography="flat",
             bc="nonperiodic",
-            adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
+            # adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
             bottom_drag="quadratic",
             tracer_advection=false,
             tracer_relaxation=false,
@@ -526,7 +526,7 @@ function NLPModels.grad!(model, param_guess, G)
             topography="flat",
             bc="nonperiodic",
             bottom_drag="quadratic",
-            adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
+            # adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
             tracer_advection=false,
             tracer_relaxation=false,
             zb_forcing_momentum=false,
@@ -683,7 +683,7 @@ function run_multistate()
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
+        # adv_scheme="Sadourny",          ### !!!!!!!!!!!!!!!!!!!!!
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,

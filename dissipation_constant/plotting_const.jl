@@ -7,10 +7,10 @@ function create_models()
 
     T = Float64
     Ndays = 90
-    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
-    uhrcg = coarse_grained_hrstates[1];
-    vhrcg = coarse_grained_hrstates[2];
-    etahrcg = coarse_grained_hrstates[3];
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
+    uhrcg = coarse_grained_hrstates[1]
+    vhrcg = coarse_grained_hrstates[2]
+    etahrcg = coarse_grained_hrstates[3]
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
