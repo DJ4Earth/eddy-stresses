@@ -706,7 +706,7 @@ function run_multistate()
 
     initial_cond = [uhrcg[:,:,1], vhrcg[:,:,1], etahrcg[:,:,1]]
 
-    # days = [1, 4, 8, 13, 18, 23, 28, 33, 38, 41, 44, 48, 53, 58, 63, 68, 73, 78, 83, 86] .* 3 .+ 1
+    days = [1, 4, 8, 13, 18, 23, 28, 33, 38, 41, 44, 48, 53, 58, 63, 68, 73, 78, 83, 86] .* 3 .+ 1
     # days = [3, 30, 50, 80] .* 3 .+ 1
 
     # days = [10, 20, 30, 40, 50, 60, 70, 80] .* 3 .+ 1
@@ -714,7 +714,7 @@ function run_multistate()
     # days = [5, 20, 35, 50, 65, 75] .* 3 .+ 1
     # days = [5, 25, 45, 65] .* 3 .+ 1
 
-    days = (1:3:87) .* 3 .+ 1 
+    # days = (1:3:87) .* 3 .+ 1 
 
     meta = NLPModelMeta(Lux.parameterlength(Slr.Diag.CNNVars.model_Su) + Lux.parameterlength(Slr.Diag.CNNVars.model_Sv);
         ncon=0,
@@ -749,7 +749,7 @@ function run_multistate()
 
     # jldsave("result_multistate_smagdiss_1:3:87daystart_3dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
     # jldsave("result_multistate_3-30-50-80daystart_5dayoptimization_initialweights10daystate_20iterations.jld2", result=result)
-    # jldsave("result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2", result=result)
+    jldsave("result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweights10day_20iterations_SMAGORINSKY.jld2", result=result)
     # jldsave("result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
     # jldsave("result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2", result=result)
 
