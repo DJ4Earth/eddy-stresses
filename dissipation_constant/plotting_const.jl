@@ -179,7 +179,7 @@ function create_models()
     # onlineweights = load_object("./result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
     # onlineweights = load_object("./result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-3-4-6-8-10-13-15-18-23-28-30-33-35-38-41-44-46-48-51-52-53-55-58-60-63-64-65-68-73-78-83-86-88-89daystart_1dayoptimizationinitialweightsmulti3daystate_20iterations.jld2").solution
-    # onlineweights = load_object("./result_multistate_1:2:89initdaystart_1dayoptimization_initialweightsmulti3daystate_fewerinitconds_15iterations.jld2").solution;
+    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1:2:89initdaystart_1dayoptimization_initialweightsmulti3daystate_fewerinitconds_15iterations.jld2").solution;
     onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
@@ -197,7 +197,7 @@ function create_models()
     Sonline.Prog.v .= copy(initial_cond[2]);
     Sonline.Prog.η .= copy(initial_cond[3]);
 
-    ShallowWaters.time_integration(Sonline)
+    P = ShallowWaters.time_integration(Sonline);
 
     # name for run
     # result_online_state_pluscD_weights_constdiffusion_20dayoptimization_startfrom20day_3years_dailysaves
