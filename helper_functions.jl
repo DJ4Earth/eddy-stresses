@@ -124,11 +124,15 @@ end
 
 function compute_true_hrS()
 
-    uhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/u.nc", "u");
-    vhr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/v.nc", "v");
-    etahr = ncread("./dissipation_constant/spinup_files/1024_postspinup_noslip_5years_061824/eta.nc", "eta");
+    uhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u");
+    vhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/v.nc", "v");
+    etahr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/eta.nc", "eta");
 
-    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    uhr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/u.nc", "u");
+    vhr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/v.nc", "v");
+    etahr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/eta.nc", "eta");
+
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2");
     uhrcg = coarse_grained_hrstates[1];
     vhrcg = coarse_grained_hrstates[2];
     etahrcg = coarse_grained_hrstates[3];
@@ -184,17 +188,30 @@ function compute_true_hrS()
     );
     Slr = ShallowWaters.model_setup(Plr);
 
+    for S in [Slr, Shr]
+        # calculate layer thicknesses for initial conditions
+        ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
+        ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
+        ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
+        ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
+    end
+
     # this is where the total time derivative gets stored
     # u0,v0,η0 = Diag.RungeKutta
 
-    S_u = zeros(127,128,1097)
-    S_v = zeros(128,127,1097)
+    S_u = zeros(127,128,1096)
+    S_v = zeros(128,127,1096)
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
-    for n = 1:1097
+    for n = 1:1096
 
-        uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr[:,:,n+1], vhr[:,:,n+1], etahr[:,:,n+1], Shr)
-        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcg[:,:,n+1], vhrcg[:,:,n+1], etahrcg[:,:,n+1], Slr)
+        if n in 1:766
+            uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr1[:,:,n], vhr1[:,:,n], etahr1[:,:,n], Shr)
+        else
+            uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr2[:,:,n-766+1], vhr2[:,:,n-766+1], etahr2[:,:,n-766+1], Shr)
+        end
+
+        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcg[:,:,n], vhrcg[:,:,n], etahrcg[:,:,n], Slr)
 
         Shr_ = deepcopy(Shr)
         Slr_ = deepcopy(Slr)
@@ -321,12 +338,6 @@ function single_step(S, t)
     uold = copy(S.Prog.u)
     vold = copy(S.Prog.v)
     etaold = copy(S.Prog.η)
-
-    # calculate layer thicknesses for initial conditions
-    ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
-    ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
-    ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
-    ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
 
     # calculate PV terms for initial conditions
     urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
@@ -494,7 +505,7 @@ function single_step(S, t)
     P = ShallowWaters.PrognosticVars{S.parameters.Tprog}(ShallowWaters.remove_halo((S.Prog.u .- uold)./S.grid.dtint,
         (S.Prog.v .- vold)./S.grid.dtint,
         (S.Prog.η .- etaold)./S.grid.dtint,
-        zeros(128,128),
+        S.Prog.sst,
         S)...
     )
 

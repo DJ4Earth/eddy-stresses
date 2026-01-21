@@ -192,9 +192,13 @@ end
 
 function filter()
 
-    u = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/u.nc", "u");
-    v = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/v.nc", "v");
-    eta = ncread("./dissipation_smagorinsky/spinup_files_newdissipation/1024_3yearpostspinup_smag_noslipbc_dailysaves/eta.nc", "eta");
+    u1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u");
+    v1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/v.nc", "v");
+    eta1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/eta.nc", "eta");
+
+    u2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/u.nc", "u");
+    v2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/v.nc", "v");
+    eta2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
@@ -202,13 +206,19 @@ function filter()
     vfiltered = zeros(1024, 1023, 1096)
     etafiltered = zeros(1024, 1024, 1096)
 
-    for j = 1:1096
-        ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
-        vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
-        etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
+    for j = 1:766
+        ufiltered[:,:,j] .= imfilter(u1[:,:,j], reflect(ker))
+        vfiltered[:,:,j] .= imfilter(v1[:,:,j], reflect(ker))
+        etafiltered[:,:,j] .= imfilter(eta1[:,:,j], reflect(ker))
     end
 
-    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    for j = 1:330
+        ufiltered[:,:,j+766] .= imfilter(u2[:,:,j+1], reflect(ker))
+        vfiltered[:,:,j+766] .= imfilter(v2[:,:,j+1], reflect(ker))
+        etafiltered[:,:,j+766] .= imfilter(eta2[:,:,j+1], reflect(ker))
+    end
+
+    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2", uveta = [ufiltered, vfiltered, etafiltered])
 
 end
 
@@ -257,7 +267,7 @@ end
 
 function downsize()
 
-    cgstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2");
+    cgstates = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2");
 
     ucg = cgstates[1];
     vcg = cgstates[2];
@@ -267,7 +277,7 @@ function downsize()
     vcgdownsized = (vcg[4:8:end, 8:8:end, :] .+ vcg[5:8:end, 8:8:end, :]) ./ 2;
     etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4;
 
-    jldsave("1024_filtered_downsized_uveta_imfilter_3years_postspinup_smagdissipation_8hoursaves.jld2", uveta = [ucgdownsized, vcgdownsized, etacgdownsized])
+    jldsave("1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2", uveta = [ucgdownsized, vcgdownsized, etacgdownsized])
 
     # the following is to create the coarse grained uv term for computing the off-diagonal entries in T
 
