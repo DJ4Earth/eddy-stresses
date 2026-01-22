@@ -238,9 +238,9 @@ function load_models()
     vnoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
     etanoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
-    u1daystategelu = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
-    v1daystategelu = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
-    eta1daystategelu = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
+    u1s = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
+    v1s = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
+    eta1s = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
 
     u5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
     v5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
@@ -274,13 +274,13 @@ function load_models()
     vmulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/v.nc", "v");
     etamulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/eta.nc", "eta");
 
-    umulti3_old = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
-    vmulti3_old = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
-    etamulti3_old = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
+    umulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    vmulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    etamulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    umulti3_new = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
-    vmulti3_new = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
-    etamulti3_new = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/eta.nc", "eta");
+    umulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
+    vmulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
+    etamulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/eta.nc", "eta");
 
     umulti5 = ncread("./dissipation_constant/results/result_online_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/u.nc", "u");
     vmulti5 = ncread("./dissipation_constant/results/result_online_multistateweights_5dayoptimization_3-30-50-80initdays_fixedcfl_constdiss_3years_dailysaves/v.nc", "v");
@@ -324,13 +324,21 @@ function load_models()
     vmulti1 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_10years_weeklysaves/v.nc", "v");
     etamulti1 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_10years_weeklysaves/eta.nc", "eta");
 
-    umulti3_old = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/u.nc", "u");
-    vmulti3_old = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
-    etamulti3_old = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/eta.nc", "eta");
+    umulti1more = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_10years_weeklysaves/u.nc", "u");
+    vmulti1more = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_10years_weeklysaves/v.nc", "v");
+    etamulti1more = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_10years_weeklysaves/eta.nc", "eta");
 
-    umulti3_new = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/u.nc", "u");
-    vmulti3_new = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/v.nc", "v");
-    etamulti3_new = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/eta.nc", "eta");
+    umulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/u.nc", "u");
+    vmulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/v.nc", "v");
+    etamulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/eta.nc", "eta");
+
+    umulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/u.nc", "u");
+    vmulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
+    etamulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/eta.nc", "eta");
+
+    umulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/u.nc", "u");
+    vmulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/v.nc", "v");
+    etamulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/eta.nc", "eta");
 
     umulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_10years_weeklysaves/u.nc", "u");
     vmulti10 = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
@@ -911,6 +919,235 @@ function prognostic_plots()
 
 end
 
+function vorticity_plots()
+
+    # ∂x!(dudx, u)
+    # ∂y!(dudy, u)
+
+    # ∂x!(dvdx, v)
+    # ∂y!(dvdy, v)
+
+    P = ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=2,
+        initial_cond="rest"
+    );
+    S = ShallowWaters.model_setup(P);
+
+    ζhrcg = zeros(129,129);
+    ζzb = zeros(129,129);
+    ζnoparam = zeros(129,129);
+    ζmulti3more = zeros(129,129);
+    ζmulti2 = zeros(129,129);
+    ζmulti1more = zeros(129,129);
+    ζmulti1 = zeros(129,129);
+    ζ20s = zeros(129,129);
+    ζ30s = zeros(129,129);
+    ζ10s = zeros(129,129);
+    ζmulti3 = zeros(129,129);
+    ζmulti10 = zeros(129,129);
+    ζmulti20 = zeros(129,129);
+
+
+    # Relative vorticity
+    dx = S.grid.Δ
+    t = 1096
+
+    uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcg[:,:,t]), Float64.(vhrcg[:,:,t]), Float64.(etahrcg[:,:,t]), zeros(128,128), S);
+    uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), S);
+    unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam[:,:,t]), Float64.(vnoparam[:,:,t]), Float64.(etanoparam[:,:,t]), zeros(128,128), S);
+    u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s[:,:,t]), Float64.(v10s[:,:,t]), Float64.(eta10s[:,:,t]), zeros(128,128), S);
+    u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S);
+    u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S);
+    umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti1[:,:,t]), Float64.(vmulti1[:,:,t]), Float64.(etamulti1[:,:,t]), zeros(128,128), S);
+    umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more[:,:,t]), Float64.(vmulti1more[:,:,t]), Float64.(etamulti1more[:,:,t]), zeros(128,128), S);
+    umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), S);
+    umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), S);
+    umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more[:,:,t]), Float64.(vmulti3more[:,:,t]), Float64.(etamulti3more[:,:,t]), zeros(128,128), S);
+    umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), S);
+    umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), S);
+
+    for j ∈ 1:129
+        for k ∈ 1:129
+            ζhrcg[k,j] = ShallowWaters.∂x(vhrcg_, dx)[k+1,j+1] - ShallowWaters.∂y(uhrcg_, dx)[k+1,j+1]
+            ζzb[k,j] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
+            ζnoparam[k,j] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
+            ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
+            ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
+            ζ30s[k,j] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
+            ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
+            ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
+            ζmulti2[k,j] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
+            ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
+            ζmulti3more[k,j] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
+            ζmulti10[k,j] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
+            ζmulti20[k,j] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
+        end
+    end
+
+    fig = Figure(size=(1040, 520), fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζhrcg,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{\zeta}(3 \; \text{years}, x, y)"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[1,2], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζnoparam,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta(3 \; \text{years}, x, y)"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[1,4], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζzb,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{ZB20}}(3 \; \text{years}, x, y)"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[1,6], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti2,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}2}(3 \; \text{years}, x, y)"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[2,2], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti3more,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}3}(3 \; \text{years}, x, y)"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[2,4], hm1, label="1/s")
+
+    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti10,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}10}(3 \; \text{years}, x, y)"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[2,6], hm1, label="1/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[2, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # examining the vorticity of the results that diverge
+    fig = Figure(size=(950, 475), fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζzb,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{ZB20}(2000 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
+    );
+    Colorbar(fig[1,2], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζnoparam,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta(2000 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
+    );
+    Colorbar(fig[1,4], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ10s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{10}(2000 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
+    );
+    Colorbar(fig[1,6], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ20s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{20}(2000 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
+    );
+    Colorbar(fig[2,2], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ30s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{30}(2000 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
+    );
+    Colorbar(fig[2,4], hm1, label="1/s")
+
+    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti20,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}20}(2000 \; \text{days}, x, y)"),
+    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
+    );
+    Colorbar(fig[2,6], hm1, label="1/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[2, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+end
+
 function energy_plots()
 
     # Energy ############################################################################
@@ -1038,12 +1275,12 @@ function energy_plots()
 
     # same as the above but without the coarse-grained energy
     # cg, zb, nn, no param
-    t = 366
+    t = 200
     fig = Figure(size=(900, 800), fontsize=15);
 
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
+    sum(unoparam[:,:,t]).^2 .+ sum(vnoparam[1:end-1,:,t]).^2,
     colormap=:amp,
     axis=(xlabel="km", ylabel="km", title="30km resolution E(10 days, x, y), no closure"),
     colorrange=(0,
@@ -1081,6 +1318,62 @@ function energy_plots()
     );
     Colorbar(fig[2,4], hm5)
 
+    # looking at the energy in the models past the three year mark
+    t = 286
+    fig = Figure(size=(900, 800), fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2,
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), no closure"),
+    colorrange=(0,
+        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
+    );
+    Colorbar(fig[1,2], hm1)
+
+    ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2,
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), ZB20 closure"),
+    colorrange=(0,
+        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
+    );
+    Colorbar(fig[1,4], hm2)
+
+    ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    umulti3more[:,1:end-1,t].^2 .+ vmulti3more[1:end-1,:,t].^2,
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), batched 3 day day closure"),
+    colorrange=(0,
+        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
+    );
+    Colorbar(fig[2,2], hm3)
+
+    ax1, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    umulti10[:,1:end-1,t].^2 .+ vmulti10[1:end-1,:,t].^2,
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), batched 20 day closure"),
+    colorrange=(0,
+        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
+    );
+    Colorbar(fig[2,4], hm5)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
     # spatially averaged energy over integration (3 year integrations on all)
 
     oneday = []
@@ -1100,16 +1393,16 @@ function energy_plots()
     tendaynoeta = []
     multi1 = []
     multi2 = []
-    multi1_more = []
-    multi3_old = []
-    multi3_new = []
+    multi1more = []
+    multi3 = []
+    multi3more = []
     multi5 = []
     multi10 = []
     multi20 = []
     zb = []
     cghr = []
     twentydaycD = []
-    for j = 1:1096
+    for j = 1:522
         push!(cghr, sum(uhrcg[:,:,j].^2) .+ sum(vhrcg[:,:,j].^2))
 
         push!(zb, sum(uzb[:,:,j].^2) .+ sum(vzb[:,:,j].^2))
@@ -1122,11 +1415,11 @@ function energy_plots()
         # push!(twentydaycD, sum(u20scD[:,:,j].^2) .+ sum(v20scD[:,:,j].^2))
         push!(thirtyday, sum(u30s[:,:,j].^2) .+ sum(v30s[:,:,j].^2))
 
-        # push!(multi3_old, sum(umulti3_old[:,1:end-1,j].^2 .+ vmulti3_old[1:end-1,:,j].^2))
+        push!(multi3, sum(umulti3[:,:,j]).^2 .+ sum(vmulti3[:,:,j].^2))
         push!(multi1, sum(umulti1[:,:,j].^2) .+ sum(vmulti1[:,:,j].^2))
-        push!(multi1_more, sum(umulti1more[:,:,j].^2) .+ sum(vmulti1more[:,:,j].^2))
+        push!(multi1more, sum(umulti1more[:,:,j].^2) .+ sum(vmulti1more[:,:,j].^2))
         push!(multi2, sum(umulti2[:,:,j].^2) .+ sum(vmulti2[:,:,j].^2))
-        push!(multi3_new, sum(umulti3_new[:,:,j].^2) .+ sum(vmulti3_new[:,:,j].^2))
+        push!(multi3more, sum(umulti3more[:,:,j].^2) .+ sum(vmulti3more[:,:,j].^2))
         push!(multi5, sum(umulti5[:,:,j].^2) .+ sum(vmulti5[:,:,j].^2))
         push!(multi10, sum(umulti10[:,:,j].^2) .+ sum(vmulti10[:,:,j].^2))
         push!(multi20, sum(umulti20[:,:,j].^2) .+ sum(vmulti20[:,:,j].^2))
@@ -1184,9 +1477,9 @@ function energy_plots()
     tendaynoeta = []
     multi1 = []
     multi2 = []
-    # multi1_more = []
-    multi3_old = []
-    multi3_new = []
+    multi1more = []
+    multi3 = []
+    multi3more = []
     multi5 = []
     multi10 = []
     multi20 = []
@@ -1194,7 +1487,7 @@ function energy_plots()
     cghr = []
     twentydaycD = []
     for j = 1:522
-        push!(cghr, sum(uhrcg[:,:,j].^2) .+ sum(vhrcg[:,:,j].^2))
+        # push!(cghr, sum(uhrcg[:,:,j].^2) .+ sum(vhrcg[:,:,j].^2))
 
         push!(zb, sum(uzb[:,:,j].^2) .+ sum(vzb[:,:,j].^2))
         push!(noparam, sum(unoparam[:,:,j].^2) .+ sum(vnoparam[:,:,j].^2))
@@ -1208,9 +1501,10 @@ function energy_plots()
 
         # push!(multi3_old, sum(umulti3_old[:,1:end-1,j].^2 .+ vmulti3_old[1:end-1,:,j].^2))
         push!(multi1, sum(umulti1[:,:,j].^2) .+ sum(vmulti1[:,:,j].^2))
-        # push!(multi1_more, sum(umulti1more[:,:,j].^2) .+ sum(vmulti1more[:,:,j].^2))
+        push!(multi1more, sum(umulti1more[:,:,j].^2) .+ sum(vmulti1more[:,:,j].^2))
         push!(multi2, sum(umulti2[:,:,j].^2) .+ sum(vmulti2[:,:,j].^2))
-        push!(multi3_new, sum(umulti3_new[:,:,j].^2) .+ sum(vmulti3_new[:,:,j].^2))
+        push!(multi3, sum(umulti3[:,:,j].^2) .+ sum(vmulti3[:,:,j].^2))
+        push!(multi3more, sum(umulti3more[:,:,j].^2) .+ sum(vmulti3more[:,:,j].^2))
         push!(multi5, sum(umulti5[:,:,j].^2) .+ sum(vmulti5[:,:,j].^2))
         push!(multi10, sum(umulti10[:,:,j].^2) .+ sum(vmulti10[:,:,j].^2))
         push!(multi20, sum(umulti20[:,:,j].^2) .+ sum(vmulti20[:,:,j].^2))
@@ -1237,12 +1531,12 @@ function energy_plots()
     # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128^2), label="Online closure, 5 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), twentyday./ (128^2), label="Online closure, 20 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128^2), label="Online closure,  ה 30 day")
-    lines!(fig[1,1], LinRange(0, 10*365, 522), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3_old ./ (128^2), label="Online closure, multi 3 day, fewer initial conditions")
-    lines!(ax, LinRange(0, 10*365, 522), multi3_new ./ (128^2), label="Online closure, batched 3 day", color=:mediumorchid)
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128^2), label="Online closure, 30 day")
+    lines!(fig[1,1], LinRange(0, 10*365, 522), multi2 ./ (128^2), label="Online closure, batched 2 day")
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, batched 3 day, fewer initial conditions")
+    lines!(ax, LinRange(0, 10*365, 522), multi3more ./ (128^2), label="Online closure, batched 3 day", color=:mediumorchid)
     lines!(ax, LinRange(0, 10*365, 522), multi10 ./ (128^2), label="Online closure, batched 10 day", color=:teal)
-    lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
     Legend(fig[1, 2], ax)
 
     # 3 year relative error figure
@@ -1258,7 +1552,32 @@ function energy_plots()
     # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
     # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
     # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( thirtyday./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{30} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( thirtyday./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{30} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
+    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1_more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi2./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi2} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, batched 2 day")
+    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi3_new./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi3} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
+    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi10./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi10} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")#, color=:teal)
+    # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
+    Legend(fig[1, 2], ax)
+
+    # 10 year relative error figure
+    fig = Figure(size=(1000, 500), fontsize=15);
+    ax = Axis(fig[1,1],
+            xlabel="Day",
+            ylabel="Energy",
+            title="Spatially averaged energy over 3 years"
+    )
+    lines!(ax, LinRange(0, 3*365, 1096), (abs.(noparam./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    lines!(ax, LinRange(0, 3*365, 1096), (abs.(zb./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{ZB} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
+    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
+    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( thirtyday./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{30} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
     # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
     lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
     # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1_more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
