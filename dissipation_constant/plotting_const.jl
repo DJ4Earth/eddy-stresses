@@ -167,7 +167,9 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
+        initial_cond="ncfile",
+        initpath="./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves"
     );
 
     Sonline = ShallowWaters.model_setup(Ponline);
