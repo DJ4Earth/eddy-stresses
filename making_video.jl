@@ -21,18 +21,57 @@ u3smag = ncread("./dissipation_smagorinsky/results_with_parameterization/result_
 
 fig = Figure(fontsize=15);
 
-framerate = 40
-timestamps = range(1, 522, step=1)
-ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "u(x, y)")
+framerate = 30
+ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "3.75 km x-velocity")
 
-record(fig, "umulti3_moreinitconds_weeklysnapshots_tenyears.mp4", 1:522) do t
-    tempframe = umulti3[:, :, t]
+record(fig, "unoparam_zb20_multi2_3years_dailysaves.mp4", 1:1096) do t
+    tempframe = uhr_all[:, :, t]
     hm =heatmap!(ax,
-        LinRange(0, 3840, 128),
-        LinRange(0, 3840, 128),
+        LinRange(0, 3840, 1024),
+        LinRange(0, 3840, 1024),
         tempframe,
         colormap = :balance,
-        colorrange=(-maximum(abs.(uhrcg[:,:,365])),maximum(abs.(uhrcg[:,:,365])))
+        colorrange=(-maximum(abs.(uhr1[:,:,365])),maximum(abs.(uhr1[:,:,365])))
     )
     Colorbar(fig[1,2], hm, label="m/s")
+end
+
+fig = Figure(fontsize=15, size=(1000, 275));
+
+Label(
+    fig[0, 3],
+    "u-velocity over three years",
+    fontsize = 20,
+    tellwidth = false
+)
+framerate = 30
+ax1 = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "No closure")
+ax2 = Axis(fig[1, 3], xlabel="km", ylabel="km", title = "ZB20")
+ax3 = Axis(fig[1, 5], xlabel="km", ylabel="km", title = "Ensemble 2 day")
+
+record(fig, "unoparam_zb20_multi2_3years_dailysaves.mp4", 1:1096) do t
+    hm = heatmap!(ax1,
+        LinRange(0, 3840, 128),
+        LinRange(0, 3840, 128),
+        unoparam[:, :, t],
+        colormap = :balance,
+        colorrange=(-maximum(abs.(uhrcg1[:,:,365])),maximum(abs.(uhrcg1[:,:,365])))
+    )
+    Colorbar(fig[1,2], hm, label="m/s")
+    hm = heatmap!(ax2,
+        LinRange(0, 3840, 128),
+        LinRange(0, 3840, 128),
+        uzb[:, :, t],
+        colormap = :balance,
+        colorrange=(-maximum(abs.(uhrcg1[:,:,365])),maximum(abs.(uhrcg1[:,:,365])))
+    )
+    Colorbar(fig[1,4], hm, label="m/s")
+    hm = heatmap!(ax3,
+        LinRange(0, 3840, 128),
+        LinRange(0, 3840, 128),
+        umulti2[:, :, t],
+        colormap = :balance,
+        colorrange=(-maximum(abs.(uhrcg1[:,:,365])),maximum(abs.(uhrcg1[:,:,365])))
+    )
+    Colorbar(fig[1,6], hm, label="m/s")
 end
