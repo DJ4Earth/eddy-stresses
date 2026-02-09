@@ -211,33 +211,33 @@ end
 
 function load_models()
 
+    uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[1],
+        load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2")[1][:,:,2:end]; dims=3
+    );
+    uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[2],
+        load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2")[2][:,:,2:end]; dims=3
+    );
+    uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[3],
+        load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2")[3][:,:,2:end]; dims=3
+    );
 
-    # coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
-    # uhrcg1 = coarse_grained_hrstates[1];
-    # vhrcg1 = coarse_grained_hrstates[2];
-    # etahrcg1 = coarse_grained_hrstates[3];
+    uhrall = cat(
+        ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u"),
+        ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/u.nc", "u")[:,:,2:end],
+        ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/u.nc", "u")[:,:,2:end]; dims=3
+    );
 
-    coarse_grained_hrstatesnew = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2");
-    uhrcg1 = coarse_grained_hrstatesnew[1];
-    vhrcg1 = coarse_grained_hrstatesnew[2];
-    etahrcg1 = coarse_grained_hrstatesnew[3];
+    vhrall = cat(
+        ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/v.nc", "v"),
+        ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/v.nc", "v")[:,:,2:end],
+        ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/v.nc", "v")[:,:,2:end]; dims=3
+    );
 
-    coarse_grained_hrstatescont = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2");
-    uhrcg2 = coarse_grained_hrstatescont[1];
-    vhrcg2 = coarse_grained_hrstatescont[2];
-    etahrcg2 = coarse_grained_hrstatescont[3];
-
-    uhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u");
-    vhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/v.nc", "v");
-    etahr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/eta.nc", "eta");
-
-    uhr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/u.nc", "u");
-    vhr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/v.nc", "v");
-    etahr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/eta.nc", "eta");
-
-    uhr3 = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/u.nc", "u");
-    vhr3 = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/v.nc", "v");
-    etahr3 = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/eta.nc", "eta");
+    etahrall = cat(
+        ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/eta.nc", "eta"),
+        ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/eta.nc", "eta")[:,:,2:end],
+        ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/eta.nc", "eta")[:,:,2:end]; dims=3
+    );
 
     uofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/u.nc", "u");
     vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
@@ -416,10 +416,6 @@ function load_models()
     # entries 1 - 1096 correspond to daily saves over the first three years, 1097-1451 correspond to the next 7 years at weekly saves
     # these do not contain the first three years of weekly saves in the 10 year runs, since those are already accounted for
     # multi2 and multi3 have an additional 10 years of weekly saves 
-
-    uhrcgall = cat(uhrcg1, uhrcg2[:,:,2:end]; dims=3);
-    vhrcgall = cat(vhrcg1, vhrcg2[:,:,2:end]; dims=3);
-    etahrcgall = cat(etahrcg1, etahrcg2[:,:,2:end]; dims=3);
 
     unoparamall = cat(unoparam, unoparam10[:,:,157:end]; dims=3);
     vnoparamall = cat(vnoparam, vnoparam10[:,:,157:end]; dims=3);
@@ -1009,7 +1005,7 @@ function prognostic_plots()
 
 end
 
-function vorticity_plots()
+function computing_vorticity()
 
     # ∂x!(dudx, u)
     # ∂y!(dudy, u)
@@ -1115,7 +1111,8 @@ function vorticity_plots()
         end
     end
 
-    ζhr = zeros(1025,1205)
+    
+    ζhr = zeros(1025,1025)
     for j ∈ 1:1025
         for k ∈ 1:1025
             ζhr[k,j] = ShallowWaters.∂x(vhr_, Shr.grid.Δ)[k+1,j+1] - ShallowWaters.∂y(uhr_, Shr.grid.Δ)[k+1,j+1]
@@ -1143,6 +1140,215 @@ function vorticity_plots()
     # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etamulti2_,S.forcing.H)
     # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
     # qmulti2 = ((S.grid.f_q/S.grid.scale) .+ ζmulti2) ./ (S.Diag.Vorticity.h_q);
+
+
+
+    # relative vorticity probability distribution over the first three years
+    ζhrcg = zeros(129,129,1096);
+    ζzb = zeros(129,129,1096);
+    ζnoparam = zeros(129,129,1096);
+    ζmulti3more = zeros(129,129,1096);
+    ζmulti2 = zeros(129,129,1096);
+    ζmulti1more = zeros(129,129,1096);
+    ζmulti1 = zeros(129,129,1096);
+    ζ20s = zeros(129,129,1096);
+    ζ30s = zeros(129,129,1096);
+    ζ10s = zeros(129,129,1096);
+    ζmulti3 = zeros(129,129,1096);
+    ζmulti10 = zeros(129,129,1096);
+    ζmulti20 = zeros(129,129,1096);
+
+    for t = 1:1096
+
+        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcg1[:,:,t]), Float64.(vhrcg1[:,:,t]), Float64.(etahrcg1[:,:,t]), zeros(128,128), S);
+
+        uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), S);
+        unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam[:,:,t]), Float64.(vnoparam[:,:,t]), Float64.(etanoparam[:,:,t]), zeros(128,128), S);
+        # u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s[:,:,t]), Float64.(v10s[:,:,t]), Float64.(eta10s[:,:,t]), zeros(128,128), S);
+        # u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S);
+        u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S);
+        # umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti1[:,:,t]), Float64.(vmulti1[:,:,t]), Float64.(etamulti1[:,:,t]), zeros(128,128), S);
+        # umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more[:,:,t]), Float64.(vmulti1more[:,:,t]), Float64.(etamulti1more[:,:,t]), zeros(128,128), S);
+        umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), S);
+        # umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), S);
+        umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more[:,:,t]), Float64.(vmulti3more[:,:,t]), Float64.(etamulti3more[:,:,t]), zeros(128,128), S);
+        umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), S);
+        umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), S);
+
+        for j ∈ 1:129
+            for k ∈ 1:129
+                ζhrcg[k,j,t] = ShallowWaters.∂x(vhrcg_, dx)[k+1,j+1] - ShallowWaters.∂y(uhrcg_, dx)[k+1,j+1]
+                ζzb[k,j,t] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
+                ζnoparam[k,j,t] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
+                # ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
+                # ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
+                ζ30s[k,j,t] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
+                # ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
+                # ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
+                ζmulti2[k,j,t] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
+                # ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
+                ζmulti3more[k,j,t] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
+                ζmulti10[k,j,t] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
+                ζmulti20[k,j,t] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
+            end
+        end
+
+    end
+
+    # Relative vorticity plots in the last seven years
+
+    ζhrcg = zeros(129,129);
+    ζzb = zeros(129,129);
+    ζnoparam = zeros(129,129);
+    ζmulti3more = zeros(129,129);
+    ζmulti2 = zeros(129,129);
+    ζmulti1more = zeros(129,129);
+    ζmulti1 = zeros(129,129);
+    ζ20s = zeros(129,129);
+    ζ30s = zeros(129,129);
+    ζ10s = zeros(129,129);
+    ζmulti3 = zeros(129,129);
+    ζmulti10 = zeros(129,129);
+    ζmulti20 = zeros(129,129);
+
+    dx = S.grid.Δ
+    t = 522
+
+    uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb10[:,:,t]), Float64.(vzb10[:,:,t]), Float64.(etazb10[:,:,t]), zeros(128,128), S);
+    unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam10[:,:,t]), Float64.(vnoparam10[:,:,t]), Float64.(etanoparam10[:,:,t]), zeros(128,128), S);
+    u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s10[:,:,t]), Float64.(v10s10[:,:,t]), Float64.(eta10s10[:,:,t]), zeros(128,128), S);
+    u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s10[:,:,t]), Float64.(v20s10[:,:,t]), Float64.(eta20s10[:,:,t]), zeros(128,128), S);
+    u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s10[:,:,t]), Float64.(v30s10[:,:,t]), Float64.(eta30s10[:,:,t]), zeros(128,128), S);
+    umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti110[:,:,t]), Float64.(vmulti110[:,:,t]), Float64.(etamulti110[:,:,t]), zeros(128,128), S);
+    umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more10[:,:,t]), Float64.(vmulti1more10[:,:,t]), Float64.(etamulti1more10[:,:,t]), zeros(128,128), S);
+    umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti210[:,:,t]), Float64.(vmulti210[:,:,t]), Float64.(etamulti210[:,:,t]), zeros(128,128), S);
+    umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti310[:,:,t]), Float64.(vmulti310[:,:,t]), Float64.(etamulti310[:,:,t]), zeros(128,128), S);
+    umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more10[:,:,t]), Float64.(vmulti3more10[:,:,t]), Float64.(etamulti3more10[:,:,t]), zeros(128,128), S);
+    umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti1010[:,:,t]), Float64.(vmulti1010[:,:,t]), Float64.(etamulti1010[:,:,t]), zeros(128,128), S);
+    umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti2010[:,:,t]), Float64.(vmulti2010[:,:,t]), Float64.(etamulti2010[:,:,t]), zeros(128,128), S);
+
+    for j ∈ 1:129
+        for k ∈ 1:129
+            ζzb[k,j] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
+            ζnoparam[k,j] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
+            ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
+            ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
+            ζ30s[k,j] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
+            ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
+            ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
+            ζmulti2[k,j] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
+            ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
+            ζmulti3more[k,j] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
+            ζmulti10[k,j] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
+            ζmulti20[k,j] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
+        end
+    end
+
+    # probability density over ten years
+
+    ζzb = zeros(129,129,522);
+    ζnoparam = zeros(129,129,522);
+    ζmulti3more = zeros(129,129,522);
+    ζmulti2 = zeros(129,129,522);
+    ζmulti1more = zeros(129,129,522);
+    ζmulti1 = zeros(129,129,522);
+    ζ20s = zeros(129,129,522);
+    ζ30s = zeros(129,129,522);
+    ζ10s = zeros(129,129,522);
+    ζmulti3 = zeros(129,129,522);
+    ζmulti10 = zeros(129,129,522);
+    ζmulti20 = zeros(129,129,522);
+
+    for t = 1:522
+
+        uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb10[:,:,t]), Float64.(vzb10[:,:,t]), Float64.(etazb10[:,:,t]), zeros(128,128), S);
+        unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam10[:,:,t]), Float64.(vnoparam10[:,:,t]), Float64.(etanoparam10[:,:,t]), zeros(128,128), S);
+        # u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s10[:,:,t]), Float64.(v10s10[:,:,t]), Float64.(eta10s10[:,:,t]), zeros(128,128), S);
+        # u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s10[:,:,t]), Float64.(v20s10[:,:,t]), Float64.(eta20s10[:,:,t]), zeros(128,128), S);
+        u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s10[:,:,t]), Float64.(v30s10[:,:,t]), Float64.(eta30s10[:,:,t]), zeros(128,128), S);
+        # umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti110[:,:,t]), Float64.(vmulti110[:,:,t]), Float64.(etamulti110[:,:,t]), zeros(128,128), S);
+        # umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more10[:,:,t]), Float64.(vmulti1more10[:,:,t]), Float64.(etamulti1more10[:,:,t]), zeros(128,128), S);
+        umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti210[:,:,t]), Float64.(vmulti210[:,:,t]), Float64.(etamulti210[:,:,t]), zeros(128,128), S);
+        # umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti310[:,:,t]), Float64.(vmulti310[:,:,t]), Float64.(etamulti310[:,:,t]), zeros(128,128), S);
+        umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more10[:,:,t]), Float64.(vmulti3more10[:,:,t]), Float64.(etamulti3more10[:,:,t]), zeros(128,128), S);
+        # umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti1010[:,:,t]), Float64.(vmulti1010[:,:,t]), Float64.(etamulti1010[:,:,t]), zeros(128,128), S);
+        umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti2010[:,:,t]), Float64.(vmulti2010[:,:,t]), Float64.(etamulti2010[:,:,t]), zeros(128,128), S);
+
+        for j ∈ 1:129
+            for k ∈ 1:129
+                ζzb[k,j,t] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
+                ζnoparam[k,j,t] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
+                # ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
+                # ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
+                ζ30s[k,j,t] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
+                # ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
+                # ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
+                ζmulti2[k,j,t] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
+                # ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
+                ζmulti3more[k,j,t] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
+                # ζmulti10[k,j] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
+                ζmulti20[k,j,t] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
+            end
+        end
+
+        # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etazb_,S.forcing.H)
+        # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
+        # qzb = ((S.grid.f_q/S.grid.scale) + ζzb) ./ (S.Diag.Vorticity.h_q);
+
+        # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etanoparam_,S.forcing.H)
+        # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
+        # qnoparam = ((S.grid.f_q/S.grid.scale) + ζnoparam) ./ (S.Diag.Vorticity.h_q);
+
+        # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etamulti2_,S.forcing.H)
+        # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
+        # qmulti2 = ((S.grid.f_q/S.grid.scale) .+ ζmulti2) ./ (S.Diag.Vorticity.h_q);
+
+    end
+
+    ζhrcg = zeros(129,129,1461);
+
+    for t = 1:1461
+        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcgall[:,:,t]), Float64.(vhrcgall[:,:,t]), Float64.(etahrcgall[:,:,t]), zeros(128,128), S);
+        for j ∈ 1:129
+            for k ∈ 1:129
+                ζhrcg[k,j,t] = ShallowWaters.∂x(vhrcg_, dx)[k+1,j+1] - ShallowWaters.∂y(uhrcg_, dx)[k+1,j+1]
+            end
+        end
+    end
+
+end
+
+function vorticity_plots()
+
+    hrcg = kde(vec(ζhrcg)).density;
+    zb = kde(vec(ζzb)).density;
+    noparam = kde(vec(ζnoparam)).density;
+    multi2 = kde(vec( ζmulti2)).density;
+    multi3more = kde(vec(ζmulti3more)).density;
+    multi20 = kde(vec(ζmulti20)).density;
+    thirty = kde(vec(ζ30s)).density;
+
+    fig = Figure(size = (650, 420));
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Relative Vorticity",
+        ylabel = "Probability Density",
+        title = "Three-year relative vorticity probability density"
+        # yscale = log10
+    )
+    lines!(ax, kde(vec(ζhrcg)).x, hrcg, label="Coarse-grained high-resolution",color=:red)
+    lines!(ax, kde(vec(ζzb)).x, zb, label="ZB20")
+    lines!(ax, kde(vec(ζnoparam)).x, noparam, label="No closure")
+    lines!(ax, kde(vec(ζmulti2)).x, multi2, label="Batched 2 day")
+    lines!(ax, kde(vec(ζmulti3more)).x, multi3more, label="Batched 3 day")
+    lines!(ax, kde(vec(ζmulti20)).x, multi20, label="Batched 20 day")#,linestyle=:dash)
+    lines!(ax, kde(vec(ζ30s)).x, thirty, label="30 day")#, linestyle=:dashdot)
+
+    Legend(fig[1,2], ax)
+    xlims!(ax, -0.001, 0.001)
+    # ylims!(ax, 1, 10^4)
+    fig
+
 
     hrcg = kde(vec(ζhrcg));#    kde(vec(qhrcg) .- mean(qhrcg))
     zb = kde(vec(ζzb));# .- mean(qzb));
@@ -1238,167 +1444,6 @@ function vorticity_plots()
         halign = :right)
     end
 
-    # plot of the vorticity itself, for poster with different labels
-    fig = Figure(size=(1040, 520), fontsize=15);
-
-    Label(
-        fig[0, 3],
-        L"\zeta(3 \text{ years}, x, y)",
-        fontsize = 20,
-        tellwidth = false
-    )
-
-    t = 1096
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
-    LinRange(0, 3840, 1024),
-    ζhrcg[:,:],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained 3.75 km"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[1,2], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζnoparam[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution vorticity"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[1,4], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζzb,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[1,6], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti2,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[2,2], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti3more,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[2,4], hm1, label="1/s")
-
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti10,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[2,6], hm1, label="1/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-
-    # relative vorticity probability distribution over the first three years
-    ζhrcg = zeros(129,129,1096);
-    ζzb = zeros(129,129,1096);
-    ζnoparam = zeros(129,129,1096);
-    ζmulti3more = zeros(129,129,1096);
-    ζmulti2 = zeros(129,129,1096);
-    ζmulti1more = zeros(129,129,1096);
-    ζmulti1 = zeros(129,129,1096);
-    ζ20s = zeros(129,129,1096);
-    ζ30s = zeros(129,129,1096);
-    ζ10s = zeros(129,129,1096);
-    ζmulti3 = zeros(129,129,1096);
-    ζmulti10 = zeros(129,129,1096);
-    ζmulti20 = zeros(129,129,1096);
-
-    for t = 1:1096
-
-        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcg1[:,:,t]), Float64.(vhrcg1[:,:,t]), Float64.(etahrcg1[:,:,t]), zeros(128,128), S);
-
-        uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), S);
-        unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam[:,:,t]), Float64.(vnoparam[:,:,t]), Float64.(etanoparam[:,:,t]), zeros(128,128), S);
-        # u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s[:,:,t]), Float64.(v10s[:,:,t]), Float64.(eta10s[:,:,t]), zeros(128,128), S);
-        # u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S);
-        u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S);
-        # umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti1[:,:,t]), Float64.(vmulti1[:,:,t]), Float64.(etamulti1[:,:,t]), zeros(128,128), S);
-        # umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more[:,:,t]), Float64.(vmulti1more[:,:,t]), Float64.(etamulti1more[:,:,t]), zeros(128,128), S);
-        umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), S);
-        # umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), S);
-        umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more[:,:,t]), Float64.(vmulti3more[:,:,t]), Float64.(etamulti3more[:,:,t]), zeros(128,128), S);
-        umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), S);
-        umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), S);
-
-        for j ∈ 1:129
-            for k ∈ 1:129
-                ζhrcg[k,j,t] = ShallowWaters.∂x(vhrcg_, dx)[k+1,j+1] - ShallowWaters.∂y(uhrcg_, dx)[k+1,j+1]
-                ζzb[k,j,t] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
-                ζnoparam[k,j,t] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
-                # ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
-                # ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
-                ζ30s[k,j,t] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
-                # ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
-                # ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
-                ζmulti2[k,j,t] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
-                # ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
-                ζmulti3more[k,j,t] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
-                ζmulti10[k,j,t] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
-                ζmulti20[k,j,t] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
-            end
-        end
-
-    end
-
-    hrcg = kde(vec(ζhrcg)).density;
-    zb = kde(vec(ζzb)).density;
-    noparam = kde(vec(ζnoparam)).density;
-    multi2 = kde(vec( ζmulti2)).density;
-    multi3more = kde(vec(ζmulti3more)).density;
-    multi20 = kde(vec(ζmulti20)).density;
-    thirty = kde(vec(ζ30s)).density;
-
-    fig = Figure(resolution = (650, 420));
-    ax = Axis(
-        fig[1, 1],
-        xlabel = "Relative Vorticity",
-        ylabel = "Probability Density",
-        title = "Three-year relative vorticity probability density"
-        # yscale = log10
-    )
-    lines!(ax, kde(vec(ζhrcg)).x, hrcg, label="Coarse-grained high-resolution",color=:red)
-    lines!(ax, kde(vec(ζzb)).x, zb, label="ZB20")
-    lines!(ax, kde(vec(ζnoparam)).x, noparam, label="No closure")
-    lines!(ax, kde(vec(ζmulti2)).x, multi2, label="Batched 2 day")
-    lines!(ax, kde(vec(ζmulti3more)).x, multi3more, label="Batched 3 day")
-    lines!(ax, kde(vec(ζmulti20)).x, multi20, label="Batched 20 day")#,linestyle=:dash)
-    lines!(ax, kde(vec(ζ30s)).x, thirty, label="30 day")#, linestyle=:dashdot)
-
-    Legend(fig[1,2], ax)
-    xlims!(ax, -0.001, 0.001)
-    # ylims!(ax, 1, 10^4)
-    fig
-
     # examining the vorticity of the results that diverge (during first three years)
     fig = Figure(size=(950, 475), fontsize=15);
 
@@ -1468,55 +1513,6 @@ function vorticity_plots()
         font = :bold,
         padding = (0, 5, 5, 0),
         halign = :right)
-    end
-
-    # Relative vorticity plots in the last seven years
-
-    ζhrcg = zeros(129,129);
-    ζzb = zeros(129,129);
-    ζnoparam = zeros(129,129);
-    ζmulti3more = zeros(129,129);
-    ζmulti2 = zeros(129,129);
-    ζmulti1more = zeros(129,129);
-    ζmulti1 = zeros(129,129);
-    ζ20s = zeros(129,129);
-    ζ30s = zeros(129,129);
-    ζ10s = zeros(129,129);
-    ζmulti3 = zeros(129,129);
-    ζmulti10 = zeros(129,129);
-    ζmulti20 = zeros(129,129);
-
-    dx = S.grid.Δ
-    t = 522
-
-    uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb10[:,:,t]), Float64.(vzb10[:,:,t]), Float64.(etazb10[:,:,t]), zeros(128,128), S);
-    unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam10[:,:,t]), Float64.(vnoparam10[:,:,t]), Float64.(etanoparam10[:,:,t]), zeros(128,128), S);
-    u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s10[:,:,t]), Float64.(v10s10[:,:,t]), Float64.(eta10s10[:,:,t]), zeros(128,128), S);
-    u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s10[:,:,t]), Float64.(v20s10[:,:,t]), Float64.(eta20s10[:,:,t]), zeros(128,128), S);
-    u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s10[:,:,t]), Float64.(v30s10[:,:,t]), Float64.(eta30s10[:,:,t]), zeros(128,128), S);
-    umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti110[:,:,t]), Float64.(vmulti110[:,:,t]), Float64.(etamulti110[:,:,t]), zeros(128,128), S);
-    umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more10[:,:,t]), Float64.(vmulti1more10[:,:,t]), Float64.(etamulti1more10[:,:,t]), zeros(128,128), S);
-    umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti210[:,:,t]), Float64.(vmulti210[:,:,t]), Float64.(etamulti210[:,:,t]), zeros(128,128), S);
-    umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti310[:,:,t]), Float64.(vmulti310[:,:,t]), Float64.(etamulti310[:,:,t]), zeros(128,128), S);
-    umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more10[:,:,t]), Float64.(vmulti3more10[:,:,t]), Float64.(etamulti3more10[:,:,t]), zeros(128,128), S);
-    umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti1010[:,:,t]), Float64.(vmulti1010[:,:,t]), Float64.(etamulti1010[:,:,t]), zeros(128,128), S);
-    umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti2010[:,:,t]), Float64.(vmulti2010[:,:,t]), Float64.(etamulti2010[:,:,t]), zeros(128,128), S);
-
-    for j ∈ 1:129
-        for k ∈ 1:129
-            ζzb[k,j] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
-            ζnoparam[k,j] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
-            ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
-            ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
-            ζ30s[k,j] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
-            ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
-            ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
-            ζmulti2[k,j] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
-            ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
-            ζmulti3more[k,j] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
-            ζmulti10[k,j] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
-            ζmulti20[k,j] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
-        end
     end
 
     # vorticity plots in the last 7 years
@@ -1697,66 +1693,8 @@ function vorticity_plots()
 
     fig
 
-    # time averaged probability density over ten years
-
-    ζzb = zeros(129,129,522);
-    ζnoparam = zeros(129,129,522);
-    ζmulti3more = zeros(129,129,522);
-    ζmulti2 = zeros(129,129,522);
-    ζmulti1more = zeros(129,129,522);
-    ζmulti1 = zeros(129,129,522);
-    ζ20s = zeros(129,129,522);
-    ζ30s = zeros(129,129,522);
-    ζ10s = zeros(129,129,522);
-    ζmulti3 = zeros(129,129,522);
-    ζmulti10 = zeros(129,129,522);
-    ζmulti20 = zeros(129,129,522);
-
-    for t = 1:522
-
-        uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb10[:,:,t]), Float64.(vzb10[:,:,t]), Float64.(etazb10[:,:,t]), zeros(128,128), S);
-        unoparam_, vnoparam_, etanoparam_ = ShallowWaters.add_halo(Float64.(unoparam10[:,:,t]), Float64.(vnoparam10[:,:,t]), Float64.(etanoparam10[:,:,t]), zeros(128,128), S);
-        # u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s10[:,:,t]), Float64.(v10s10[:,:,t]), Float64.(eta10s10[:,:,t]), zeros(128,128), S);
-        # u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s10[:,:,t]), Float64.(v20s10[:,:,t]), Float64.(eta20s10[:,:,t]), zeros(128,128), S);
-        u30s_, v30s_, eta30s_ = ShallowWaters.add_halo(Float64.(u30s10[:,:,t]), Float64.(v30s10[:,:,t]), Float64.(eta30s10[:,:,t]), zeros(128,128), S);
-        # umulti1_, vmulti1_, etamulti1_ = ShallowWaters.add_halo(Float64.(umulti110[:,:,t]), Float64.(vmulti110[:,:,t]), Float64.(etamulti110[:,:,t]), zeros(128,128), S);
-        # umulti1more_, vmulti1more_, etamulti1more_ = ShallowWaters.add_halo(Float64.(umulti1more10[:,:,t]), Float64.(vmulti1more10[:,:,t]), Float64.(etamulti1more10[:,:,t]), zeros(128,128), S);
-        umulti2_, vmulti2_, etamulti2_ = ShallowWaters.add_halo(Float64.(umulti210[:,:,t]), Float64.(vmulti210[:,:,t]), Float64.(etamulti210[:,:,t]), zeros(128,128), S);
-        # umulti3_, vmulti3_, etamulti3_ = ShallowWaters.add_halo(Float64.(umulti310[:,:,t]), Float64.(vmulti310[:,:,t]), Float64.(etamulti310[:,:,t]), zeros(128,128), S);
-        umulti3more_, vmulti3more_, etamulti3more_ = ShallowWaters.add_halo(Float64.(umulti3more10[:,:,t]), Float64.(vmulti3more10[:,:,t]), Float64.(etamulti3more10[:,:,t]), zeros(128,128), S);
-        # umulti10_, vmulti10_, etamulti10_ = ShallowWaters.add_halo(Float64.(umulti1010[:,:,t]), Float64.(vmulti1010[:,:,t]), Float64.(etamulti1010[:,:,t]), zeros(128,128), S);
-        umulti20_, vmulti20_, etamulti20_ = ShallowWaters.add_halo(Float64.(umulti2010[:,:,t]), Float64.(vmulti2010[:,:,t]), Float64.(etamulti2010[:,:,t]), zeros(128,128), S);
-
-        for j ∈ 1:129
-            for k ∈ 1:129
-                ζzb[k,j,t] = ShallowWaters.∂x(vzb_, dx)[k+1,j+1] - ShallowWaters.∂y(uzb_, dx)[k+1,j+1]
-                ζnoparam[k,j,t] = ShallowWaters.∂x(vnoparam_, dx)[k+1,j+1] - ShallowWaters.∂y(unoparam_, dx)[k+1,j+1]
-                # ζ10s[k,j] = ShallowWaters.∂x(v10s_, dx)[k+1,j+1] - ShallowWaters.∂y(u10s_, dx)[k+1,j+1]
-                # ζ20s[k,j] = ShallowWaters.∂x(v20s_, dx)[k+1,j+1] - ShallowWaters.∂y(u20s_, dx)[k+1,j+1]
-                ζ30s[k,j,t] = ShallowWaters.∂x(v30s_, dx)[k+1,j+1] - ShallowWaters.∂y(u30s_, dx)[k+1,j+1]
-                # ζmulti1[k,j] = ShallowWaters.∂x(vmulti1_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1_, dx)[k+1,j+1]
-                # ζmulti1more[k,j] = ShallowWaters.∂x(vmulti1more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti1more_, dx)[k+1,j+1]
-                ζmulti2[k,j,t] = ShallowWaters.∂x(vmulti2_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti2_, dx)[k+1,j+1]
-                # ζmulti3[k,j] = ShallowWaters.∂x(vmulti3_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3_, dx)[k+1,j+1]
-                ζmulti3more[k,j,t] = ShallowWaters.∂x(vmulti3more_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti3more_, dx)[k+1,j+1]
-                # ζmulti10[k,j] = ShallowWaters.∂x(vmulti10_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti10_, dx)[k+1,j+1]
-                ζmulti20[k,j,t] = ShallowWaters.∂x(vmulti20_, dx)[k+1,j+1] - ShallowWaters.∂y(umulti20_, dx)[k+1,j+1]
-            end
-        end
-
-        # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etazb_,S.forcing.H)
-        # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
-        # qzb = ((S.grid.f_q/S.grid.scale) + ζzb) ./ (S.Diag.Vorticity.h_q);
-
-        # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etanoparam_,S.forcing.H)
-        # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
-        # qnoparam = ((S.grid.f_q/S.grid.scale) + ζnoparam) ./ (S.Diag.Vorticity.h_q);
-
-        # ShallowWaters.thickness!(S.Diag.VolumeFluxes.h,etamulti2_,S.forcing.H)
-        # ShallowWaters.Ixy!(S.Diag.Vorticity.h_q,S.Diag.VolumeFluxes.h)
-        # qmulti2 = ((S.grid.f_q/S.grid.scale) .+ ζmulti2) ./ (S.Diag.Vorticity.h_q);
-
-    end
+    # 10 year figure
+    cghr10_forplotting = cat(ζhrcg[:,:,1:7:1096], ζhrcg[:,:,1097:end]; dims=3)
 
     zb = kde(vec(ζzb)).density;
     noparam = kde(vec(ζnoparam)).density;
@@ -1773,18 +1711,97 @@ function vorticity_plots()
         title = "Ten-year relative vorticity probability density"
         # yscale = log10
     )
-    lines!(ax, kde(vec(ζhrcg)).x, hrcg, label="Coarse-grained high-resolution")
+    lines!(ax, kde(vec(cghr10_forplotting)).x, kde(vec(cghr10_forplotting)).density, label="Coarse-grained high-resolution", color=:red)
     lines!(ax, kde(vec(ζzb)).x, zb, label="ZB20")
     lines!(ax, kde(vec(ζnoparam)).x, noparam, label="No closure")
-    lines!(ax, kde(vec(ζmulti2)).x, multi2, label="Batched 2 day")
-    lines!(ax, kde(vec(ζmulti3more)).x, multi3more, label="Batched 3 day")
-    # lines!(ax, kde(vec(ζmulti20)).x, multi20, label="Batched 20 day",linestyle=:dash)
     lines!(ax, kde(vec(ζ30s)).x, thirty, label="30 day")#, linestyle=:dashdot)
+    lines!(ax, kde(vec(ζmulti2)).x, multi2, label="Ensemble 2 day")
+    lines!(ax, kde(vec(ζmulti3more)).x, multi3more, label="Ensemble 3 day")
+    lines!(ax, kde(vec(ζmulti20)).x, multi20, label="Ensemble 20 day")#,linestyle=:dash)
 
     Legend(fig[1,2], ax)
     xlims!(ax, -0.001, 0.001)
     # ylims!(ax, 1, 10^4)
     fig
+
+    # plot of the vorticity itself, for poster with different labels
+    fig = Figure(size=(1040, 520), fontsize=15);
+
+    Label(
+        fig[0, 3],
+        L"\zeta(3 \text{ years}, x, y)",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    t = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
+    LinRange(0, 3840, 1024),
+    ζhrcg[:,:],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained 3.75 km"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[1,2], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζnoparam[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="30 km resolution vorticity"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[1,4], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζzb,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[1,6], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti2,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[2,2], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti3more,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[2,4], hm1, label="1/s")
+
+    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti10,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    );
+    Colorbar(fig[2,6], hm1, label="1/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[2, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
 end
 
