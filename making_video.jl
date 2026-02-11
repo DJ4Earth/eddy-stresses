@@ -19,59 +19,84 @@ u20day = ncread("./dissipation_constant/results/result_online_stateweights_20day
 
 u3smag = ncread("./dissipation_smagorinsky/results_with_parameterization/result_online_stateweights_3dayoptimization_smagorinskydiffusion_startfromoffline/u.nc", "u")
 
+
 fig = Figure(fontsize=15);
 
-framerate = 30
-ax = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "3.75 km x-velocity")
+fframerate = 15
 
-record(fig, "unoparam_zb20_multi2_3years_dailysaves.mp4", 1:1096) do t
-    tempframe = uhr_all[:, :, t]
-    hm =heatmap!(ax,
-        LinRange(0, 3840, 1024),
-        LinRange(0, 3840, 1024),
-        tempframe,
-        colormap = :balance,
-        colorrange=(-maximum(abs.(uhr1[:,:,365])),maximum(abs.(uhr1[:,:,365])))
-    )
-    Colorbar(fig[1,2], hm, label="m/s")
+xs = LinRange(0, 3840, 1025)
+ys = LinRange(0, 3840, 1025)
+
+inv_scale = 1 / Shr.constants.scale
+# clim = maximum(abs.(ζhr[:,:,1000] .* inv_scale))  # compute ONCE
+clim = .0001
+
+ax = Axis(fig[1, 1],
+    xlabel = "km",
+    ylabel = "km",
+    title  = "3.75 km vorticity"
+)
+
+hm = heatmap!(
+    ax,
+    xs, ys,
+    ζhr[:, :, 1096],
+    colormap = :balance,
+    colorrange = (-clim, clim)
+)
+
+Colorbar(fig[1, 2], hm, label = "1/s")
+
+record(fig, "highres_vorticity.mp4", 1:1096; framerate = framerate) do t
+    hm[3][] = ζhr[:, :, t]
 end
 
-fig = Figure(fontsize=15, size=(1000, 275));
 
-Label(
-    fig[0, 3],
-    "u-velocity over three years",
-    fontsize = 20,
-    tellwidth = false
+# double video 
+fig = Figure(size=(900,350));
+framerate = 15
+
+xs = LinRange(0, 3840, 1025)
+ys = LinRange(0, 3840, 1025)
+
+xsl = LinRange(0, 3840, 129)
+ysl = LinRange(0, 3840, 129)
+
+clim = .0001
+
+ax1 = Axis(fig[1, 1],
+    xlabel = "km",
+    ylabel = "km",
+    title  = "3.75 km vorticity"
 )
-framerate = 30
-ax1 = Axis(fig[1, 1], xlabel="km", ylabel="km", title = "No closure")
-ax2 = Axis(fig[1, 3], xlabel="km", ylabel="km", title = "ZB20")
-ax3 = Axis(fig[1, 5], xlabel="km", ylabel="km", title = "Ensemble 2 day")
 
-record(fig, "unoparam_zb20_multi2_3years_dailysaves.mp4", 1:1096) do t
-    hm = heatmap!(ax1,
-        LinRange(0, 3840, 128),
-        LinRange(0, 3840, 128),
-        unoparam[:, :, t],
-        colormap = :balance,
-        colorrange=(-maximum(abs.(uhrcg1[:,:,365])),maximum(abs.(uhrcg1[:,:,365])))
-    )
-    Colorbar(fig[1,2], hm, label="m/s")
-    hm = heatmap!(ax2,
-        LinRange(0, 3840, 128),
-        LinRange(0, 3840, 128),
-        uzb[:, :, t],
-        colormap = :balance,
-        colorrange=(-maximum(abs.(uhrcg1[:,:,365])),maximum(abs.(uhrcg1[:,:,365])))
-    )
-    Colorbar(fig[1,4], hm, label="m/s")
-    hm = heatmap!(ax3,
-        LinRange(0, 3840, 128),
-        LinRange(0, 3840, 128),
-        umulti2[:, :, t],
-        colormap = :balance,
-        colorrange=(-maximum(abs.(uhrcg1[:,:,365])),maximum(abs.(uhrcg1[:,:,365])))
-    )
-    Colorbar(fig[1,6], hm, label="m/s")
+hm1 = heatmap!(
+    ax1,
+    xs, ys,
+    ζhr[:, :, 1],
+    colormap = :balance,
+    colorrange = (-clim, clim)
+)
+
+ax2 = Axis(fig[1, 3],
+    xlabel = "km",
+    ylabel = "km",
+    title  = "30 km vorticity"
+)
+
+hm2 = heatmap!(
+    ax2,
+    xs, ys,
+    ζnoparam[:, :, 1],
+    colormap = :balance,
+    colorrange = (-clim, clim)
+)
+
+Colorbar(fig[1, 2], hm1, label = "1/s")
+Colorbar(fig[1, 4], hm2, label = "1/s")
+
+
+record(fig, "highres_lowres_vorticity.mp4", 1:1096; framerate = framerate) do t
+    hm1[3][] = ζhr[:, :, t]
+    hm2[3][] = ζnoparam[:, :, t]
 end
