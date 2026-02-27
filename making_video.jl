@@ -56,8 +56,8 @@ end
 fig = Figure(size=(900,350));
 framerate = 15
 
-xs = LinRange(0, 3840, 1025)
-ys = LinRange(0, 3840, 1025)
+xs = LinRange(0, 3840, 129)
+ys = LinRange(0, 3840, 129)
 
 xsl = LinRange(0, 3840, 129)
 ysl = LinRange(0, 3840, 129)
@@ -67,13 +67,13 @@ clim = .0001
 ax1 = Axis(fig[1, 1],
     xlabel = "km",
     ylabel = "km",
-    title  = "3.75 km vorticity"
+    title  = "30 km vorticity, with ensemble 2 day closure"
 )
 
 hm1 = heatmap!(
     ax1,
     xs, ys,
-    ζhr[:, :, 1],
+    ζmulti2[:, :, 1],
     colormap = :balance,
     colorrange = (-clim, clim)
 )
@@ -81,13 +81,13 @@ hm1 = heatmap!(
 ax2 = Axis(fig[1, 3],
     xlabel = "km",
     ylabel = "km",
-    title  = "30 km vorticity"
+    title  = "30 km vorticity, with ensemble 3 day closure"
 )
 
 hm2 = heatmap!(
     ax2,
     xs, ys,
-    ζnoparam[:, :, 1],
+    ζmulti3more[:, :, 1],
     colormap = :balance,
     colorrange = (-clim, clim)
 )
@@ -96,7 +96,7 @@ Colorbar(fig[1, 2], hm1, label = "1/s")
 Colorbar(fig[1, 4], hm2, label = "1/s")
 
 
-record(fig, "highres_lowres_vorticity.mp4", 1:1096; framerate = framerate) do t
-    hm1[3][] = ζhr[:, :, t]
-    hm2[3][] = ζnoparam[:, :, t]
+record(fig, "multi2_multi3_vorticity.mp4", 1:1096; framerate = framerate) do t
+    hm1[3][] = ζmulti2[:, :, t]
+    hm2[3][] = ζmulti3more[:, :, t]
 end

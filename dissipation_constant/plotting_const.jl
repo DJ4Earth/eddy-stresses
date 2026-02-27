@@ -710,62 +710,152 @@ function prognostic_plots()
 
     # time-averaged eta fields
     fig = Figure(size=(1040, 520), fontsize=15);
-    # fig.layout.alignmode = Outside();
-    # Label(fig[0, :],
-    #   "3-year time-averaged sea surface height",
-    #   halign = :center,
-    #   tellwidth = false)
+    fig.layout.alignmode = Outside();
+    Label(
+        fig[0, 3],
+        "10-year averaged sea-surface height",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    # change this if you want ten year or 3 year
+    index = vcat(1:7:1096, 1097:1461)
+    total = length(index)
+    timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
+
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etahrcg,dims=3)[:,:,1] ./ 1096,
+    timeavg_hr,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Coarse-grained 3.75 km"),
-    colorrange=(-maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)),maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)))
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[1,2], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etanoparam, dims=3)[:,:,1] ./ 1096,
+    sum(etanoparam10, dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="No closure"),
-    colorrange=(-maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)),maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)))
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[1,4], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etazb, dims=3)[:,:,1] ./ 1096,
+    sum(etazb10, dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="ZB20 closure"),
-    colorrange=(-maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)),maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)))
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[1,6], hm1, label="m")
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etamulti2, dims=3)[:,:,1] ./ 1096,
+    sum(etamulti210, dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Batched 2 day closure"),
-    colorrange=(-maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)),maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)))
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[2,2], hm3, label="m")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etamulti3more, dims=3)[:,:,1] ./ 1096,
+    sum(etamulti3more10, dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Batched 3 day closure"),
-    colorrange=(-maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)),maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)))
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[2,4], hm4, label="m")
 
     ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etamulti10, dims=3)[:,:,1] ./ 1096,
+    sum(etamulti1010, dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Batched 10 day closure"),
-    colorrange=(-maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)),maximum(abs.(sum(etahrcg,dims=3)[:,:,1] ./ 1096)))
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    Colorbar(fig[2,6], hm1, label="m")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[2, 5] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # absolute difference in the time averaged ssh fields
+    index = vcat(1:7:1096, 1097:1461)
+    total = length(index)
+    timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
+
+    fig = Figure(size=(1040, 520), fontsize=15);
+    fig.layout.alignmode = Outside();
+    Label(
+        fig[0, 3],
+        L"Absolute difference between 10-year averaged $\overline{\eta}$ and parameterized models",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    timeavg_hr,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Coarse-grained 3.75 km"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    Colorbar(fig[1,2], hm1, label="m")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(sum(etanoparam10, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="No closure"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    Colorbar(fig[1,4], hm1, label="m")
+
+    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(sum(etazb10, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    Colorbar(fig[1,6], hm1, label="m")
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(sum(etamulti210, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    Colorbar(fig[2,2], hm3, label="m")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(sum(etamulti3more10, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    Colorbar(fig[2,4], hm4, label="m")
+
+    ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(sum(etamulti1010, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[2,6], hm1, label="m")
 
@@ -1298,10 +1388,10 @@ function vorticity_plots()
     t = 1096
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1025),
     LinRange(0, 3840, 1025),
-    ζhr[:,:,t],
+    ζhrch[:,:,t],
     colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title="3.75 km resolution vorticity"),# title=L"\overline{\zeta}(3 \; \text{years}, x, y), \; 3.75 \; \text{km}"),
-    colorrange=(-maximum(abs.(ζhr[:,:,t])),maximum(abs.(ζhr[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title="Fitlered, coarse-grained 3.75 km resolution vorticity"),# title=L"\overline{\zeta}(3 \; \text{years}, x, y), \; 3.75 \; \text{km}"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:,t])),maximum(abs.(ζhcgr[:,:,t])))
     );
     Colorbar(fig[1,2], hm1, label="1/s")
 
@@ -1579,7 +1669,7 @@ function vorticity_plots()
     end
 
     # plot of the vorticity itself, for poster with different labels
-    fig = Figure(size=(1040, 520), fontsize=15);
+    fig = Figure(size=(1098, 520), fontsize=15);
 
     Label(
         fig[0, 3],
@@ -1591,10 +1681,10 @@ function vorticity_plots()
     t = 1096
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
     LinRange(0, 3840, 1024),
-    ζhrcg[:,:],
+    ζhrcg[:,:, t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained 3.75 km"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    axis=(xlabel="km", ylabel="km", title="Coarse-grained 3.75 km"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     Colorbar(fig[1,2], hm1, label="1/s")
 
@@ -1602,44 +1692,44 @@ function vorticity_plots()
     LinRange(0, 3840, 128),
     ζnoparam[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution vorticity"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    axis=(xlabel="km", ylabel="km", title="No closure"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     Colorbar(fig[1,4], hm1, label="1/s")
 
     ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    ζzb,
+    ζzb[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     Colorbar(fig[1,6], hm1, label="1/s")
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    ζmulti2,
+    ζmulti2[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     Colorbar(fig[2,2], hm1, label="1/s")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    ζmulti3more,
+    ζmulti3more[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     Colorbar(fig[2,4], hm1, label="1/s")
 
     ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    ζmulti10,
+    ζmulti10[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     Colorbar(fig[2,6], hm1, label="1/s")
 
@@ -2174,7 +2264,7 @@ function energy_plots()
     ax3 = Axis(fig[2,1],
         xlabel="Day",
         # ylabel="Energy",
-        title="Spatially averaged energy over ten years"
+        title="Spatially averaged energy over 10 years"
     )
     lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
     lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="30 km resolution, no closure",color=:gray)
@@ -2193,13 +2283,25 @@ function energy_plots()
     ax4 = Axis(fig[3,1],
         xlabel="Day",
         # ylabel="Energy",
-        title="Spatially averaged energy over twenty years"
+        title="Spatially averaged energy over 20 years"
     )
     lines!(ax4, LinRange(0, 20*365, 1043), multi2all ./ (128^2), label="Online closure, ensemble 2 day",color=:teal)
     lines!(ax4, LinRange(0, 20*365, 1043), multi3all ./ (128^2), label="Online closure, ensemble 3 day",color=:darkorchid)
     # lines!(ax3, LinRange(0, 10*365, 522),  cghr10_forplotting ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:red)
 
     Legend(fig[3, 2], ax4)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[2, 1] = GridLayout()
+    gc = fig[3, 1] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)"], [ga, gb, gc])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
 
     # Diverging results
 
@@ -2209,8 +2311,9 @@ function energy_plots()
             ylabel="Energy",
             title="Spatially averaged energy over 3 years"
     )
-    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure")
-    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
+    lines!(ax, LinRange(0, 3*365, 1096),  hrcg[1:1096] ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
+    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure",color=:gray)
+    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20", color=:red)
     # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
     lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
     lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
@@ -2222,8 +2325,7 @@ function energy_plots()
     # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, ensemble 3 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
     # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, ensemble 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, ensemble 20 day", color=:darkorchid)
-    lines!(ax, LinRange(0, 3*365, 1096),  cghr ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:red)
+    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, ensemble 20 day")
     Legend(fig[1, 2], ax)
 
     ax3 = Axis(fig[2,1],
@@ -2231,16 +2333,26 @@ function energy_plots()
         # ylabel="Energy",
         title="Spatially averaged energy over ten years"
     )
-    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="30 km resolution, no closure")
-    lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20")
+    lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="30 km resolution, no closure",color=:gray)
+    lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
     # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128^2), label="Online closure, 5 day")
     lines!(ax3, LinRange(0, 10*365, 522), tenday10./ (128^2), label="Online closure, 10 day")
     lines!(ax3, LinRange(0, 10*365, 522), twentyday10./ (128^2), label="Online closure, 20 day")
     lines!(ax3, LinRange(0, 10*365, 522), thirtyday10./ (128^2), label="Online closure, 30 day")
-    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    lines!(ax3, LinRange(0, 10*365, 522),  cghr10_forplotting ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:red)
+    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128^2), label="Online closure, ensemble 20 day")
 
     Legend(fig[2, 2], ax3)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[2, 1] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
 
 end
