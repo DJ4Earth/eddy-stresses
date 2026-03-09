@@ -6,7 +6,7 @@ without all of this also running.
 function create_models()
 
     T = Float64
-    Ndays = 1
+    Ndays = 3*365
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     uhrcg = coarse_grained_hrstates[1]
     vhrcg = coarse_grained_hrstates[2]
@@ -17,6 +17,7 @@ function create_models()
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
+        output_vars=["u", "v", "η"],
         # output_dt = 1,
         # output_dt=168,
         # output_dt=12600,
@@ -24,27 +25,28 @@ function create_models()
         g=9.81,
         H=500,
         # cfl=.898,
+        ϕ = 50.,
         wind_forcing_x="double_gyre",
+        Fx0=1.2,
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
         bottom_drag="quadratic",
-        # diffusion="Smagorinsky",        # this is the only new parameter to be adjusted in the new spinups
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
         nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
+        nn_forcing_dissipation=false,
         N=1,
         α=2,
-        nx=128,
+        nx=1024,
         Ndays=Ndays,
-        # initial_cond="rest",
-        initial_cond="ncfile",
-        initpath="./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog"
+        initial_cond="rest"
+        # initial_cond="ncfile",
+        # initpath="./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog"
         # initpath = "./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves/1024_postspinup_day1-766saves"
     );
 
