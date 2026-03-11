@@ -3146,7 +3146,7 @@ function computing_ketransfer_offline()
     # Svhr = load_object("./dissipation_constant/results/true_S_SuSv_fromtimederivatives_new.jld2")[2];
 
     lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
-    nfft = nextfastfft(size(uhrcg[:,:,1]))
+    nfft = nextfastfft(size(uhrcgall[:,:,1]))
 
     totalu_hrcg = zeros(65)
     totalv_hrcg = zeros(65)
@@ -3203,9 +3203,9 @@ function computing_ketransfer_offline()
             Suhr, Svhr = compute_hrS(uhr2[:,:,t-766+1], vhr2[:,:, t-766+1])
         end
 
-        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcg[:, :, t], Suhr, nfft[1])
+        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], Suhr, nfft[1])
         fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
-        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcg[:, :, t], Svhr, nfft[1])
+        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], Svhr, nfft[1])
         fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
 
         totalu_hrcg += outu_hrcg
@@ -3219,18 +3219,18 @@ function computing_ketransfer_offline()
         # totalu_hrcg2 += outu_hrcg2
         # totalv_hrcg2 += outv_hrcg2
 
+        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcgall[:,:,t]), Float64.(vhrcgall[:,:,t]), Float64.(etahrcgall[:,:,t]), zeros(128,128), SZB);
+
         # ZB20 ############################
+        ShallowWaters.ZB_momentum(uhrcg_, vhrcg_, SZB, SZB.Diag);
 
-        # ShallowWaters.ZB_momentum(uzb, vzb, SZB, SZB.Diag);
-        # uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uhrcgall[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
+        fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vhrcgall[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
+        fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
 
-        # outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb_[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
-        # outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb_[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
-
-        # totalu_ZB += outu_ZB
-        # totalv_ZB += outv_ZB
+        totalu_ZB += outu_ZB
+        totalv_ZB += outv_ZB
 
         # 5 day optimization ################
 
