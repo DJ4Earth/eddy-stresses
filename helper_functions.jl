@@ -227,14 +227,14 @@ function compute_true_hrS()
         duhr, dvhr, detahr = single_step(Shr_, n*1800*Shr_.grid.dtint)
         duhrcg, dvhrcg, detahrcg = single_step(Slr_, n*225*Slr_.grid.dtint)
 
-        ufiltered = imfilter(duhr, reflect(ker))
-        vfiltered = imfilter(dvhr, reflect(ker))
+        dufiltered = imfilter(duhr, reflect(ker))
+        dvfiltered = imfilter(dvhr, reflect(ker))
 
-        udownsized = (ufiltered[8:8:end, 4:8:end, :] .+ ufiltered[8:8:end, 5:8:end, :]) ./ 2;
-        vdownsized = (vfiltered[4:8:end, 8:8:end, :] .+ vfiltered[5:8:end, 8:8:end, :]) ./ 2;
+        dudownsized = (dufiltered[8:8:end, 4:8:end, :] .+ dufiltered[8:8:end, 5:8:end, :]) ./ 2;
+        dvdownsized = (dvfiltered[4:8:end, 8:8:end, :] .+ dvfiltered[5:8:end, 8:8:end, :]) ./ 2;
 
-        S_u[:,:,n] .= duhrcg - udownsized
-        S_v[:,:,n] .= dvhrcg - vdownsized
+        S_u[:,:,n] .= duhrcg - dudownsized
+        S_v[:,:,n] .= dvhrcg - dvdownsized
 
     end
 
@@ -335,9 +335,9 @@ end
 
 function single_step(S, t)
 
-    uold = copy(S.Prog.u)
-    vold = copy(S.Prog.v)
-    etaold = copy(S.Prog.η)
+    # uold = copy(S.Prog.u)
+    # vold = copy(S.Prog.v)
+    # etaold = copy(S.Prog.η)
 
     # calculate PV terms for initial conditions
     urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
@@ -498,20 +498,25 @@ function single_step(S, t)
     v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
     # ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
 
-    copyto!(S.Prog.u, S.Diag.RungeKutta.u0)
-    copyto!(S.Prog.v, S.Diag.RungeKutta.v0)
-    copyto!(S.Prog.η, S.Diag.RungeKutta.η0)
+    # copyto!(S.Prog.u, S.Diag.RungeKutta.u0)
+    # copyto!(S.Prog.v, S.Diag.RungeKutta.v0)
+    # copyto!(S.Prog.η, S.Diag.RungeKutta.η0)
 
-    P = ShallowWaters.PrognosticVars{S.parameters.Tprog}(ShallowWaters.remove_halo((S.Prog.u .- uold)./S.grid.dtint,
-        (S.Prog.v .- vold)./S.grid.dtint,
-        (S.Prog.η .- etaold)./S.grid.dtint,
-        S.Prog.sst,
-        S)...
-    )
+    halo = S.grid.halo
+    haloη = S.grid.haloη
+    du = zeros(S.grid.nux, S.grid.nuy)
+    dv = zeros(S.grid.nvx, S.grid.nvy)
+    dη = zeros(S.grid.nx, S.grid.ny)
+   
+    @views du .= S.constants.scale_inv .* S.Diag.RungeKutta.u0[halo+1:end-halo, halo+1:end-halo] -
+                S.constants.scale_inv .* S.Prog.u[halo+1:end-halo, halo+1:end-halo]
 
-    # u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
-    # v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+    @views dv .= S.constants.scale_inv .* S.Diag.RungeKutta.v0[halo+1:end-halo, halo+1:end-halo] -
+                S.constants.scale_inv .* S.Prog.v[halo+1:end-halo, halo+1:end-halo]
 
-    return P.u, P.v, P.η
+    @views dη .= S.Diag.RungeKutta.η0[haloη+1:end-haloη, haloη+1:end-haloη] -
+                S.Prog.η[haloη+1:end-haloη, haloη+1:end-haloη]
+
+    return du, dv, dη
 
 end
