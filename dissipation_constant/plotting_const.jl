@@ -17,7 +17,7 @@ function create_models()
 
     Pnoparam = ShallowWaters.Parameter(T=T,
         output=true,
-        output_vars=["u", "v", "η"],
+        # output_vars=["u", "v", "η"],
         # output_dt = 1,
         # output_dt=168,
         # output_dt=12600,
@@ -25,7 +25,7 @@ function create_models()
         g=9.81,
         H=500,
         # cfl=.898,
-        ϕ = 50.,
+        ϕ = 45.,
         wind_forcing_x="double_gyre",
         Fx0=1.2,
         Lx=3840e3,
@@ -43,9 +43,11 @@ function create_models()
         N=1,
         α=2,
         nx=1024,
-        Ndays=Ndays,
-        initial_cond="rest"
-        # initial_cond="ncfile",
+        Ndays=3*365-374,
+        # initial_cond="rest"
+        initial_cond="ncfile",
+        initpath="./run_0002",
+        init_starti=374
         # initpath="./dissipation_constant/spinup_files/10yearspinup_128_noslipbc_noforcing_float64prog"
         # initpath = "./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves/1024_postspinup_day1-766saves"
     );
