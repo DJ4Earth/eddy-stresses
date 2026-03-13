@@ -1,126 +1,126 @@
 
-function compute_hrS(u, v)
+# function compute_hrS(u, v)
 
-    T = Float64
-    S_true = ShallowWaters.model_setup(T=T; output=false,
-        output_dt = 8,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=30,
-        initial_cond="ncfile",
-        initpath="./dissipation_constant/spinup_files/1024_spinup_noslip"
-    );
-    halo = S_true.grid.halo
+#     T = Float64
+#     S_true = ShallowWaters.model_setup(T=T; output=false,
+#         output_dt = 8,
+#         L_ratio=1,
+#         g=9.81,
+#         H=500,
+#         wind_forcing_x="double_gyre",
+#         Lx=3840e3,
+#         seasonal_wind_x=false,
+#         topography="flat",
+#         bc="nonperiodic",
+#         bottom_drag="quadratic",
+#         tracer_advection=false,
+#         tracer_relaxation=false,
+#         N=1,
+#         α=2,
+#         nx=1024,
+#         Ndays=30,
+#         initial_cond="ncfile",
+#         initpath="./dissipation_constant/spinup_files/1024_spinup_noslip"
+#     );
+#     halo = S_true.grid.halo
 
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+#     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    T11true = zeros(1024, 1024)
-    T22true = zeros(1024, 1024)
-    T12true = zeros(1025, 1025)
+#     T11true = zeros(1024, 1024)
+#     T22true = zeros(1024, 1024)
+#     T12true = zeros(1025, 1025)
 
-    # cgstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_111925.jld2")
-    uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),u,zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-    vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),v,zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+#     # cgstates = load_object("./offline_files/hrstates_filtered_downsized_hourly_tendays_uveta_beginsatonehour_111925.jld2")
+#     uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),u,zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+#     vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),v,zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
 
-    # moving to hr corner grid and cut off the halo
+#     # moving to hr corner grid and cut off the halo
 
-    uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
-    vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
+#     uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
+#     vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
 
-    uhrT = zeros(1024,1024)
-    vhrT = zeros(1024,1024)
+#     uhrT = zeros(1024,1024)
+#     vhrT = zeros(1024,1024)
 
-    ShallowWaters.Ixy!(uhrT,uhrq)
-    ShallowWaters.Ixy!(vhrT,vhrq)
+#     ShallowWaters.Ixy!(uhrT,uhrq)
+#     ShallowWaters.Ixy!(vhrT,vhrq)
 
-    # ubar = uhrT
-    # vbar = vhrT
+#     # ubar = uhrT
+#     # vbar = vhrT
 
-    ubar = imfilter(uhrT, reflect(ker))
-    vbar = imfilter(vhrT, reflect(ker))
+#     ubar = imfilter(uhrT, reflect(ker))
+#     vbar = imfilter(vhrT, reflect(ker))
 
-    # usqbar = ubar.^2
-    # vsqbar = vbar.^2
+#     # usqbar = ubar.^2
+#     # vsqbar = vbar.^2
 
-    usqbar = imfilter(uhrT.^2, reflect(ker))
-    vsqbar = imfilter(vhrT.^2, reflect(ker))
+#     usqbar = imfilter(uhrT.^2, reflect(ker))
+#     vsqbar = imfilter(vhrT.^2, reflect(ker))
 
-    # uvbar = uhrq .* vhrq
-    uvbar = imfilter(uhrq .* vhrq, reflect(ker))
-    ubarvbar = imfilter(uhrq, reflect(ker)) .* imfilter(vhrq, reflect(ker))
+#     # uvbar = uhrq .* vhrq
+#     uvbar = imfilter(uhrq .* vhrq, reflect(ker))
+#     ubarvbar = imfilter(uhrq, reflect(ker)) .* imfilter(vhrq, reflect(ker))
 
-    T11true[:,:] .= ubar .* ubar - usqbar
-    T22true[:,:] .= vbar .* vbar - vsqbar
-    T12true[:,:] .= ubarvbar - uvbar
+#     T11true[:,:] .= ubar .* ubar - usqbar
+#     T22true[:,:] .= vbar .* vbar - vsqbar
+#     T12true[:,:] .= ubarvbar - uvbar
 
-    T11downsized = zeros(128, 128)
-    T22downsized = zeros(128, 128)
-    T12downsized = zeros(129, 129)
+#     T11downsized = zeros(128, 128)
+#     T22downsized = zeros(128, 128)
+#     T12downsized = zeros(129, 129)
 
-    T11downsized[:,:] .= (T11true[4:8:end,4:8:end] .+ T11true[5:8:end,5:8:end] .+ T11true[4:8:end,5:8:end] .+ T11true[5:8:end,4:8:end]) ./ 4
-    T22downsized[:,:] .= (T22true[4:8:end,4:8:end] .+ T22true[5:8:end,5:8:end] .+ T22true[4:8:end,5:8:end] .+ T22true[5:8:end,4:8:end]) ./ 4
-    T12downsized[:,:] .= T12true[1:8:end,1:8:end]
+#     T11downsized[:,:] .= (T11true[4:8:end,4:8:end] .+ T11true[5:8:end,5:8:end] .+ T11true[4:8:end,5:8:end] .+ T11true[5:8:end,4:8:end]) ./ 4
+#     T22downsized[:,:] .= (T22true[4:8:end,4:8:end] .+ T22true[5:8:end,5:8:end] .+ T22true[4:8:end,5:8:end] .+ T22true[5:8:end,4:8:end]) ./ 4
+#     T12downsized[:,:] .= T12true[1:8:end,1:8:end]
     
-    Slr = ShallowWaters.model_setup(T=T; output=false,
-        output_dt = 8,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=30
-    );
-    halo = Slr.grid.halo
-    dT11dx = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy)         # derivative of T11 in the x-direction, u-grid
-    dT12dy = zeros(T,Slr.Diag.CNNVars.nux+halo,Slr.Diag.CNNVars.nuy)    # derivative of T12 in the y-direction, u-grid
-    dT12dx = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy+halo)    # derivative of T12 in the x-direction, v-grid
-    dT22dy = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)         # derivative of T22 in the y-direction, v-grid
+#     Slr = ShallowWaters.model_setup(T=T; output=false,
+#         output_dt = 8,
+#         L_ratio=1,
+#         g=9.81,
+#         H=500,
+#         wind_forcing_x="double_gyre",
+#         Lx=3840e3,
+#         seasonal_wind_x=false,
+#         topography="flat",
+#         bc="nonperiodic",
+#         bottom_drag="quadratic",
+#         tracer_advection=false,
+#         tracer_relaxation=false,
+#         N=1,
+#         α=2,
+#         nx=128,
+#         Ndays=30
+#     );
+#     halo = Slr.grid.halo
+#     dT11dx = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy)         # derivative of T11 in the x-direction, u-grid
+#     dT12dy = zeros(T,Slr.Diag.CNNVars.nux+halo,Slr.Diag.CNNVars.nuy)    # derivative of T12 in the y-direction, u-grid
+#     dT12dx = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy+halo)    # derivative of T12 in the x-direction, v-grid
+#     dT22dy = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)         # derivative of T22 in the y-direction, v-grid
 
-    ShallowWaters.∂x!(dT11dx, T11downsized)
-    ShallowWaters.∂y!(dT12dy, T12downsized)
+#     ShallowWaters.∂x!(dT11dx, T11downsized)
+#     ShallowWaters.∂y!(dT12dy, T12downsized)
 
-    ShallowWaters.∂x!(dT12dx, T12downsized)
-    ShallowWaters.∂y!(dT22dy, T22downsized)
+#     ShallowWaters.∂x!(dT12dx, T12downsized)
+#     ShallowWaters.∂y!(dT22dy, T22downsized)
 
-    S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy)             # total forcing in x-direction
-    S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)             # total forcing in y-direction
+#     S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy)             # total forcing in x-direction
+#     S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)             # total forcing in y-direction
 
-    @inbounds for j in 1:Slr.Diag.CNNVars.nuy
-        for k in 1:Slr.Diag.CNNVars.nux
-            S_u[k,j] = Slr.grid.scale * (dT11dx[k,j] + dT12dy[k+1,j])
-        end
-    end
+#     @inbounds for j in 1:Slr.Diag.CNNVars.nuy
+#         for k in 1:Slr.Diag.CNNVars.nux
+#             S_u[k,j] = Slr.grid.scale * (dT11dx[k,j] + dT12dy[k+1,j])
+#         end
+#     end
 
-    @inbounds for j in 1:Slr.Diag.CNNVars.nvy
-        for k in 1:Slr.Diag.CNNVars.nvx
-            S_v[k,j] = Slr.grid.scale * (dT22dy[k,j] + dT12dx[k,j+1])
-        end
-    end
+#     @inbounds for j in 1:Slr.Diag.CNNVars.nvy
+#         for k in 1:Slr.Diag.CNNVars.nvx
+#             S_v[k,j] = Slr.grid.scale * (dT22dy[k,j] + dT12dx[k,j+1])
+#         end
+#     end
 
-    return S_u, S_v
+#     return S_u, S_v
 
-end
+# end
 
 function compute_true_hrS()
 
@@ -202,39 +202,66 @@ function compute_true_hrS()
     S_u = zeros(127,128,1096)
     S_v = zeros(128,127,1096)
 
+    hr_du = zeros(1023,1024,1096)
+    hr_dv = zeros(1024, 1023,1096)
+    hr_deta = zeros(1024,1024,1096)
+
+    hrcg_du = zeros(127,128,1096)
+    hrcg_dv = zeros(128,127,1096)
+    hrcg_deta = zeros(128,128,1096)
+
+    Shr_ = deepcopy(Shr)
+    Slr_ = deepcopy(Slr)
+
+    thr = 1800 * Shr.grid.dtint
+    tlr = 225  * Slr.grid.dtint
+
+    duhr = zeros(Shr.grid.nux, Shr.grid.nuy)
+    dvhr = zeros(Shr.grid.nvx, Shr.grid.nvy)
+    detahr = zeros(Shr.grid.nx, Shr.grid.ny)
+
+    dulr = zeros(Slr.grid.nux, Slr.grid.nuy)
+    dvlr = zeros(Slr.grid.nvx, Slr.grid.nvy)
+    detalr = zeros(Slr.grid.nx, Slr.grid.ny)
+
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
     for n = 1:1096
 
-        if n in 1:766
-            uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr1[:,:,n], vhr1[:,:,n], etahr1[:,:,n], Shr)
-        else
-            uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr2[:,:,n-766+1], vhr2[:,:,n-766+1], etahr2[:,:,n-766+1], Shr)
-        end
+        # if n ≤ 766
+        #     uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr1[:,:,n], vhr1[:,:,n], etahr1[:,:,n], Shr)
+        # else
+        #     uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr2[:,:,n-766+1], vhr2[:,:,n-766+1], etahr2[:,:,n-766+1], Shr)
+        # end
 
-        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcg[:,:,n], vhrcg[:,:,n], etahrcg[:,:,n], Slr)
+        # uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcg[:,:,n], vhrcg[:,:,n], etahrcg[:,:,n], Slr)
 
-        Shr_ = deepcopy(Shr)
-        Slr_ = deepcopy(Slr)
+        # Shr_.Prog.u = uhr_
+        # Shr_.Prog.v = vhr_
+        # Shr_.Prog.η = etahr_
 
-        Shr_.Prog.u = uhr_
-        Shr_.Prog.v = vhr_
-        Shr_.Prog.η = etahr_
+        # Slr_.Prog.u = uhrcg_
+        # Slr_.Prog.v = vhrcg_
+        # Slr_.Prog.η = etahrcg_
 
-        Slr_.Prog.u = uhrcg_
-        Slr_.Prog.v = vhrcg_
-        Slr_.Prog.η = etahrcg_
+        # single_step!(duhr, dvhr, detahr, Shr_, n*thr)
+        # single_step!(dulr, dvlr, detalr, Slr_, n*tlr)
 
-        duhr, dvhr, detahr = single_step(Shr_, n*1800*Shr_.grid.dtint)
-        duhrcg, dvhrcg, detahrcg = single_step(Slr_, n*225*Slr_.grid.dtint)
+        # @views hr_du[:,:,n] .= duhr
+        # @views hr_dv[:,:,n] .= dvhr
+        # @views hr_deta[:,:,n] .= detahr
 
-        dufiltered = imfilter(duhr, reflect(ker))
-        dvfiltered = imfilter(dvhr, reflect(ker))
+        # @views hrcg_du[:,:,n] .= dulr
+        # @views hrcg_dv[:,:,n] .= dvlr
+        # @views hrcg_deta[:,:,n] .= detalr
 
-        dudownsized = (dufiltered[8:8:end, 4:8:end, :] .+ dufiltered[8:8:end, 5:8:end, :]) ./ 2;
-        dvdownsized = (dvfiltered[4:8:end, 8:8:end, :] .+ dvfiltered[5:8:end, 8:8:end, :]) ./ 2;
+        imfilter!(dufiltered, hr_du[:,:,n], reflect(ker))
+        imfilter!(dvfiltered, hr_dv[:,:,n], reflect(ker))
 
-        S_u[:,:,n] .= duhrcg - dudownsized
-        S_v[:,:,n] .= dvhrcg - dvdownsized
+        @views dudownsized = (dufiltered[8:8:end, 4:8:end, :] .+ dufiltered[8:8:end, 5:8:end, :]) ./ 2;
+        @views dvdownsized = (dvfiltered[4:8:end, 8:8:end, :] .+ dvfiltered[5:8:end, 8:8:end, :]) ./ 2;
+
+        @views S_u[:,:,n] .= hrcg_du[:,:,n] - dudownsized
+        @views S_v[:,:,n] .= hrcg_dv[:,:,n] - dvdownsized
 
     end
 
@@ -333,7 +360,7 @@ function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, u_fft::Matrix
     out
 end
 
-function single_step(S, t)
+function single_step!(du, dv, deta, S, t)
 
     # uold = copy(S.Prog.u)
     # vold = copy(S.Prog.v)
@@ -504,19 +531,16 @@ function single_step(S, t)
 
     halo = S.grid.halo
     haloη = S.grid.haloη
-    du = zeros(S.grid.nux, S.grid.nuy)
-    dv = zeros(S.grid.nvx, S.grid.nvy)
-    dη = zeros(S.grid.nx, S.grid.ny)
-   
-    @views du .= S.constants.scale_inv .* S.Diag.RungeKutta.u0[halo+1:end-halo, halo+1:end-halo] -
+
+    du .= S.constants.scale_inv .* S.Diag.RungeKutta.u0[halo+1:end-halo, halo+1:end-halo] -
                 S.constants.scale_inv .* S.Prog.u[halo+1:end-halo, halo+1:end-halo]
 
-    @views dv .= S.constants.scale_inv .* S.Diag.RungeKutta.v0[halo+1:end-halo, halo+1:end-halo] -
+    dv .= S.constants.scale_inv .* S.Diag.RungeKutta.v0[halo+1:end-halo, halo+1:end-halo] -
                 S.constants.scale_inv .* S.Prog.v[halo+1:end-halo, halo+1:end-halo]
 
-    @views dη .= S.Diag.RungeKutta.η0[haloη+1:end-haloη, haloη+1:end-haloη] -
+    deta .= S.Diag.RungeKutta.η0[haloη+1:end-haloη, haloη+1:end-haloη] -
                 S.Prog.η[haloη+1:end-haloη, haloη+1:end-haloη]
 
-    return du, dv, dη
+    return nothing
 
 end
