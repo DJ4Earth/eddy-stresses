@@ -7,18 +7,52 @@ function create_models()
 
     T = Float64
     Ndays = 3*365
+
+    Shr = ShallowWaters.model_setup(T=T,
+        output=true,
+        output_vars=["u", "v", "η", "ζ", "du", "dv"],
+        # output_dt = 1,
+        # output_dt=168,
+        # output_dt=12600,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        ϕ = 50.,
+        wind_forcing_x="double_gyre",
+        Fx0=1.2,
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=3*365-367,
+        initpath="./1024_postspinup_newlatandamp_days1-367"
+    );
+
+    ShallowWaters.time_integration(Shr)
+
     # coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
     # uhrcg = coarse_grained_hrstates[1]
     # vhrcg = coarse_grained_hrstates[2]
     # etahrcg = coarse_grained_hrstates[3]
 
-    # uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[1]
-    # vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[2]
-    # etahrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[3]
+    uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[1]
+    vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[2]
+    etahrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[3]
 
-    uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[1];
-    vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[2];
-    etahrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[3];
+    # uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[1];
+    # vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[2];
+    # etahrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[3];
 
     # uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/hrcg_initcond_uveta_newampandlatitude.jld2")[1];
     # vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/hrcg_initcond_uveta_newampandlatitude.jld2")[2];
@@ -159,20 +193,20 @@ function create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 3*365
+    Ndays = 7*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_vars=["u", "v", "η", "ζ"],
         # output_dt = 1,
-        # output_dt=168,
+        output_dt=168,
         # output_dt=12600,
         L_ratio=1,
         g=9.81,
         H=500,
         cfl=.898,
-        ϕ = 45.,
+        ϕ = 50.,
         wind_forcing_x="double_gyre",
-        Fx0=1.2,
+        Fx0=0.12,
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
@@ -190,7 +224,7 @@ function create_models()
         nx=128,
         Ndays=Ndays,
         initial_cond="ncfile",
-        initpath="./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves"
+        initpath="./multi3_newlatitude_3years_dailysaves/"
     );
 
     Sonline = ShallowWaters.model_setup(Ponline);
@@ -220,9 +254,9 @@ function create_models()
     end
     # Sonline.constants.cD = onlineweights[end]
 
-    Sonline.Prog.u .= copy(initial_cond[1]);
-    Sonline.Prog.v .= copy(initial_cond[2]);
-    Sonline.Prog.η .= copy(initial_cond[3]);
+    # Sonline.Prog.u .= copy(initial_cond[1]);
+    # Sonline.Prog.v .= copy(initial_cond[2]);
+    # Sonline.Prog.η .= copy(initial_cond[3]);
 
     P = ShallowWaters.time_integration(Sonline);
 
