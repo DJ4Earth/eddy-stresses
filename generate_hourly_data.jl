@@ -204,21 +204,29 @@ function filter()
     # v = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/v.nc", "v");
     # eta = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/eta.nc", "eta");
 
-    u1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/u.nc", "u");
-    v1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/v.nc", "v");
-    eta1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/eta.nc", "eta");
+    # u1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/u.nc", "u");
+    # v1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/v.nc", "v");
+    # eta1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/eta.nc", "eta");
 
-    u2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/u.nc", "u");
-    v2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/v.nc", "v");
-    eta2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/eta.nc", "eta");
+    # u2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/u.nc", "u");
+    # v2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/v.nc", "v");
+    # eta2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/eta.nc", "eta");
+
+    u1 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlatitude_days1-367/u.nc", "u");
+    v1 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlatitude_days1-367/v.nc", "v");
+    eta1 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlatitude_days1-367/eta.nc", "eta");
+
+    u2 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlat_days367-end/u.nc", "u");
+    v2 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlat_days367-end/v.nc", "v");
+    eta2 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlat_days367-end/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    ufiltered = zeros(1023, 1024, 366)
-    vfiltered = zeros(1024, 1023, 366)
-    etafiltered = zeros(1024, 1024, 366)
+    ufiltered = zeros(1023, 1024, 366);
+    vfiltered = zeros(1024, 1023, 366);
+    etafiltered = zeros(1024, 1024, 366);
 
-    for j = 1:381
+    for j = 1:366
         ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
         vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
         etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
@@ -279,15 +287,19 @@ end
 
 function downsize()
 
-    cgstates = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2");
+    # cgstates = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2");
 
-    ucg = cgstates[1];
-    vcg = cgstates[2];
-    etacg = cgstates[3];
+    # ucg = cgstates[1];
+    # vcg = cgstates[2];
+    # etacg = cgstates[3];
 
-    ucgdownsized = (ucg[8:8:end, 4:8:end] .+ ucg[8:8:end, 5:8:end]) ./ 2;
-    vcgdownsized = (vcg[4:8:end, 8:8:end] .+ vcg[5:8:end, 8:8:end]) ./ 2;
-    etacgdownsized = (etacg[4:8:end,4:8:end] .+ etacg[5:8:end,5:8:end] .+ etacg[4:8:end,5:8:end] .+ etacg[5:8:end,4:8:end]) ./ 4;
+    ucg = ufiltered;
+    vcg = vfiltered;
+    etacg = etafiltered;
+
+    ucgdownsized = (ucg[8:8:end, 4:8:end,:] .+ ucg[8:8:end, 5:8:end,:]) ./ 2;
+    vcgdownsized = (vcg[4:8:end, 8:8:end,:] .+ vcg[5:8:end, 8:8:end,:]) ./ 2;
+    etacgdownsized = (etacg[4:8:end,4:8:end,:] .+ etacg[5:8:end,5:8:end,:] .+ etacg[4:8:end,5:8:end,:] .+ etacg[5:8:end,4:8:end,:]) ./ 4;
 
     jldsave("1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2", uveta = [ucgdownsized, vcgdownsized, etacgdownsized])
 

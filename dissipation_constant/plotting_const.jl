@@ -46,9 +46,9 @@ function create_models()
     # vhrcg = coarse_grained_hrstates[2]
     # etahrcg = coarse_grained_hrstates[3]
 
-    uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[1]
-    vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[2]
-    etahrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[3]
+    uhrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[1]
+    vhrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[2]
+    etahrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[3]
 
     # uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[1];
     # vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[2];
@@ -111,14 +111,17 @@ function create_models()
 
     ShallowWaters.time_integration(Snoparam);
 
-    Ndays = 10*365
+    Ndays = 3*365
     PZB = ShallowWaters.Parameter(T=T,
         output=true,
-        output_dt=168,
+        output_vars=["u", "v", "η", "ζ"],
+        output_dt=24,
         L_ratio=1,
         g=9.81,
         H=500,
+        ϕ = 45.,
         wind_forcing_x="double_gyre",
+        Fx0=1.2,
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
@@ -153,7 +156,9 @@ function create_models()
         g=9.81,
         H=500,
         cfl=.898,
+        ϕ = 50.,
         wind_forcing_x="double_gyre",
+        Fx0=0.12,
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
@@ -169,7 +174,7 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
     );
 
     Soffline = ShallowWaters.model_setup(Poffline);
@@ -295,13 +300,13 @@ function load_models()
         ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/eta.nc", "eta")[:,:,2:end]; dims=3
     );
 
-    uofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/u.nc", "u");
-    vofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/v.nc", "v");
-    etaofflinegelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_8hoursaves/eta.nc", "eta");
+    uofflinegelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_gelu_8hoursaves/u.nc", "u");
+    vofflinegelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_gelu_8hoursaves/v.nc", "v");
+    etaofflinegelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_gelu_8hoursaves/eta.nc", "eta");
 
-    uofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/u.nc", "u");
-    vofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
-    etaofflinerelu = ncread("./results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
+    uofflinerelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/u.nc", "u");
+    vofflinerelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
+    etaofflinerelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
 
     # 3 year
 
@@ -432,6 +437,20 @@ function load_models()
     umulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/u.nc", "u");
     vmulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/v.nc", "v");
     etamulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/eta.nc", "eta");
+
+    # generalizability tests
+
+    uzb_lat = ncread("./ZB_newlat_3years_dailysaves/u.nc", "u");
+    vzb_lat = ncread("./ZB_newlat_3years_dailysaves/v.nc", "v");
+    etazb_lat = ncread("./ZB_newlat_3years_dailysaves/eta.nc", "eta");
+
+    umulti2_lat = ncread("./dissipation_constant/multi2_newlatitude_3years_dailysaves/u.nc", "u");
+    vmulti2_lat = ncread("./dissipation_constant/multi2_newlatitude_3years_dailysaves/v.nc", "v");
+    etamulti2_lat = ncread("./dissipation_constant/multi2_newlatitude_3years_dailysaves/eta.nc", "eta");
+
+    umulti3_lat = ncread("./dissipation_constant/multi3_newlatitude_3years_dailysaves/u.nc", "u");
+    vmulti3_lat = ncread("./dissipation_constant/multi3_newlatitude_3years_dailysaves/v.nc", "v");
+    etamulti3_lat = ncread("./dissipation_constant/multi3_newlatitude_3years_dailysaves/eta.nc", "eta");
 
     # the following didn't work as loss functions
 
@@ -765,19 +784,22 @@ function prognostic_plots()
     end
 
     # time-averaged eta fields
+
+    # change this if you want ten year or 3 year
+    # index = vcat(1:7:1096, 1097:1461)
+    # index = 1:1096
+    index = 1:366
+    total = length(index)
+    timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
+
     fig = Figure(size=(1040, 520), fontsize=15);
     fig.layout.alignmode = Outside();
     Label(
         fig[0, 3],
-        "10-year averaged sea-surface height",
+        "1-year averaged sea-surface height, new latitude and amplitude",
         fontsize = 20,
         tellwidth = false
     )
-
-    # change this if you want ten year or 3 year
-    index = vcat(1:7:1096, 1097:1461)
-    total = length(index)
-    timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
 
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -790,16 +812,16 @@ function prognostic_plots()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etanoparam10, dims=3)[:,:,1] ./ total,
+    sum(etamulti2_latamp[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="No closure"),
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     Colorbar(fig[1,4], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etazb10, dims=3)[:,:,1] ./ total,
+    sum(etazb_lat[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
@@ -808,12 +830,12 @@ function prognostic_plots()
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etamulti210, dims=3)[:,:,1] ./ total,
+    sum(etamulti3_lat[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,2], hm3, label="m")
+    Colorbar(fig[2,2], hm1, label="m")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -856,7 +878,7 @@ function prognostic_plots()
     fig.layout.alignmode = Outside();
     Label(
         fig[0, 3],
-        L"Absolute difference between 10-year averaged $\overline{\eta}$ and parameterized models",
+        "Absolute difference between 1-year averages, new latitude and amplitude",
         fontsize = 20,
         tellwidth = false
     )
@@ -881,7 +903,7 @@ function prognostic_plots()
 
     ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(sum(etazb10, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    abs.(sum(etazb_lat[:,:,index], dims=3)[:,:,1] ./ total .- timeavg_hr),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
@@ -890,7 +912,7 @@ function prognostic_plots()
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(sum(etamulti210, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    abs.(sum(etamulti2_latamp[:,:,index], dims=3)[:,:,1] ./ total .- timeavg_hr),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
@@ -899,7 +921,7 @@ function prognostic_plots()
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(sum(etamulti3more10, dims=3)[:,:,1] ./ total .- timeavg_hr),
+    abs.(sum(etamulti3_lat[:,:,index], dims=3)[:,:,1] ./ total .- timeavg_hr),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
@@ -2047,6 +2069,13 @@ function energy_plots()
     multi5      = zeros(Float64, N)
     multi10     = zeros(Float64, N)
     multi20     = zeros(Float64, N)
+
+    # appendix
+
+    kespec = zeros(Float64, N)
+    hybrid = zeros(Float64, N)
+    fourier = zeros(Float64, N)
+    kespecpd = zeros(Float64, N)
     for j = 1:1096
 
         zb[j] = sum(abs2, uzb[:,:,j]) + sum(abs2, vzb[:,:,j])
@@ -2063,10 +2092,10 @@ function energy_plots()
         multi10[j] = sum(abs2, umulti10[:,:,j]) + sum(abs2, vmulti10[:,:,j])
         multi20[j] = sum(abs2, umulti20[:,:,j]) + sum(abs2, vmulti20[:,:,j])
         # appendix stuff
-        # push!(kespec, sum(ukespec[:,1:end-1,j].^2 .+ vkespec[1:end-1,:,j].^2))
-        # push!(hybrid, sum(uhybrid[:,1:end-1,j].^2 .+ vhybrid[1:end-1,:,j].^2))
-        # push!(fourier, sum(ufourier[:,1:end-1,j].^2 .+ vfourier[1:end-1,:,j].^2))
-        # push!(kespecpd, sum(ukespecpd[:,1:end-1,j].^2 .+ vkespecpd[1:end-1,:,j].^2))
+        kespec[j] = sum(abs2, ukespec[:,:,j]) + sum(abs2, vkespec[:,:,j])
+        hybrid[j] = sum(abs2, uhybrid[:,:,j]) + sum(abs2, vhybrid[:,:,j])
+        fourier[j] = sum(abs2, ufourier[:,:,j]) + sum(abs2, vfourier[:,:,j])
+        kespecpd[j] = sum(abs2, ukespecpd[:,:,j]) + sum(abs2, vkespecpd[:,:,j])
         # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
@@ -3653,7 +3682,7 @@ function parameterization_S_plots()
     Smulti2.Diag.CNNVars.S_u,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"S_u \text{, ensemble 2 day}"),
-    colorrange=(-maximum(abs.(Suhr)),maximum(abs.(Suhr)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
     );
     Colorbar(fig[1,6], hm1, label="1/s")
 
@@ -3701,7 +3730,7 @@ function parameterization_S_plots()
     # comparing based on cghr snapshot results
 
     t = 1096
-    uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcg1[:,:,t]), Float64.(vhrcg1[:,:,t]), Float64.(etahrcg1[:,:,t]), zeros(128,128), S);
+    uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcgall[:,:,t]), Float64.(vhrcgall[:,:,t]), Float64.(etahrcgall[:,:,t]), zeros(128,128), S);
 
     ShallowWaters.ZB_momentum(uhrcg_, vhrcg_, Szb, Szb.Diag);
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, S20);
@@ -3731,7 +3760,7 @@ function parameterization_S_plots()
     axis=(xlabel="km", ylabel="km", title="ZB20"),
     colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
     );
-    Colorbar(fig[1,2], hm1, label=L"m/s^2")
+    Colorbar(fig[1,2], hm2, label=L"m/s^2")
 
     ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
