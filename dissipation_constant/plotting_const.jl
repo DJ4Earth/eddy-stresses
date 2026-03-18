@@ -19,7 +19,7 @@ function create_models()
         H=500,
         ϕ = 50.,
         wind_forcing_x="double_gyre",
-        Fx0=1.2,
+        Fx0=0.12,
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
@@ -36,7 +36,8 @@ function create_models()
         α=2,
         nx=1024,
         Ndays=3*365-367,
-        initpath="./1024_postspinup_newlatandamp_days1-367"
+        initial_cond="ncfile",
+        initpath="./dissipation_constant/generalizability/1024_postspinup_newlatitude/1024_postspinup_newlatitude_days1-367"
     );
 
     ShallowWaters.time_integration(Shr)
