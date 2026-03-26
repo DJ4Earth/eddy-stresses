@@ -5,6 +5,7 @@ using Lux, Random
 using DSP, FFTW, AbstractFFTs
 using ChainRules, LinearAlgebra
 using NLPModels, MadNLP
+using KernelDensity
 Enzyme.EnzymeRules.inactive(::typeof(plan_fft), args...; kwargs...) = true
 Enzyme.EnzymeRules.inactive(::typeof(plan_rfft), args...; kwargs...) = true
 Enzyme.@import_rrule(typeof(*), AbstractFFTs.Plan, AbstractArray)

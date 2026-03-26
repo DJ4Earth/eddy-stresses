@@ -42,14 +42,14 @@ function create_models()
 
     ShallowWaters.time_integration(Shr)
 
-    # coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
-    # uhrcg = coarse_grained_hrstates[1]
-    # vhrcg = coarse_grained_hrstates[2]
-    # etahrcg = coarse_grained_hrstates[3]
+    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
+    uhrcg = coarse_grained_hrstates[1]
+    vhrcg = coarse_grained_hrstates[2]
+    etahrcg = coarse_grained_hrstates[3]
 
-    uhrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[1]
-    vhrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[2]
-    etahrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[3]
+    # uhrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[1]
+    # vhrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[2]
+    # etahrcg = load_object("./dissipation_constant/generalizability_files/1024_spinup_newlatitude/hrcg_initcond_uveta_newlatitude.jld2")[3]
 
     # uhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[1];
     # vhrcg = load_object("./dissipation_constant/spinup_files/1024_spinup_newwindamp/hrcg_initcond_uveta_newamplitude.jld2")[2];
@@ -66,13 +66,13 @@ function create_models()
         output=true,
         output_vars=["u", "v", "η", "ζ"],
         # output_dt = 1,
-        # output_dt=168,
+        output_dt=168,
         # output_dt=12600,
         L_ratio=1,
         g=9.81,
         H=500,
         cfl=.898,
-        ϕ = 50.,
+        ϕ = 45.,
         wind_forcing_x="double_gyre",
         Fx0=0.12,
         Lx=3840e3,
@@ -101,8 +101,8 @@ function create_models()
 
     Snoparam = ShallowWaters.model_setup(Pnoparam);
 
-    # u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Snoparam);
-    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg,vhrcg,etahrcg,zeros(128,128),Snoparam);
+    u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg[:,:,1],vhrcg[:,:,1],etahrcg[:,:,1],zeros(128,128),Snoparam);
+    # u0, v0, eta0, _ = ShallowWaters.add_halo(uhrcg,vhrcg,etahrcg,zeros(128,128),Snoparam);
 
     initial_cond = [u0, v0, eta0];
 
@@ -377,9 +377,9 @@ function load_models()
 
     # 10 year
 
-    unoparam10 = ncread("./dissipation_constant/spinup_files/128_noparam_10year_postspinup_weeklysaves/u.nc", "u");
-    vnoparam10 = ncread("./dissipation_constant/spinup_files/128_noparam_10year_postspinup_weeklysaves/v.nc", "v");
-    etanoparam10 = ncread("./dissipation_constant/spinup_files/128_noparam_10year_postspinup_weeklysaves/eta.nc", "eta");
+    unoparam10 = ncread("./dissipation_constant/results/128_noparam_postspinup_10years_weeklysaves/u.nc", "u");
+    vnoparam10 = ncread("./dissipation_constant/results/128_noparam_postspinup_10years_weeklysaves/v.nc", "v");
+    etanoparam10 = ncread("./dissipation_constant/results/128_noparam_postspinup_10years_weeklysaves/eta.nc", "eta");
 
     u5s10 = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1day_10years_weeklysaves/u.nc", "u");
     v5s10 = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1day_10years_weeklysaves/v.nc", "v");
@@ -473,17 +473,17 @@ function load_models()
 
     # relu activation function
 
-    u1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
-    v1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
-    eta1daystaterelu = ncread("./results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
+    u1daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
+    v1daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
+    eta1daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
 
-    u5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    v5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    eta5daystaterelu = ncread("./results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
+    u5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
+    v5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
+    eta5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
 
-    ukespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    vkespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    etakespecpd1dayrelu = ncread("./results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
+    ukespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
+    vkespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
+    etakespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
@@ -787,82 +787,130 @@ function prognostic_plots()
     # time-averaged eta fields
 
     # change this if you want ten year or 3 year
-    # index = vcat(1:7:1096, 1097:1461)
+    index = vcat(1:7:1096, 1097:1461)
     # index = 1:1096
-    index = 1:366
+    # index = 1:366
     total = length(index)
     timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
 
-    fig = Figure(size=(1040, 520), fontsize=15);
+    fig = Figure(size=(850, 520), fontsize=15);
     fig.layout.alignmode = Outside();
     Label(
-        fig[0, 3],
-        "1-year averaged sea-surface height, new latitude and amplitude",
+        fig[0, 2],
+        "10-year averaged sea-surface height",
         fontsize = 20,
         tellwidth = false
     )
 
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    ax, hm = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     timeavg_hr,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained 3.75 km"),
+    axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[1,2], hm1, label="m")
+    # Colorbar(fig[1,2], hm1, label="m")
+
+    index=1:522
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(etanoparam10[:,:,index], dims=3)[:,:,1] ./ total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="No closure, 30 km"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[1,4], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etamulti2_latamp[:,:,index], dims=3)[:,:,1] ./ total,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[1,4], hm1, label="m")
-
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sum(etazb_lat[:,:,index], dims=3)[:,:,1] ./ total,
+    sum(etazb10[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[1,6], hm1, label="m")
+    # Colorbar(fig[1,6], hm1, label="m")
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    sum(etamulti3_lat[:,:,index], dims=3)[:,:,1] ./ total,
+    sum(etamulti210[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,2], hm1, label="m")
+    # Colorbar(fig[2,2], hm1, label="m")
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etamulti3more10, dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,4], hm4, label="m")
+    # Colorbar(fig[2,4], hm4, label="m")
 
-    ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etamulti1010, dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,6], hm1, label="m")
+    # Colorbar(fig[2,6], hm1, label="m")
+
+    Colorbar(fig[1:2,4], hm, label="m")
 
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
     gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # 20 year average ssh, multi2 and multi3 results
+
+    fig = Figure(size=(600, 300), fontsize=15);
+    fig.layout.alignmode = Outside();
+    Label(
+        fig[0, 1:2],
+        "20-year averaged sea-surface height",
+        fontsize = 15,
+        tellwidth = false
+    )
+
+    index = vcat(1:7:1096, 1096:1983)
+    total = length(index)
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(etamulti2all[:,:,index], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+
+    index=1:522
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(etamulti3all[:,:,index], dims=3)[:,:,1] ./ total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[1,4], hm1, label="m")
+
+    Colorbar(fig[1,3], hm, label="m")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
         font = :bold,
@@ -1174,6 +1222,138 @@ function prognostic_plots()
 
 end
 
+function ssh_variability()
+
+    # std in the spatial dimension (resulting in a two-dimensional plot of time versus std)
+
+    colors = Makie.wong_colors()
+
+    # change this if you want ten year or 3 year
+    index = vcat(1:7:1096, 1097:1461)
+    # index = 1:1096
+    # index = 1:366
+    total = length(index)
+
+    fig = Figure(size=(1100, 575), fontsize=15);
+    fig.layout.alignmode = Outside();
+    Label(
+        fig[0, 1],
+        "Sea-surface height variability (spatial)",
+        fontsize = 20,
+        tellwidth = false
+    )
+    ax = Axis(fig[1,1],xlabel="Day",ylabel="Standard-deviation")
+
+    lines!(ax, LinRange(0,10*365, 522), std(etahrcgall[:,:,index], dims=[1,2])[1:522],label="Filtered, coarse-grained 3.75 km",color=:black)
+    index=1:522
+    lines!(ax, LinRange(0,10*365, 522), std(etanoparam10[:,:,index], dims=[1,2])[index], label="No closure, 30 km",color=:gray)
+    lines!(ax, LinRange(0,10*365, 522), std(etazb10[:,:,index], dims=[1,2])[index], label="ZB20", color=:red)
+    lines!(ax, LinRange(0,10*365, 522), std(etamulti210[:,:,index], dims=[1,2])[index], label="Ensemble 2 day", color=colors[1])
+    lines!(ax, LinRange(0,10*365, 522), std(etamulti3more10[:,:,index], dims=[1,2])[index], label="Ensemble 3 day", color=colors[2])
+    lines!(ax, LinRange(0,10*365, 522), std(etamulti1010[:,:,index], dims=[1,2])[index], label="Ensemble 10 day", color=colors[3])
+    Legend(fig[2, 1], ax, orientation=:horizontal)
+
+    # std in time (resulting in a three-dimensional plot std)
+
+    colors = Makie.wong_colors()
+
+    # change this if you want ten year or 3 year
+    index = vcat(1:7:1096, 1097:1461)
+    # index = 1:1096
+    # index = 1:366
+
+    fig = Figure(size=(850, 520), fontsize=15);
+    fig.layout.alignmode = Outside();
+    Label(
+        fig[0, 2],
+        "10-year sea-surface height variability",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    temp = std(etahrcgall[:,:,index], dims=[3])[:,:,1]
+
+    ax, hm = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    temp,
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
+    colorrange=(0,maximum(abs.(temp)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+
+    index=1:522
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    std(etanoparam10[:,:,index], dims=3)[:,:,1],
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="No closure, 30 km"),
+    colorrange=(0,maximum(abs.(temp)))
+    );
+    # Colorbar(fig[1,4], hm1, label="m")
+
+    ax2, hm2 = heatmap(fig[1,3],LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    std(etazb10[:,:,index], dims=3)[:,:,1],
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(0,maximum(abs.(temp)))
+    );
+    # Colorbar(fig[1,6], hm1, label="m")
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    std(etamulti210[:,:,index], dims=3)[:,:,1],
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(0,maximum(abs.(temp)))
+    );
+    # Colorbar(fig[2,2], hm1, label="m")
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    std(etamulti3more10, dims=3)[:,:,1],
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(0,maximum(abs.(temp)))
+    );
+    # Colorbar(fig[2,4], hm4, label="m")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    std(etamulti1010, dims=3)[:,:,1],
+    colormap=:amp,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    colorrange=(0,maximum(abs.(temp)))
+    );
+    # Colorbar(fig[2,6], hm1, label="m")
+
+    Colorbar(fig[1:2,4], hm, label="m")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+
+    # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128^2), label="5 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="10 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="20 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
+    # lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="30 day")
+
+
+end
+
 function computing_vorticity()
 
     # ∂x!(dudx, u)
@@ -1250,11 +1430,10 @@ function computing_vorticity()
     ζnoparam = zeros(129,129,1096);
     ζmulti3more = zeros(129,129,1096);
     ζmulti2 = zeros(129,129,1096);
-    ζmulti1more = zeros(129,129,1096);
-    ζmulti1 = zeros(129,129,1096);
     ζ20s = zeros(129,129,1096);
     ζ30s = zeros(129,129,1096);
     ζ10s = zeros(129,129,1096);
+    ζ5s = zeros(129,129,1096)
     ζmulti3 = zeros(129,129,1096);
     ζmulti10 = zeros(129,129,1096);
     ζmulti20 = zeros(129,129,1096);
@@ -1408,6 +1587,9 @@ function vorticity_plots()
     multi2 = kde(vec( ζmulti2));
     multi3more = kde(vec(ζmulti3more));
     multi20 = kde(vec(ζmulti20));
+    five = kde(vec(ζ5s));
+    ten = kde(vec(ζ10s));
+    twenty = kde(vec(ζ20s));
     thirty = kde(vec(ζ30s));
 
     fig = Figure(size = (650, 420));
@@ -1418,14 +1600,20 @@ function vorticity_plots()
         title = "Three-year relative vorticity probability density"
         # yscale = log10
     )
-    lines!(ax, hr.x, hr.density, label="3.75 km resolution", color=:black)
-    lines!(ax, hrcg.x, hrcg.density, label="Coarse-grained 3.75 km resolution",color=:gray)
-    lines!(ax, zb.x, zb.density, label="ZB20")
-    lines!(ax, noparam.x, noparam.density, label="No closure")
-    lines!(ax, multi2.x, multi2.density, label="Ensemble 2 day")
-    lines!(ax, multi3more.x, multi3more.density, label="Ensemble 3 day")
-    lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day")#,linestyle=:dash)
-    lines!(ax, thirty.x, thirty.density, label="30 day")#, linestyle=:dashdot)
+    lines!(ax, hr.x, hr.density, label="3.75 km", color=colors[1])
+    lines!(ax, hrcg.x, hrcg.density, label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax, zb.x, zb.density, label="ZB20", color=:red)
+    lines!(ax, noparam.x, noparam.density, label="No closure, 30 km",color=:gray)
+    # lines!(ax, multi2.x, multi2.density, label="Ensemble 2 day", color=colors[2])
+    # lines!(ax, multi3more.x, multi3more.density, label="Ensemble 3 day", color=colors[3])
+    # lines!(ax, multi10.x, multi10.density, label="Ensemble 10 day", color=colors[4])
+    lines!(ax, ten.x, ten.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
+    lines!(ax, twenty.x, twenty.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
+    lines!(ax, thirty.x, thirty.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
+    lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
+
+    # lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day")#,linestyle=:dash)
+    # lines!(ax, thirty.x, thirty.density, label="30 day")#, linestyle=:dashdot)
 
     Legend(fig[1,2], ax)
     xlims!(ax, -0.000007, 0.000007)
@@ -1436,11 +1624,14 @@ function vorticity_plots()
     hr10 = kde(vec(cat(ζhr[:,:,1:7:1096], ζhr[:,:,1097:end]; dims=3)); npoints=16384);
     hrcg10 = kde(vec(cat(ζhrcg[:,:,1:7:1096], ζhrcg[:,:,1097:end]; dims=3)));
     zb10 = kde(vec(ζzb10));
+    ten10 = kde(vec(ζ10s10));
+    twenty10 = kde(vec(ζ20s10));
+    thirty10 = kde(vec(ζ30s10));
     noparam10 = kde(vec(ζnoparam10));
     multi210 = kde(vec(ζmulti210));
     multi3more10 = kde(vec(ζmulti3more10));
     multi2010 = kde(vec(ζmulti2010));
-    thirty10 = kde(vec(ζ30s10));
+    multi1010 = kde(vec(ζmulti1010));
 
     fig = Figure(size = (650, 420));
     ax = Axis(
@@ -1450,88 +1641,74 @@ function vorticity_plots()
         title = "Ten-year relative vorticity probability density"
         # yscale = log10
     )
-    lines!(ax, hr10.x, hr10.density, label="3.75 km resolution", color=:black)
-    lines!(ax, hrcg10.x, hrcg10.density, label="Coarse-grained 3.75 km resolution",color=:gray)
-    lines!(ax, zb10.x, zb10.density, label="ZB20")
-    lines!(ax, noparam10.x, noparam10.density, label="No closure")
-    lines!(ax, multi210.x, multi210.density, label="Ensemble 2 day")
-    lines!(ax, multi3more10.x, multi3more10.density, label="Ensemble 3 day")
-    lines!(ax, multi2010.x, multi2010.density, label="Ensemble 20 day")#,linestyle=:dash)
-    lines!(ax, thirty10.x, thirty10.density, label="30 day")#, linestyle=:dashdot)
+    lines!(ax, hr10.x, hr10.density, label="3.75 km", color=colors[1])
+    lines!(ax, hrcg10.x, hrcg10.density, label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax, zb10.x, zb10.density, label="ZB20", color=:red)
+    lines!(ax, noparam10.x, noparam10.density, label="No closure, 30 km",color=:gray)
+    # lines!(ax, multi210.x, multi210.density, label="Ensemble 2 day", color=colors[2])
+    # lines!(ax, multi3more10.x, multi3more10.density, label="Ensemble 3 day", color=colors[3])
+    # lines!(ax, multi1010.x, multi1010.density, label="Ensemble 10 day", color=colors[4])
+    lines!(ax, ten10.x, ten10.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
+    lines!(ax, twenty10.x, twenty10.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
+    lines!(ax, thirty10.x, thirty10.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
+    lines!(ax, multi2010.x, multi2010.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
+
     Legend(fig[1,2], ax)
     xlims!(ax, -0.000007, 0.000007)
     # ylims!(ax, 1, 10^4)
 
+    # 3 and 10 year
+
+    fig = Figure(size = (1100, 500));
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Relative Vorticity",
+        ylabel = "Probability Density",
+        title = "Three-year relative vorticity probability density"
+        # yscale = log10
+    )
+
+    ax2 = Axis(
+        fig[1, 2],
+        xlabel = "Relative Vorticity",
+        # ylabel = "Probability Density",
+        title = "Ten-year relative vorticity probability density"
+        # yscale = log10
+    )
+
+    lines!(ax, hr.x, hr.density, label="3.75 km", color=colors[1])
+    lines!(ax, hrcg.x, hrcg.density, label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax, zb.x, zb.density, label="ZB20", color=:red)
+    lines!(ax, noparam.x, noparam.density, label="No closure, 30 km",color=:gray)
+    # lines!(ax, multi2.x, multi2.density, label="Ensemble 2 day", color=colors[2])
+    # lines!(ax, multi3more.x, multi3more.density, label="Ensemble 3 day", color=colors[3])
+    # lines!(ax, multi10.x, multi10.density, label="Ensemble 10 day", color=colors[4])
+    lines!(ax, ten.x, ten.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
+    lines!(ax, twenty.x, twenty.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
+    lines!(ax, thirty.x, thirty.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
+    lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
+
+    xlims!(ax, -0.000007, 0.000007)
+    ylims!(ax, 0, 2e5)
+
+    lines!(ax2, hr10.x, hr10.density, label="3.75 km", color=colors[1])
+    lines!(ax2, hrcg10.x, hrcg10.density, label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax2, zb10.x, zb10.density, label="ZB20", color=:red)
+    lines!(ax2, noparam10.x, noparam10.density, label="No closure, 30 km",color=:gray)
+    # lines!(ax, multi210.x, multi210.density, label="Ensemble 2 day", color=colors[2])
+    # lines!(ax, multi3more10.x, multi3more10.density, label="Ensemble 3 day", color=colors[3])
+    # lines!(ax, multi1010.x, multi1010.density, label="Ensemble 10 day", color=colors[4])
+    lines!(ax2, ten10.x, ten10.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
+    lines!(ax2, twenty10.x, twenty10.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
+    lines!(ax2, thirty10.x, thirty10.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
+    lines!(ax2, multi2010.x, multi2010.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
+
+    xlims!(ax2, -0.000007, 0.000007)
+    ylims!(ax2, 0, 2e5)
+
+    Legend(fig[2, 1:2], ax, orientation = :horizontal)
+
     # plot of the vorticity itself
-    fig = Figure(size=(1040, 400), fontsize=15);
-    t = 1096
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1025),
-    LinRange(0, 3840, 1025),
-    ζhrch[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Fitlered, coarse-grained 3.75 km resolution vorticity"),# title=L"\overline{\zeta}(3 \; \text{years}, x, y), \; 3.75 \; \text{km}"),
-    colorrange=(-maximum(abs.(ζhrcg[:,:,t])),maximum(abs.(ζhcgr[:,:,t])))
-    );
-    Colorbar(fig[1,2], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζnoparam[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution vorticity"),# title=L"\zeta(3 \; \text{years}, x, y), "),
-    colorrange=(-maximum(abs.(ζhrcg[:,:,t])),maximum(abs.(ζhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,4], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζzb,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{ZB20}}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[1,6], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti2,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}2}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[2,2], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti3more,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}3}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[2,4], hm1, label="1/s")
-
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti10,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}10}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζhrcg)),maximum(abs.(ζhrcg)))
-    );
-    Colorbar(fig[2,6], hm1, label="1/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
 
     # examining the vorticity of the results that diverge (during first three years)
     fig = Figure(size=(950, 475), fontsize=15);
@@ -1604,154 +1781,12 @@ function vorticity_plots()
         halign = :right)
     end
 
-    # vorticity plots in the last 7 years
-
-    fig = Figure(size=(1040, 520), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζzb,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\overline{\zeta}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    );
-    Colorbar(fig[1,2], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζnoparam,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    );
-    Colorbar(fig[1,4], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζ10s,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{ZB20}}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    );
-    Colorbar(fig[1,6], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti2,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}2}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    );
-    Colorbar(fig[2,2], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti3more,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}3}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    );
-    Colorbar(fig[2,4], hm1, label="1/s")
-
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti10,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}10}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    );
-    Colorbar(fig[2,6], hm1, label="1/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # examining the vorticity of the results that diverge over the last seven years
-    fig = Figure(size=(950, 475), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζzb[:,:,522],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{ZB20}(2000 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb[:,:,522])),maximum(abs.(ζzb[:,:,522])))
-    );
-    Colorbar(fig[1,2], hm1, label="1/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζnoparam[:,:,522],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta(2000 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb[:,:,522])),maximum(abs.(ζzb[:,:,522])))
-    );
-    Colorbar(fig[1,4], hm1, label="1/s")
-
-    # ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # ζ10s,
-    # colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title=L"\zeta_{10}(2000 \; \text{days}, x, y)"),
-    # colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    # );
-    # Colorbar(fig[1,6], hm1, label="1/s")
-
-    # ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # ζ20s,
-    # colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title=L"\zeta_{20}(2000 \; \text{days}, x, y)"),
-    # colorrange=(-maximum(abs.(ζzb)),maximum(abs.(ζzb)))
-    # );
-    # Colorbar(fig[2,2], hm1, label="1/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζ30s[:,:,522],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{30}(2000 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb[:,:,522])),maximum(abs.(ζzb[:,:,522])))
-    );
-    Colorbar(fig[2,4], hm1, label="1/s")
-
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ζmulti20[:,:,522],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\zeta_{\text{multi}20}(2000 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(ζzb[:,:,522])),maximum(abs.(ζzb[:,:,522])))
-    );
-    Colorbar(fig[2,6], hm1, label="1/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # plot of the vorticity itself, for poster with different labels
-    fig = Figure(size=(1098, 520), fontsize=15);
+    # plot of the vorticity itself, best template
+    # stable results in first three years
+    fig = Figure(size=(900, 520), fontsize=15);
 
     Label(
-        fig[0, 3],
+        fig[0, 2],
         L"\zeta(3 \text{ years}, x, y)",
         fontsize = 20,
         tellwidth = false
@@ -1762,28 +1797,28 @@ function vorticity_plots()
     LinRange(0, 3840, 1024),
     ζhrcg[:,:, t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained 3.75 km"),
+    axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
-    Colorbar(fig[1,2], hm1, label="1/s")
+    # Colorbar(fig[1,2], hm1, label="1/s")
 
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζnoparam[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="No closure"),
+    axis=(xlabel="km", ylabel="km", title="No closure, 30 km"),
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
-    Colorbar(fig[1,4], hm1, label="1/s")
+    # Colorbar(fig[1,4], hm1, label="1/s")
 
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζzb[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
-    Colorbar(fig[1,6], hm1, label="1/s")
+    # Colorbar(fig[1,6], hm1, label="1/s")
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -1792,32 +1827,197 @@ function vorticity_plots()
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
-    Colorbar(fig[2,2], hm1, label="1/s")
+    # Colorbar(fig[2,2], hm1, label="1/s")
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζmulti3more[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
-    Colorbar(fig[2,4], hm1, label="1/s")
+    # Colorbar(fig[2,4], hm1, label="1/s")
 
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζmulti10[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
-    Colorbar(fig[2,6], hm1, label="1/s")
+    # Colorbar(fig[2,6], hm1, label="1/s")
+
+    Colorbar(fig[1:2,4], hm1, label="1/s")
 
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
     gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # examining the vorticity of the results that diverge over the last seven years
+    # results in first 3 years
+    fig = Figure(size=(900, 520), fontsize=15);
+
+    Label(
+        fig[0, 2],
+        L"\zeta(3 \text{ years}, x, y)",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    t = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
+    LinRange(0, 3840, 1024),
+    ζhrcg[:,:, t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[1,2], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζzb[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[1,4], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ10s[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="10 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[1,6], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ20s[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="20 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[2,2], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ30s[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="30 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[2,4], hm1, label="1/s")
+
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti20[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 20 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[2,6], hm1, label="1/s")
+
+    Colorbar(fig[1:2,4], hm1, label="1/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # diverging results in final 7 years
+    fig = Figure(size=(900, 520), fontsize=15);
+
+    Label(
+        fig[0, 2],
+        L"\zeta(10 \text{ years}, x, y)",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    t = 522
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
+    LinRange(0, 3840, 1024),
+    ζhrcg[:,:,end],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[1,2], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζzb10[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[1,4], hm1, label="1/s")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ10s10[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="10 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[1,6], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ20s10[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="20 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[2,2], hm1, label="1/s")
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζ30s10[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="30 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[2,4], hm1, label="1/s")
+
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ζmulti2010[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 20 day"),
+    colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
+    );
+    # Colorbar(fig[2,6], hm1, label="1/s")
+
+    Colorbar(fig[1:2,4], hm1, label="1/s")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
@@ -2077,6 +2277,7 @@ function energy_plots()
     hybrid = zeros(Float64, N)
     fourier = zeros(Float64, N)
     kespecpd = zeros(Float64, N)
+
     for j = 1:1096
 
         zb[j] = sum(abs2, uzb[:,:,j]) + sum(abs2, vzb[:,:,j])
@@ -2114,9 +2315,10 @@ function energy_plots()
     multi210 = zeros(Float64, N)
     multi310 = zeros(Float64, N)
     multi3more10 = zeros(Float64, N)
-    multi510 = zeros(Float64, N)
+    # multi510 = zeros(Float64, N)
     multi1010 = zeros(Float64, N)
     multi2010 = zeros(Float64, N)
+
     for j = 1:522
 
         zb10[j] = sum(abs2, uzb10[:,:,j]) + sum(abs2, vzb10[:,:,j])
@@ -2133,14 +2335,6 @@ function energy_plots()
         # multi510[j] = sum(abs2, umulti510[:,:,j]) + sum(abs2, vmulti510[:,:,j])
         multi1010[j] = sum(abs2, umulti1010[:,:,j]) + sum(abs2, vmulti1010[:,:,j])
         multi2010[j] = sum(abs2, umulti2010[:,:,j]) + sum(abs2, vmulti2010[:,:,j])
-        # appendix stuff
-        # push!(kespec, sum(ukespec10[:,1:end-1,j].^2 .+ vkespec10[1:end-1,:,j].^2))
-        # push!(hybrid, sum(uhybrid10[:,1:end-1,j].^2 .+ vhybrid10[1:end-1,:,j].^2))
-        # push!(fourier, sum(ufourier10[:,1:end-1,j].^2 .+ vfourier10[1:end-1,:,j].^2))
-        # push!(kespecpd, sum(ukespecpd10[:,1:end-1,j].^2 .+ vkespecpd10[1:end-1,:,j].^2))
-        # push!(relu1day, sum(uonline1dayrelu10[:,1:end-1,j].^2 .+ vonline1dayrelu10[1:end-1,:,j].^2))
-        # push!(relu5day, sum(uonline5dayrelu10[:,1:end-1,j].^2 .+ vonline5dayrelu10[1:end-1,:,j].^2))
-        # push!(reluKEspec, sum(uonlinekespecpdrelu10[:,1:end-1,j].^2 .+ vonlinekespecpdrelu10[1:end-1,:,j].^2))
 
     end
 
@@ -2305,82 +2499,85 @@ function energy_plots()
     # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
     Legend(fig[1, 2], ax)
 
-    fig = Figure(size=(1200, 500), fontsize=15);
-    lines(fig[1,1], LinRange(0, 3*365, 1096), cghr ./ (128^2), label="KE spectrum", 
-        axis=(
-            xlabel="Day",
-            ylabel="Energy",
-            title="Spatially averaged energy over 3 years"
-        )
+    fig = Figure(size=(1100, 500), fontsize=15);
+    ax = Axis(fig[1,1], xlabel="Day",ylabel="Energy",title="Spatially averaged energy over 3 years")
+    lines!(ax, LinRange(0, 3*365, 1096), hrcg[1:1096]./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black
     )
     # lines!(fig[1,1], LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), hybrid./ (128^2), label="Hybrid")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), kespec./ (128^2), label="KE spectrum")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), kespecpd./ (128^2), label="KE spectrum percent-difference")
-    lines!(fig[1,1], LinRange(0, 3*365, 1096), fourier./ (128^2), label="Fourier")
-    axislegend(position = (0,1))
+    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20",color=:red)
+    lines!(ax, LinRange(0, 3*365, 1096), hybrid./ (128^2), label="Hybrid")
+    lines!(ax, LinRange(0, 3*365, 1096), kespec./ (128^2), label="KE spectrum")
+    lines!(ax, LinRange(0, 3*365, 1096), kespecpd./ (128^2), label="KE spectrum percent-difference")
+    lines!(ax, LinRange(0, 3*365, 1096), fourier./ (128^2), label="Fourier")
+    # axislegend(position = (0,1))
+
+    Legend(fig[2, 1], ax, orientation = :horizontal)
+
 
     # 3 year, 10 year, 20 year
 
-    fig = Figure(size=(1000, 750), fontsize=15);
-    ax = Axis(fig[1,1],
-            xlabel="Day",
-            ylabel="Energy",
-            title="Spatially averaged energy over 3 years"
-    )
-    lines!(ax, LinRange(0, 3*365, 1096),  hrcg[1:1096] ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
-    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure",color=:gray)
-    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20", color=:red)
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
-    lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, ensemble 2 day", color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, ensemble 3 day",color=:darkorchid)
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, ensemble 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, ensemble 20 day",color=:green)
-    Legend(fig[1, 2], ax)
+    colors = Makie.wong_colors()
+
+    fig = Figure(size=(1000, 600), fontsize=15);
+    # ax = Axis(fig[1,1],
+    #         # xlabel="Day",
+    #         ylabel="Energy",
+    #         title="Spatially averaged energy over 3 years"
+    # )
+    # lines!(ax, LinRange(0, 3*365, 1096),  hrcg[1:1096] ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
+    # lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="No closure, 30 km",color=:gray)
+    # lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20", color=:red)
+    # # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
+    # # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
+    # # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
+    # # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
+    # # lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="30 day")
+    # # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
+    # # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Ensemble 2 day", color=colors[1])
+    # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Ensemble 3 day",color=colors[2])
+    # # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
+    # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Ensemble 10 day",color=colors[3])#, color=:teal)
+    # # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Ensemble 20 day",color=:green)
+    # # Legend(fig[1, 2], ax)
 
     hrcg_10 = cat(hrcg[1:7:1096], hrcg[1097:end];dims=1)
-    ax3 = Axis(fig[2,1],
-        xlabel="Day",
-        # ylabel="Energy",
+    ax3 = Axis(fig[1,1],
+        # xlabel="Day",
+        ylabel="Energy",
         title="Spatially averaged energy over 10 years"
     )
     lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
-    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="30 km resolution, no closure",color=:gray)
+    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="No closure, 30 km",color=:gray)
     lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
     # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128^2), label="Online closure, 5 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), twentyday./ (128^2), label="Online closure, 20 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128^2), label="Online closure, 30 day")
-    lines!(ax3, LinRange(0, 10*365, 522), multi210 ./ (128^2), label="Online closure, ensemble 2 day",color=:teal)
+    lines!(ax3, LinRange(0, 10*365, 522), multi210 ./ (128^2), label="Ensemble 2 day",color=colors[1])
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, batched 3 day, fewer initial conditions")
-    lines!(ax3, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Online closure, ensemble 3 day",color=:darkorchid)
-    lines!(ax3, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Online closure, ensemble 10 day", color=:green)
+    lines!(ax3, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Ensemble 3 day",color=colors[2])
+    lines!(ax3, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Ensemble 10 day",color=colors[3])
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    Legend(fig[2, 2], ax3)
+    # Legend(fig[2, 2], ax3)
 
-    ax4 = Axis(fig[3,1],
+    ax4 = Axis(fig[2,1],
         xlabel="Day",
-        # ylabel="Energy",
+        ylabel="Energy",
         title="Spatially averaged energy over 20 years"
     )
-    lines!(ax4, LinRange(0, 20*365, 1043), multi2all ./ (128^2), label="Online closure, ensemble 2 day",color=:teal)
-    lines!(ax4, LinRange(0, 20*365, 1043), multi3all ./ (128^2), label="Online closure, ensemble 3 day",color=:darkorchid)
+    lines!(ax4, LinRange(0, 20*365, 1043), multi2all ./ (128^2), label="Online closure, ensemble 2 day",color=colors[1])
+    lines!(ax4, LinRange(0, 20*365, 1043), multi3all ./ (128^2), label="Online closure, ensemble 3 day",color=colors[2])
     # lines!(ax3, LinRange(0, 10*365, 522),  cghr10_forplotting ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:red)
 
-    Legend(fig[3, 2], ax4)
+    # Legend(fig[3, 2], ax4)
+
+    Legend(fig[3, 1], ax, orientation = :horizontal)
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[2, 1] = GridLayout()
     gc = fig[3, 1] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)"], [ga, gb, gc])
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
         font = :bold,
@@ -2391,44 +2588,46 @@ function energy_plots()
 
     # Diverging results
 
-    fig = Figure(size=(1000, 750), fontsize=15);
+    fig = Figure(size=(1100, 750), fontsize=15);
     ax = Axis(fig[1,1],
-            xlabel="Day",
+            # xlabel="Day",
             ylabel="Energy",
             title="Spatially averaged energy over 3 years"
     )
     lines!(ax, LinRange(0, 3*365, 1096),  hrcg[1:1096] ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
-    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure",color=:gray)
+    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="No closure, 30 km",color=:gray)
     lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20", color=:red)
-    # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128^2), label="5 day")
+    lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="10 day")
+    lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="20 day")
     # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
+    lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="30 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, ensemble 2 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, ensemble 3 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
     # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, ensemble 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, ensemble 20 day")
-    Legend(fig[1, 2], ax)
+    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Ensemble 20 day")
+    # Legend(fig[1, 2], ax)
 
     ax3 = Axis(fig[2,1],
         xlabel="Day",
-        # ylabel="Energy",
+        ylabel="Energy",
         title="Spatially averaged energy over ten years"
     )
     lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
-    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="30 km resolution, no closure",color=:gray)
+    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="No closure, 30 km",color=:gray)
     lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128^2), label="Online closure, 5 day")
-    lines!(ax3, LinRange(0, 10*365, 522), tenday10./ (128^2), label="Online closure, 10 day")
-    lines!(ax3, LinRange(0, 10*365, 522), twentyday10./ (128^2), label="Online closure, 20 day")
-    lines!(ax3, LinRange(0, 10*365, 522), thirtyday10./ (128^2), label="Online closure, 30 day")
-    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128^2), label="Online closure, ensemble 20 day")
+    # lines!(ax3, LinRange(0, 10*365, 522), fiveday10./ (128^2), label="5 day")
+    lines!(ax3, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
+    lines!(ax3, LinRange(0, 10*365, 522), twentyday10./ (128^2), label="20 day")
+    lines!(ax3, LinRange(0, 10*365, 522), thirtyday10./ (128^2), label="30 day")
+    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128^2), label="Ensemble 20 day")
 
-    Legend(fig[2, 2], ax3)
+    # Legend(fig[2, 2], ax3)
+
+    Legend(fig[3, 1], ax, orientation = :horizontal)
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[2, 1] = GridLayout()
@@ -2452,7 +2651,7 @@ function spectrum_plots()
     # imfilter(hru[:,:,j], reflect(ker))
 
     # for first three years
-    totalstates = 1096 # saved every 8 hours (this is when the hr cg and low resolution match up)
+    totalstates = 1096
 
     # for all ten years
     totalstates = 1461
@@ -2777,34 +2976,37 @@ function spectrum_plots()
         yscale=log10,
         xlabel="Wavelength (km)",
         ylabel=L"\text{KE(k) } (m^3/s^2)", xreversed=true,
-        xticks=[700, 100, 30, 10, 2],
+        xticks=[700, 400, 100, 30, 10, 2],
         title="3-year averaged kinetic energy spectrum"
     )
-    ax2 = Axis(fig[2,1],
+    ax2 = Axis(fig[1,1],
         xscale=log10,
         yscale=log10,
         xlabel="Wavelength (km)",
         ylabel=L"\text{KE(k) } (m^3/s^2)", xreversed=true,
-        xticks=[700, 100, 30, 10, 2],
+        xticks=[700, 400, 100, 30, 10, 2],
         title="3-year averaged kinetic energy spectrum"
     )
-    lines!(ax, lr_wl[2:end], (up_cghr_avg[2:end] + vp_cghr_avg[2:end])/totalstates, label="Filtered, coarse-grained 3.75km resolution", color=:black)
+    lines!(ax, lr_wl[2:end], (up_cghr_avg[2:end] + vp_cghr_avg[2:end])/totalstates, label="Filtered, coarse-grained 3.75 km", color=:black)
     lines!(ax, lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/totalstates, label="ZB20", color=:red)
-    lines!(ax, lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30 km resolution, no closure", color=:gray)
+    lines!(ax, lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="No closure, 30 km", color=:gray)
 
     # lines!(ax, lr_wl[2:end], (up_multi1_avg[2:end] + vp_multi1_avg[2:end])/1096, label="Online NN closure, batched 1 day")#, linestyle=:dash)
     lines!(ax, lr_wl[2:end], (up_multi2_avg[2:end] + vp_multi2_avg[2:end])/totalstates, label="Ensemble 2 day")#, linestyle=:dash)
     lines!(ax, lr_wl[2:end], (up_multi3more_avg[2:end] + vp_multi3more_avg[2:end])/totalstates, label="Ensemble 3 day")#, linestyle=:dashdot)
     lines!(ax, lr_wl[2:end], (up_multi10_avg[2:end] + vp_multi10_avg[2:end])/totalstates, label="Ensemble 10 day")#,linestyle=:dot)
-    # lines!(ax, lr_wl[2:end], (up_multi20_avg[2:end] + vp_multi20_avg[2:end])/totalstates, label="Ensemble 20 day")#, color=:red)
 
-    lines!(ax2, lr_wl[2:end], (up_cghr_avg[2:end] + vp_cghr_avg[2:end])/totalstates, label="Filtered, coarse-grained 3.75km resolution", color=:black)
+    lines!(ax2, lr_wl[2:end], (up_cghr_avg[2:end] + vp_cghr_avg[2:end])/totalstates, label="Filtered, coarse-grained 3.75 km", color=:black)
     lines!(ax2, lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/totalstates, label="ZB20", color=:red)
-    lines!(ax2, lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="30 km resolution, no closure", color=:gray)
+    lines!(ax2, lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="No closure, 30 km", color=:gray)
     lines!(ax2, lr_wl[2:end], (up_5day_avg[2:end] + vp_5day_avg[2:end])/1096, label="5 day")
     lines!(ax2, lr_wl[2:end], (up_10day_avg[2:end] + vp_10day_avg[2:end])/1096, label="10 day")
     lines!(ax2, lr_wl[2:end], (up_20day_avg[2:end] + vp_20day_avg[2:end])/1096, label="20 day")
     lines!(ax2, lr_wl[2:end], (up_30day_avg[2:end] + vp_30day_avg[2:end])/1096, label="30 day")#, linestyle=:dashdot)
+    lines!(ax, lr_wl[2:end], (up_multi20_avg[2:end] + vp_multi20_avg[2:end])/totalstates, label="Ensemble 20 day")#, color=:red)
+
+    Legend(fig[1, 2], ax2, orientation = :vertical)
+
 
     # lines!(fig[1,1], lr_wl[2:end], (up_5dayeta_avg[2:end] + vp_5dayeta_avg[2:end])/1098, label="Online NN closure, 5 day with eta")
     # lines!(fig[1,1], lr_wl[2:end], (up_geluKEspec_avg[2:end] + vp_geluKEspec_avg[2:end])/31, label="Online NN closure, KE spec")
@@ -2865,6 +3067,30 @@ end
 # where ^* is the complex conjugate. It's not clear to me if S should come from the same
 # timestep or the prior, because the prior is what when into computing u and v
 function computing_ketransfer()
+
+    # computing the true subgrid forcing
+    duhrcg = load_object("./dissipation_constant/hrcgtendencies_dudvdeta.jld2")[1];
+    dvhrcg = load_object("./dissipation_constant/hrcgtendencies_dudvdeta.jld2")[2];
+
+    duhr = load_object("./dissipation_constant/hrtendencies_dudvdeta.jld2")[1];
+    dvhr = load_object("./dissipation_constant/hrtendencies_dudvdeta.jld2")[2];
+
+    Su_true = zeros(127, 128, 1096)
+    Sv_true = zeros(128, 127, 1096)
+
+    for j = 1:1096
+
+        dufiltered = imfilter(@view(duhr[:, :, j]), reflect(ker))
+        dvfiltered = imfilter(@view(dvhr[:,:,j]), reflect(ker))
+    
+        duhrdownsized = (dufiltered[8:8:end, 4:8:end] .+ dufiltered[8:8:end, 5:8:end]) .* 0.5
+        dvhrdownsized = (dvfiltered[4:8:end, 8:8:end] .+ dvfiltered[5:8:end, 8:8:end]) .* 0.5
+
+        Su_true[:,:,j] .= (duhrcg[:,:,j]./384) - (duhrdownsized[:,:,1]./48)
+        Sv_true[:,:,j] .= (dvhrcg[:,:,j]./384) - (dvhrdownsized[:,:,1]./48)
+
+    end
+
     T = Float64
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
@@ -2934,12 +3160,9 @@ function computing_ketransfer()
     # Smulti1more = ShallowWaters.model_setup(Ponline);
     Smulti2 = ShallowWaters.model_setup(Ponline);
 
-    # coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
-    # uhrcg = coarse_grained_hrstates[1];
-    # vhrcg = coarse_grained_hrstates[2];
-
-    # Suhr = load_object("./dissipation_constant/results/true_S_SuSv_fromtimederivatives_new.jld2")[1];
-    # Svhr = load_object("./dissipation_constant/results/true_S_SuSv_fromtimederivatives_new.jld2")[2];
+    true_S = load_object("./dissipation_constant/trueS_fromtendencies_SuSv_032526.jld2");
+    Suhr = true_S[1];
+    Svhr = true_S[2];
 
     lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcg[:,:,1]))
@@ -2992,41 +3215,26 @@ function computing_ketransfer()
     totalstates = 1096
     for t = 1:totalstates
 
-        # coarse-grained high-resolution computation, corrected setup
-        if t in 1:766
-            Suhr, Svhr = compute_hrS(uhr1[:,:,t], vhr1[:,:, t])
-        else
-            Suhr, Svhr = compute_hrS(uhr2[:,:,t-766+1], vhr2[:,:, t-766+1])
-        end
-
-        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcg[:, :, t], Suhr, nfft[1])
+        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], Suhr[:,:,t], nfft[1])
         fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
-        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcg[:, :, t], Svhr, nfft[1])
+        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], Svhr[:,:,t], nfft[1])
         fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
 
         totalu_hrcg += outu_hrcg
         totalv_hrcg += outv_hrcg
 
-        # outu_hrcg2, inputu_hrcg2, inputSu_hrcg2 = paddingu(uhrcg2[:, :, t], Suhr2[:,:,t], nfft[1])
-        # fft2pow2radial!(outu_hrcg2, rfft(inputu_hrcg2), rfft(inputSu_hrcg2), nfft...)
-        # outv_hrcg2, inputv_hrcg2, inputSv_hrcg2 = paddingv(vhrcg2[:, :, t], Svhr2[:,:,t], nfft[1])
-        # fft2pow2radial!(outv_hrcg2, rfft(inputv_hrcg2), rfft(inputSv_hrcg2), nfft...)
-
-        # totalu_hrcg2 += outu_hrcg2
-        # totalv_hrcg2 += outv_hrcg2
-
         # ZB20 ############################
 
-        # ShallowWaters.ZB_momentum(uzb, vzb, SZB, SZB.Diag);
-        # uzb, vzb, etazb = ShallowWaters.add_halo(Float64.(uzb_[:,:,t]), Float64.(vzb_[:,:,t]), Float64.(etazb_[:,:,t]), zeros(128,128), SZB);
+        uzb_, vzb_, _ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), SZB);
+        ShallowWaters.ZB_momentum(uzb_, vzb_, SZB, SZB.Diag);
 
-        # outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb_[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
-        # outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb_[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
+        fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
+        fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
 
-        # totalu_ZB += outu_ZB
-        # totalv_ZB += outv_ZB
+        totalu_ZB += outu_ZB
+        totalv_ZB += outv_ZB
 
         # 5 day optimization ################
 
@@ -3042,27 +3250,27 @@ function computing_ketransfer()
 
         # 20 day optimization ##############
 
-        # u20, v20, _ = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
-        # ShallowWaters.CNN_momentum(u20, v20, S20)
-        # outu_20, inputu_20, inputSu_20 = paddingu(u20day[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
-        # outv_20, inputv_20, inputSv_20 = paddingv(v20day[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
+        u20, v20, _ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S20);
+        ShallowWaters.CNN_momentum(u20, v20, S20)
+        outu_20, inputu_20, inputSu_20 = paddingu(u20s[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
+        outv_20, inputv_20, inputSv_20 = paddingv(v20s[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
 
-        # totalu_20 += outu_20
-        # totalv_20 += outv_20
+        totalu_20 += outu_20
+        totalv_20 += outv_20
 
         # 30 day optimization ###############
 
-        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
-        # ShallowWaters.CNN_momentum(u30, v30, S30)
-        # outu_30, inputu_30, inputSu_30 = paddingu(u30day[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
-        # outv_30, inputv_30, inputSv_30 = paddingv(v30day[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
+        u30, v30, _ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S30);
+        ShallowWaters.CNN_momentum(u30, v30, S30)
+        outu_30, inputu_30, inputSu_30 = paddingu(u30s[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
+        outv_30, inputv_30, inputSv_30 = paddingv(v30s[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
 
-        # totalu_30 += outu_30
-        # totalv_30 += outv_30
+        totalu_30 += outu_30
+        totalv_30 += outv_30
 
         # batched 1 day wtih fewer initial conditions (35) ################
 
@@ -3090,27 +3298,28 @@ function computing_ketransfer()
 
         # batched 2 day ##################################
 
-        # umulti2_, vmulti2_, _ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), Smulti2);
-        # ShallowWaters.CNN_momentum(umulti2_, vmulti2_, Smulti2)
-        # outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], Smulti2.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
-        # outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], Smulti2.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
+        umulti2_, vmulti2_, _ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), Smulti2);
+        ShallowWaters.CNN_momentum(umulti2_, vmulti2_, Smulti2)
 
-        # totalu_multi2 += outu_multi2
-        # totalv_multi2 += outv_multi2
+        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], Smulti2.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
+        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], Smulti2.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
+
+        totalu_multi2 += outu_multi2
+        totalv_multi2 += outv_multi2
 
         # batched 3 day ###########################
 
-        # umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
-        # ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
-        # outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
-        # outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
+        umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
+        ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
 
-        # totalu_multi3 += outu_multi3
-        # totalv_multi3 += outv_multi3
+        totalu_multi3 += outu_multi3
+        totalv_multi3 += outv_multi3
 
         # batched 5 day ######################
 
@@ -3126,27 +3335,27 @@ function computing_ketransfer()
 
         # batched 10 day #####################
 
-        # umulti10_, vmulti10_, _ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), Smulti10);
-        # ShallowWaters.CNN_momentum(umulti10_, vmulti10_, Smulti10)
-        # outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], Smulti10.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
-        # outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], Smulti10.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
+        umulti10_, vmulti10_, _ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), Smulti10);
+        ShallowWaters.CNN_momentum(umulti10_, vmulti10_, Smulti10)
+        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], Smulti10.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
+        outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], Smulti10.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
 
-        # totalu_multi10 += outu_multi10
-        # totalv_multi10 += outv_multi10
+        totalu_multi10 += outu_multi10
+        totalv_multi10 += outv_multi10
 
         # batched 20 day #####################
 
-        # umulti20_, vmulti20_, _ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), Smulti20);
-        # ShallowWaters.CNN_momentum(umulti20_, vmulti20_, Smulti20)
-        # outu_multi20, inputu_multi20, inputSu_multi20 = paddingu(umulti20[:, :, t], Smulti20.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi20, rfft(inputu_multi20), rfft(inputSu_multi20), nfft...)
-        # outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[:, :, t], Smulti20.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi20, rfft(inputv_multi20), rfft(inputSv_multi20), nfft...)
+        umulti20_, vmulti20_, _ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), Smulti20);
+        ShallowWaters.CNN_momentum(umulti20_, vmulti20_, Smulti20)
+        outu_multi20, inputu_multi20, inputSu_multi20 = paddingu(umulti20[:, :, t], Smulti20.Diag.CNNVars.S_u, nfft[1])
+        fft2pow2radial!(outu_multi20, rfft(inputu_multi20), rfft(inputSu_multi20), nfft...)
+        outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[:, :, t], Smulti20.Diag.CNNVars.S_v, nfft[1])
+        fft2pow2radial!(outv_multi20, rfft(inputv_multi20), rfft(inputSv_multi20), nfft...)
 
-        # totalu_multi20 += outu_multi20
-        # totalv_multi20 += outv_multi20
+        totalu_multi20 += outu_multi20
+        totalv_multi20 += outv_multi20
 
     end
 end
@@ -3441,39 +3650,10 @@ end
 
 function ketransfer_plots()
 
-    totalu_hrcg = load_object("./dissipation_constant/spinup_files/hrcg_ketransfer_fromapprox_correctedsetup_uv_3years.jld2")[1];
-    totalv_hrcg = load_object("./dissipation_constant/spinup_files/hrcg_ketransfer_fromapprox_correctedsetup_uv_3years.jld2")[2];
-
-    totalu_ZB = load_object("./dissipation_constant/results/zb20_ketransfer_uv_3years.jld2")[1];
-    totalv_ZB = load_object("./dissipation_constant/results/zb20_ketransfer_uv_3years.jld2")[2];
-
-    totalu_30 = load_object("./dissipation_constant/results/30day_stateloss_ketransfer_uv_3years.jld2")[1];
-    totalv_30 = load_object("./dissipation_constant/results/30day_stateloss_ketransfer_uv_3years.jld2")[2];
-
-    totalu_20 = load_object("./dissipation_constant/results/20day_stateloss_ketransfer_uv_3years.jld2")[1];
-    totalv_20 = load_object("./dissipation_constant/results/20day_stateloss_ketransfer_uv_3years.jld2")[2];
-    
-    totalu_5 = load_object("./dissipation_constant/results/5day_ketransfer_uv_3years.jld2")[1];
-    totalv_5 = load_object("./dissipation_constant/results/5day_ketransfer_uv_3years.jld2")[2];
-
-    totalu_multi3_old = load_object("./dissipation_constant/results/multi3day_stateloss_3-25-30-40-50-60-80-initdays_ketransfer_uv_3years.jld2")[1];
-    totalv_multi3_old = load_object("./dissipation_constant/results/multi3day_stateloss_3-25-30-40-50-60-80-initdays_ketransfer_uv_3years.jld2")[2];
-
-    totalu_multi3_new = load_object("./dissipation_constant/results/multi3day_stateloss_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_ketransfer_uv_3years.jld2")[1]
-    totalv_multi3_new = load_object("./dissipation_constant/results/multi3day_stateloss_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_ketransfer_uv_3years.jld2")[2]
-
-    totalu_multi5 = load_object("./dissipation_constant/results/multi5day_stateloss_3-30-50-80-initdays_ketransfer_uv_3years.jld2")[1];
-    totalv_multi5 = load_object("./dissipation_constant/results/multi5day_stateloss_3-30-50-80-initdays_ketransfer_uv_3years.jld2")[2];
-
-    totalu_multi10 = load_object("./dissipation_constant/results/multi10day_stateloss_5-20-35-50-65-75initdays_ketransfer_uv_3years.jld2")[1];
-    totalv_multi10 = load_object("./dissipation_constant/results/multi10day_stateloss_5-20-35-50-65-75initdays_ketransfer_uv_3years.jld2")[2];
-
-    totalu_multi20 = load_object("./dissipation_constant/results/multi20day_stateloss_5-25-45-65initdays_ketransfer_uv_3years.jld2")[1];
-    totalv_multi20 = load_object("./dissipation_constant/results/multi20day_stateloss_5-25-45-65initdays_ketransfer_uv_3years.jld2")[2];
-
     lr_freq = 1/30 .* freq(periodogram(u20s[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcg[:,:,1]))
 
+    s = 1096 * 30000 * 64
     fig = Figure(size=(800, 300), fontsize=15);
     ax = Axis(fig[1,1],
         xscale = log10,
@@ -3481,24 +3661,25 @@ function ketransfer_plots()
         ylabel="KE(k)",
         title="Kinetic energy transfer"
     )
-    lines!(ax, lr_freq.*(totalu_hrcg + totalv_hrcg) / 1096, label="Subgrid forcing")
-    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB) / 1098, label="ZB20")
-    lines!(ax, lr_freq.*(totalu_multi1 + totalv_multi1) / 1096, label="Batched 1 day optimization")
-    # lines!(ax, lr_freq.*(totalu_multi1more + totalv_multi1more) / 1096, label="Batched 1 day optimization, more init conditions")
-    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2) / 1096, label="Batched 2 day optimization")
+    lines!(ax, lr_freq.*(totalu_hrcg + totalv_hrcg)/1096, label="Subgrid forcing")
+    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB) / s, label="ZB20")
+    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2) / s, label="Ensemble 2 day")
 
-    lines!(ax, lr_freq.*(totalu_30 + totalv_30) / 1096, label="30 day optimization")
-    lines!(ax, lr_freq.*(totalu_20 + totalv_20) / 1096, label="20 day optimization")
-    # lines!(ax, lr_freq.*(totalu_multi3_old + totalv_multi3_old) / 1096, label="Multi 3 day state optimization old")
-    lines!(ax, lr_freq.*(totalu_multi3_new + totalv_multi3_new) / 1096, label="Multi 3 day state optimization")
-    lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
-    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10) / 1096, label="Multi 10 day state optimization")
-    lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / 1096, label="Multi 20 day state optimization")
+    # lines!(ax, lr_freq.*(totalu_30 + totalv_30) / s, label="30 day")
+    # lines!(ax, lr_freq.*(totalu_20 + totalv_20) / s, label="20 day")
+    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3) / s, label="Ensemble 3 day")
+    # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
+    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10) / s, label="Ensemble 10 day")
+    # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
     Legend(fig[1,2], ax)
 
 end
 
 function parameterization_S_plots()
+
+    true_S = load_object("./dissipation_constant/trueS_fromtendencies_SuSv_032526.jld2");
+    Suhr = true_S[1];
+    Svhr = true_S[2];
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,
@@ -3629,13 +3810,6 @@ function parameterization_S_plots()
     # plot within the first three years
     t = 1096
 
-    # coarse-grained high-resolution computation, corrected setup
-    if t in 1:766
-        Suhr, Svhr = compute_hrS(uhr1[:,:,t], vhr1[:,:, t])
-    else
-        Suhr, Svhr = compute_hrS(uhr2[:,:,t-766+1], vhr2[:,:, t-766+1])
-    end
-
     uzb_, vzb_, etazb_ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), S);
     u10s_, v10s_, eta10s_ = ShallowWaters.add_halo(Float64.(u10s[:,:,t]), Float64.(v10s[:,:,t]), Float64.(eta10s[:,:,t]), zeros(128,128), S);
     u20s_, v20s_, eta20s_ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S);
@@ -3662,55 +3836,55 @@ function parameterization_S_plots()
 
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Suhr,
+    Suhr[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"\overline{S_u}(3 \; \text{years}, x, y)"),
-    colorrange=(-maximum(abs.(Suhr)),maximum(abs.(Suhr)))
+    colorrange=(-maximum(abs.(Suhr[:,:,t])),maximum(abs.(Suhr[:,:,t])))
     );
     Colorbar(fig[1,2], hm1, label="1/s")
-
+ 
     ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Szb.Diag.ZBVars.S_u,
+    Szb.Diag.ZBVars.S_u ./ Szb.grid.Δ,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"S_u \text{, ZB20}"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(Suhr[:,:,t])),maximum(abs.(Suhr[:,:,t])))
     );
     Colorbar(fig[1,4], hm1, label="1/s")
 
     ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti2.Diag.CNNVars.S_u,
+    Smulti2.Diag.CNNVars.S_u ./ Smulti2.grid.Δ,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"S_u \text{, ensemble 2 day}"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(-maximum(abs.(Suhr[:,:,t])),maximum(abs.(Suhr[:,:,t])))
     );
     Colorbar(fig[1,6], hm1, label="1/s")
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti3.Diag.CNNVars.S_u,
+    Smulti3.Diag.CNNVars.S_u ./ Smulti3.grid.Δ,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"S_u \text{, ensemble 3 day}"),
-    colorrange=(-maximum(abs.(Suhr)),maximum(abs.(Suhr)))
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(-maximum(abs.(Suhr[:,:,t])),maximum(abs.(Suhr[:,:,t])))
     );
     Colorbar(fig[2,2], hm1, label="1/s")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    S20.Diag.CNNVars.S_u,
+    Smulti10.Diag.CNNVars.S_u./ Smulti10.grid.Δ,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"S_u \text{, 10 day}"),
-    colorrange=(-maximum(abs.(Suhr)),maximum(abs.(Suhr)))
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    colorrange=(-maximum(abs.(Suhr[:,:,t])),maximum(abs.(Suhr[:,:,t])))
     );
     Colorbar(fig[2,4], hm1, label="1/s")
 
     ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    S30.Diag.CNNVars.S_u,
+    S30.Diag.CNNVars.S_u ./ S30.grid.Δ,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"S_u \text{, 30 day}"),
-    colorrange=(-maximum(abs.(Suhr)),maximum(abs.(Suhr)))
+    axis=(xlabel="km", ylabel="km", title="30 day"),
+    colorrange=(-maximum(abs.(Suhr[:,:,t])),maximum(abs.(Suhr[:,:,t])))
     );
     Colorbar(fig[2,6], hm1, label="1/s")
 
@@ -3754,59 +3928,60 @@ function parameterization_S_plots()
         tellwidth = false
     )
 
+    s = Szb.grid.Δ * Szb.grid.scale
     ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Szb.Diag.ZBVars.S_u,
+    Szb.Diag.ZBVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
     );
     Colorbar(fig[1,2], hm2, label=L"m/s^2")
 
     ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Soffline.Diag.CNNVars.S_u,
+    Soffline.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u ./ s)))
     );
-    Colorbar(fig[1,4], hm1, label=L"m/s^2")
+    Colorbar(fig[1,4], hm2, label=L"m/s^2")
 
     ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti2.Diag.CNNVars.S_u,
+    Smulti2.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
     );
-    Colorbar(fig[1,6], hm1, label=L"m/s^2")
+    Colorbar(fig[1,6], hm2, label=L"m/s^2")
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti3.Diag.CNNVars.S_u,
+    Smulti3.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
     );
-    Colorbar(fig[2,2], hm1, label=L"m/s^2")
+    Colorbar(fig[2,2], hm2, label=L"m/s^2")
 
     ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti10.Diag.CNNVars.S_u,
+    Smulti10.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
     );
-    Colorbar(fig[2,4], hm1, label=L"m/s^2")
+    Colorbar(fig[2,4], hm2, label=L"m/s^2")
 
     ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    S30.Diag.CNNVars.S_u,
+    S30.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="30 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u)),maximum(abs.(Szb.Diag.ZBVars.S_u)))
+    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
     );
-    Colorbar(fig[2,6], hm1, label=L"m/s^2")
+    Colorbar(fig[2,6], hm2, label=L"m/s^2")
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
@@ -3900,6 +4075,55 @@ function parameterization_S_plots()
         halign = :right)
     end
 
+    # true S plots
+    fig = Figure(size=(900, 350), fontsize=15);
+    j = 1096
+    Label(
+        fig[0, 2],
+        "True SGS forcing",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    Suhr[:,:,j],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="u-component"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-2.5e-5, 2.5e-5)
+    );
+    Colorbar(fig[1,2], hm2, label=L"m/s^2")
+
+    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    Svhr[:,:,j],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="v-component"),
+    # colorrange=(-maximum(abs.(Svhr[:,:,j])),maximum(abs.(Svhr[:,:,j]))),
+    colorrange=(-2.5e-5, 2.5e-5)
+    );
+    Colorbar(fig[1,4], hm1, label=L"m/s^2")
+    
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # tendency plots
+    fig = Figure();
+    clims = (-abs.(maximum(dvhrdownsized[:,:,1]./ 48)), abs.(maximum(dvhrdownsized[:,:,1]./ 48)))
+    # clims = (-abs.(maximum(Suhr[:,:,j])), abs.(maximum(Suhr[:,:,j])))
+
+    ax, hm = heatmap(fig[1,1], dvhrdownsized[:,:,1] ./ 48,colormap=:balance, colorrange=clims)
+    Colorbar(fig[1,2], hm)
+    ax2, hm2 = heatmap(fig[2,1], dvhrcg[:,:,j] ./ 384,  colormap=:balance, colorrange=clims)
+    Colorbar(fig[2,2], hm)
 
 end
 
