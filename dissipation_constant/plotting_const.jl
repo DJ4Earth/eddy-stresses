@@ -473,9 +473,9 @@ function load_models()
 
     # relu activation function
 
-    u1daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
-    v1daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
-    eta1daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
+    u1daystaterelu = ncread("./dissipation_constant/results/result_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
+    v1daystaterelu = ncread("./dissipation_constant/results/result_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
+    eta1daystaterelu = ncread("./dissipation_constant/results/result_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
 
     u5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
     v5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
@@ -3078,6 +3078,8 @@ function computing_ketransfer()
     Su_true = zeros(127, 128, 1096)
     Sv_true = zeros(128, 127, 1096)
 
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
     for j = 1:1096
 
         dufiltered = imfilter(@view(duhr[:, :, j]), reflect(ker))
@@ -3093,8 +3095,7 @@ function computing_ketransfer()
 
     T = Float64
     Ponline = ShallowWaters.Parameter(T=T,
-        output=true,
-        output_dt=24,
+        output=false,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -3143,32 +3144,112 @@ function computing_ketransfer()
         Ndays=1
     );
 
-    S10 = ShallowWaters.model_setup(Ponline);
-    S20 = ShallowWaters.model_setup(Ponline);
-    S5 = ShallowWaters.model_setup(Ponline);
     Shrcg = ShallowWaters.model_setup(Ponline);
     SZB = ShallowWaters.model_setup(PZB);
+
+    S10 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (S10.Diag.CNNVars.model_Su, S10.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_states_10dayoptimization_startfrom5daystate_noeta_gelu_30iterations.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
+    S20 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (S20.Diag.CNNVars.model_Su, S20.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_states_20dayoptimization_startfrom10daystate_noeta_10iterations.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
+    S5 = ShallowWaters.model_setup(Ponline);
+
     S30 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (S30.Diag.CNNVars.model_Su, S30.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_30dayoptimzation_startfrom30day6iterations_constantdissipation_15iterations_21totaliterations_8hourdata_200maxhistory_fixedcfl.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
+    Smulti2 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (Smulti2.Diag.CNNVars.model_Su, Smulti2.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
 
     Smulti3 = ShallowWaters.model_setup(Ponline);
-    Smulti5 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (Smulti3.Diag.CNNVars.model_Su, Smulti3.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
+
 
     Smulti10 = ShallowWaters.model_setup(Ponline);
-    Smulti20 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (Smulti10.Diag.CNNVars.model_Su, Smulti10.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
 
-    # Smulti1 = ShallowWaters.model_setup(Ponline);
-    # Smulti1more = ShallowWaters.model_setup(Ponline);
-    Smulti2 = ShallowWaters.model_setup(Ponline);
+    Smulti20 = ShallowWaters.model_setup(Ponline);
+    current = 1
+    for m in (Smulti20.Diag.CNNVars.model_Su, Smulti20.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
 
     true_S = load_object("./dissipation_constant/trueS_fromtendencies_SuSv_032526.jld2");
     Suhr = true_S[1];
     Svhr = true_S[2];
 
+    approx_S = load_object("./dissipation_constant/SuSv_fromapprox_nottendencies_040726.jld2");
+    Suapprox = approx_S[1];
+    Svapprox = approx_S[2];
+
     lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
-    nfft = nextfastfft(size(uhrcg[:,:,1]))
+    nfft = nextfastfft(size(uhrcgall[:,:,1]))
 
     totalu_hrcg = zeros(65)
     totalv_hrcg = zeros(65)
+
+    totalu_approx = zeros(65)
+    totalv_approx = zeros(65)
 
     totalu_hrcg2 = zeros(65)
     totalv_hrcg2 = zeros(65)
@@ -3215,6 +3296,16 @@ function computing_ketransfer()
     totalstates = 1096
     for t = 1:totalstates
 
+        # from approximation to nonlinear advection
+        outu_approx, inputu_approx, inputSu_approx = paddingu(uhrcgall[:, :, t], Suapprox[:,:,t], nfft[1])
+        fft2pow2radial!(outu_approx, rfft(inputu_approx), rfft(inputSu_approx), nfft...)
+        outv_approx, inputv_approx, inputSv_approx = paddingv(vhrcgall[:, :, t], Svapprox[:,:,t], nfft[1])
+        fft2pow2radial!(outv_approx, rfft(inputv_approx), rfft(inputSv_approx), nfft...)
+
+        totalu_approx += outu_approx
+        totalv_approx += outv_approx
+
+        # from total tendencies
         outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], Suhr[:,:,t], nfft[1])
         fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
         outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], Svhr[:,:,t], nfft[1])
@@ -3271,30 +3362,6 @@ function computing_ketransfer()
 
         totalu_30 += outu_30
         totalv_30 += outv_30
-
-        # batched 1 day wtih fewer initial conditions (35) ################
-
-        # umulti1_, vmulti1_, _ = ShallowWaters.add_halo(Float64.(umulti1[:,:,t]), Float64.(vmulti1[:,:,t]), Float64.(etamulti1[:,:,t]), zeros(128,128), Smulti1);  
-        # ShallowWaters.CNN_momentum(umulti1_, vmulti1_, Smulti1)
-        # outu_multi1, inputu_multi1, inputSu_multi1 = paddingu(umulti1[:, :, t], Smulti1.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi1, rfft(inputu_multi1), rfft(inputSu_multi1), nfft...)
-        # outv_multi1, inputv_multi1, inputSv_multi1 = paddingv(vmulti1[:, :, t], Smulti1.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi1, rfft(inputv_multi1), rfft(inputSv_multi1), nfft...)
-
-        # totalu_multi1 += outu_multi1
-        # totalv_multi1 += outv_multi1
-
-        # batched 1 day with a ton of initial conditions #############################
-
-        # umulti1more_, vmulti1more_, _ = ShallowWaters.add_halo(Float64.(umulti1more[:,:,t]), Float64.(vmulti1more[:,:,t]), Float64.(etamulti1more[:,:,t]), zeros(128,128), Smulti1more);
-        # ShallowWaters.CNN_momentum(umulti1more_, vmulti1more_, Smulti1more)
-        # outu_multi1more, inputu_multi1more, inputSu_multi1more = paddingu(umulti1more[:, :, t], Smulti1more.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi1more, rfft(inputu_multi1more), rfft(inputSu_multi1more), nfft...)
-        # outv_multi1more, inputv_multi1more, inputSv_multi1more = paddingv(vmulti1more[:, :, t], Smulti1more.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi1more, rfft(inputv_multi1more), rfft(inputSv_multi1more), nfft...)
-
-        # totalu_multi1more += outu_multi1more
-        # totalv_multi1more += outv_multi1more
 
         # batched 2 day ##################################
 
@@ -3358,10 +3425,13 @@ function computing_ketransfer()
         totalv_multi20 += outv_multi20
 
     end
-end
 
-# same as above but computing from snapshots of the cg hr states (so the parameterizations are offline)
-function computing_ketransfer_offline()
+    # same as above but with the viscosity term
+    visc_multi2 = load_object("./dissipation_constant/results/viscosities/viscosity_multi2_3years_dailysaves.jld2");
+    visc_multi3 = load_object("./dissipation_constant/results/viscosities/viscosity_multi3_3years_dailysaves.jld2");
+    visc_multi10 = load_object("./dissipation_constant/results/viscosities/viscosity_multi3_3years_dailysaves.jld2");
+    visc_ZB20 = load_object("./dissipation_constant/results/viscosities/viscosity_ZB20_3years_dailysaves.jld2");
+
     T = Float64
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
@@ -3414,116 +3484,81 @@ function computing_ketransfer_offline()
         Ndays=1
     );
 
+    Shrcg = ShallowWaters.model_setup(Ponline);
+    SZB = ShallowWaters.model_setup(PZB);
+
     S10 = ShallowWaters.model_setup(Ponline);
     S20 = ShallowWaters.model_setup(Ponline);
     S5 = ShallowWaters.model_setup(Ponline);
-    Shrcg = ShallowWaters.model_setup(Ponline);
-    SZB = ShallowWaters.model_setup(PZB);
     S30 = ShallowWaters.model_setup(Ponline);
 
+    Smulti2 = ShallowWaters.model_setup(Ponline);
     Smulti3 = ShallowWaters.model_setup(Ponline);
     Smulti5 = ShallowWaters.model_setup(Ponline);
 
     Smulti10 = ShallowWaters.model_setup(Ponline);
     Smulti20 = ShallowWaters.model_setup(Ponline);
 
-    # Smulti1 = ShallowWaters.model_setup(Ponline);
-    # Smulti1more = ShallowWaters.model_setup(Ponline);
-    Smulti2 = ShallowWaters.model_setup(Ponline);
-
-    # coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2");
-    # uhrcg = coarse_grained_hrstates[1];
-    # vhrcg = coarse_grained_hrstates[2];
-
-    # Suhr = load_object("./dissipation_constant/results/true_S_SuSv_fromtimederivatives_new.jld2")[1];
-    # Svhr = load_object("./dissipation_constant/results/true_S_SuSv_fromtimederivatives_new.jld2")[2];
-
     lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcgall[:,:,1]))
 
-    totalu_hrcg = zeros(65)
-    totalv_hrcg = zeros(65)
+    viscu_hrcg = zeros(65)
+    viscv_hrcg = zeros(65)
 
-    totalu_hrcg2 = zeros(65)
-    totalv_hrcg2 = zeros(65)
+    viscu_hrcg2 = zeros(65)
+    viscv_hrcg2 = zeros(65)
 
-    totalu_5 = zeros(65)
-    totalv_5 = zeros(65)
+    viscu_5 = zeros(65)
+    viscv_5 = zeros(65)
 
-    totalu_10 = zeros(65)
-    totalv_10 = zeros(65)
+    viscu_10 = zeros(65)
+    viscv_10 = zeros(65)
 
-    totalu_20 = zeros(65)
-    totalv_20 = zeros(65)
+    viscu_20 = zeros(65)
+    viscv_20 = zeros(65)
     
-    totalu_30 = zeros(65)
-    totalv_30 = zeros(65)
+    viscu_30 = zeros(65)
+    viscv_30 = zeros(65)
 
-    totalu_multi1 = zeros(65)
-    totalv_multi1 = zeros(65)
+    viscu_multi1 = zeros(65)
+    viscv_multi1 = zeros(65)
 
-    totalu_multi1more = zeros(65)
-    totalv_multi1more = zeros(65)
+    viscu_multi1more = zeros(65)
+    viscv_multi1more = zeros(65)
 
-    totalu_multi2 = zeros(65)
-    totalv_multi2 = zeros(65)
+    viscu_multi2 = zeros(65)
+    viscv_multi2 = zeros(65)
 
-    totalu_multi3 = zeros(65)
-    totalv_multi3 = zeros(65)
+    viscu_multi3 = zeros(65)
+    viscv_multi3 = zeros(65)
 
-    totalu_multi5 = zeros(65)
-    totalv_multi5 = zeros(65)
+    viscu_multi5 = zeros(65)
+    viscv_multi5 = zeros(65)
 
-    totalu_multi10 = zeros(65)
-    totalv_multi10 = zeros(65)
+    viscu_multi10 = zeros(65)
+    viscv_multi10 = zeros(65)
 
-    totalu_multi20 = zeros(65)
-    totalv_multi20 = zeros(65)
+    viscu_multi20 = zeros(65)
+    viscv_multi20 = zeros(65)
 
-    totalu_ZB = zeros(65)
-    totalv_ZB = zeros(65)
+    viscu_ZB = zeros(65)
+    viscv_ZB = zeros(65)
 
-    totalu_3 = zeros(65)
-    totalv_3 = zeros(65)
+    viscu_3 = zeros(65)
+    viscv_3 = zeros(65)
 
     totalstates = 1096
     for t = 1:totalstates
 
-        # coarse-grained high-resolution computation, corrected setup
-        if t in 1:766
-            Suhr, Svhr = compute_hrS(uhr1[:,:,t], vhr1[:,:, t])
-        else
-            Suhr, Svhr = compute_hrS(uhr2[:,:,t-766+1], vhr2[:,:, t-766+1])
-        end
-
-        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], Suhr, nfft[1])
-        fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
-        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], Svhr, nfft[1])
-        fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
-
-        totalu_hrcg += outu_hrcg
-        totalv_hrcg += outv_hrcg
-
-        # outu_hrcg2, inputu_hrcg2, inputSu_hrcg2 = paddingu(uhrcg2[:, :, t], Suhr2[:,:,t], nfft[1])
-        # fft2pow2radial!(outu_hrcg2, rfft(inputu_hrcg2), rfft(inputSu_hrcg2), nfft...)
-        # outv_hrcg2, inputv_hrcg2, inputSv_hrcg2 = paddingv(vhrcg2[:, :, t], Svhr2[:,:,t], nfft[1])
-        # fft2pow2radial!(outv_hrcg2, rfft(inputv_hrcg2), rfft(inputSv_hrcg2), nfft...)
-
-        # totalu_hrcg2 += outu_hrcg2
-        # totalv_hrcg2 += outv_hrcg2
-
-        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcgall[:,:,t]), Float64.(vhrcgall[:,:,t]), Float64.(etahrcgall[:,:,t]), zeros(128,128), SZB);
-
         # ZB20 ############################
-        ShallowWaters.ZB_momentum(uhrcg_, vhrcg_, SZB, SZB.Diag);
 
-        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uhrcgall[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], visc_ZB20[1][:,:,t], nfft[1])
         fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
-        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vhrcgall[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], visc_ZB20[2][:,:,t], nfft[1])
         fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
 
-        totalu_ZB += outu_ZB
-        totalv_ZB += outv_ZB
+        viscu_ZB += outu_ZB
+        viscv_ZB += outv_ZB
 
         # 5 day optimization ################
 
@@ -3534,80 +3569,52 @@ function computing_ketransfer_offline()
         # outv_5, inputv_5, inputSv_5 = paddingv(v5day[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
 
-        # totalu_5 += outu_5
-        # totalv_5 += outv_5
+        # viscu_5 += outu_5
+        # viscv_5 += outv_5
 
         # 20 day optimization ##############
 
-        # u20, v20, _ = ShallowWaters.add_halo(Float64.(u20day[:,:,t]), Float64.(v20day[:,:,t]), Float64.(eta20day[:,:,t]), zeros(128,128), S20);
+        # u20, v20, _ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S20);
         # ShallowWaters.CNN_momentum(u20, v20, S20)
-        # outu_20, inputu_20, inputSu_20 = paddingu(u20day[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
+        # outu_20, inputu_20, inputSu_20 = paddingu(u20s[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
-        # outv_20, inputv_20, inputSv_20 = paddingv(v20day[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
+        # outv_20, inputv_20, inputSv_20 = paddingv(v20s[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
 
-        # totalu_20 += outu_20
-        # totalv_20 += outv_20
+        # viscu_20 += outu_20
+        # viscv_20 += outv_20
 
         # 30 day optimization ###############
 
-        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30day[:,:,t]), Float64.(v30day[:,:,t]), Float64.(eta30day[:,:,t]), zeros(128,128), S30);
+        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S30);
         # ShallowWaters.CNN_momentum(u30, v30, S30)
-        # outu_30, inputu_30, inputSu_30 = paddingu(u30day[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
+        # outu_30, inputu_30, inputSu_30 = paddingu(u30s[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
-        # outv_30, inputv_30, inputSv_30 = paddingv(v30day[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
+        # outv_30, inputv_30, inputSv_30 = paddingv(v30s[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
 
-        # totalu_30 += outu_30
-        # totalv_30 += outv_30
-
-        # batched 1 day wtih fewer initial conditions (35) ################
-
-        # umulti1_, vmulti1_, _ = ShallowWaters.add_halo(Float64.(umulti1[:,:,t]), Float64.(vmulti1[:,:,t]), Float64.(etamulti1[:,:,t]), zeros(128,128), Smulti1);  
-        # ShallowWaters.CNN_momentum(umulti1_, vmulti1_, Smulti1)
-        # outu_multi1, inputu_multi1, inputSu_multi1 = paddingu(umulti1[:, :, t], Smulti1.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi1, rfft(inputu_multi1), rfft(inputSu_multi1), nfft...)
-        # outv_multi1, inputv_multi1, inputSv_multi1 = paddingv(vmulti1[:, :, t], Smulti1.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi1, rfft(inputv_multi1), rfft(inputSv_multi1), nfft...)
-
-        # totalu_multi1 += outu_multi1
-        # totalv_multi1 += outv_multi1
-
-        # batched 1 day with a ton of initial conditions #############################
-
-        # umulti1more_, vmulti1more_, _ = ShallowWaters.add_halo(Float64.(umulti1more[:,:,t]), Float64.(vmulti1more[:,:,t]), Float64.(etamulti1more[:,:,t]), zeros(128,128), Smulti1more);
-        # ShallowWaters.CNN_momentum(umulti1more_, vmulti1more_, Smulti1more)
-        # outu_multi1more, inputu_multi1more, inputSu_multi1more = paddingu(umulti1more[:, :, t], Smulti1more.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi1more, rfft(inputu_multi1more), rfft(inputSu_multi1more), nfft...)
-        # outv_multi1more, inputv_multi1more, inputSv_multi1more = paddingv(vmulti1more[:, :, t], Smulti1more.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi1more, rfft(inputv_multi1more), rfft(inputSv_multi1more), nfft...)
-
-        # totalu_multi1more += outu_multi1more
-        # totalv_multi1more += outv_multi1more
+        # viscu_30 += outu_30
+        # viscv_30 += outv_30
 
         # batched 2 day ##################################
 
-        # umulti2_, vmulti2_, _ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), Smulti2);
-        # ShallowWaters.CNN_momentum(umulti2_, vmulti2_, Smulti2)
-        # outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], Smulti2.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
-        # outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], Smulti2.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
+        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], visc_multi2[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
+        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], visc_multi2[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
 
-        # totalu_multi2 += outu_multi2
-        # totalv_multi2 += outv_multi2
+        viscu_multi2 += outu_multi2
+        viscv_multi2 += outv_multi2
 
         # batched 3 day ###########################
 
-        # umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
-        # ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
-        # outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
-        # outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], visc_multi3[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], visc_multi3[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
 
-        # totalu_multi3 += outu_multi3
-        # totalv_multi3 += outv_multi3
+        viscu_multi3 += outu_multi3
+        viscv_multi3 += outv_multi3
 
         # batched 5 day ######################
 
@@ -3618,20 +3625,18 @@ function computing_ketransfer_offline()
         # outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[:, :, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_multi5, rfft(inputv_multi5), rfft(inputSv_multi5), nfft...)
 
-        # totalu_multi5 += outu_multi5
-        # totalv_multi5 += outv_multi5
+        # viscu_multi5 += outu_multi5
+        # viscv_multi5 += outv_multi5
 
         # batched 10 day #####################
 
-        # umulti10_, vmulti10_, _ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), Smulti10);
-        # ShallowWaters.CNN_momentum(umulti10_, vmulti10_, Smulti10)
-        # outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], Smulti10.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
-        # outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], Smulti10.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
+        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], visc_multi10[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
+        outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], visc_multi10[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
 
-        # totalu_multi10 += outu_multi10
-        # totalv_multi10 += outv_multi10
+        viscu_multi10 += outu_multi10
+        viscv_multi10 += outv_multi10
 
         # batched 20 day #####################
 
@@ -3642,16 +3647,75 @@ function computing_ketransfer_offline()
         # outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[:, :, t], Smulti20.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_multi20, rfft(inputv_multi20), rfft(inputSv_multi20), nfft...)
 
-        # totalu_multi20 += outu_multi20
-        # totalv_multi20 += outv_multi20
+        # viscu_multi20 += outu_multi20
+        # viscv_multi20 += outv_multi20
 
     end
+
+end
+
+function ketransfer_check()
+
+    T = Float64
+    PZB = ShallowWaters.Parameter(T=T,
+        output=true,
+        output_dt=24,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    );
+
+    SZB = ShallowWaters.model_setup(PZB);
+
+    lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
+    nfft = nextfastfft(size(uhrcgall[:,:,1]))
+
+    totalu_ZB_check = zeros(65)
+    totalv_ZB_check = zeros(65)
+
+    totalstates = 1096
+    for t = 1:totalstates
+
+        # ZB20 ############################
+
+        uzb_, vzb_, _ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), SZB);
+        ShallowWaters.ZB_momentum(uzb_, vzb_, SZB, SZB.Diag);
+
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], SZB.Diag.ZBVars.S_u + Mu_all[:,:,t], nfft[1])
+        fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], SZB.Diag.ZBVars.S_v + Mv_all[:,:,t], nfft[1])
+        fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
+
+        totalu_ZB_check += outu_ZB
+        totalv_ZB_check += outv_ZB
+
+    end
+
 end
 
 function ketransfer_plots()
 
+    colors = Makie.wong_colors()
+
     lr_freq = 1/30 .* freq(periodogram(u20s[:,:,10]; radialavg=true, radialsum=false));
-    nfft = nextfastfft(size(uhrcg[:,:,1]))
+    nfft = nextfastfft(size(uhrcgall[:,:,1]))
 
     s = 1096 * 30000 * 64
     fig = Figure(size=(800, 300), fontsize=15);
@@ -3661,15 +3725,51 @@ function ketransfer_plots()
         ylabel="KE(k)",
         title="Kinetic energy transfer"
     )
+    lines!(ax, -lr_freq.*(totalu_hrcg + totalv_hrcg)/1096, label="SGS forcing", color=:black)
+    lines!(ax, (lr_freq * 30000).*(totalu_approx + totalv_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2) ./ s, label="Ensemble 2 day", color=colors[2])
+
+    # lines!(ax, lr_freq.*(totalu_30 + totalv_30) / s, label="30 day",color=colors[6])
+    # lines!(ax, lr_freq.*(totalu_20 + totalv_20) / s, label="20 day", color=colors[7])
+    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10) ./ s, label="Ensemble 10 day", color=colors[4])
+    # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
+
+    Legend(fig[1,2], ax)
+
+    s = 1096 * 30000 * 64
+    ax = Axis(fig[2,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer of viscosity"
+    )
+    lines!(ax, lr_freq.*(viscu_ZB + viscv_ZB) ./ s, label="ZB20", color=colors[2])
+    lines!(ax, lr_freq.*(viscu_multi2 + viscv_multi2) ./ s, label="Ensemble 2 day",color=colors[3])
+    lines!(ax, lr_freq.*(viscu_multi3 + viscv_multi3) ./ s, label="Ensemble 3 day",color=colors[4])
+    # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
+    lines!(ax, lr_freq.*(viscu_multi10 + viscv_multi10) ./ s, label="Ensemble 10 day",color=colors[5])
+    # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
+    Legend(fig[2,2], ax)
+
+    s = 1096 * 30000 * 64
+    fig = Figure(size=(800, 300), fontsize=15);
+    ax = Axis(fig[1,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer of S + M"
+    )
     lines!(ax, lr_freq.*(totalu_hrcg + totalv_hrcg)/1096, label="Subgrid forcing")
-    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB) / s, label="ZB20")
-    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2) / s, label="Ensemble 2 day")
+    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB + viscu_ZB + viscv_ZB) / s, label="ZB20")
+    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2 + viscu_multi2 + viscv_multi2) / s, label="Ensemble 2 day")
 
     # lines!(ax, lr_freq.*(totalu_30 + totalv_30) / s, label="30 day")
     # lines!(ax, lr_freq.*(totalu_20 + totalv_20) / s, label="20 day")
-    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3) / s, label="Ensemble 3 day")
+    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3 + viscu_multi3 + viscv_multi3) / s, label="Ensemble 3 day")
     # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
-    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10) / s, label="Ensemble 10 day")
+    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10 + viscu_multi10 + viscv_multi10) / s, label="Ensemble 10 day")
     # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
     Legend(fig[1,2], ax)
 
@@ -4330,5 +4430,26 @@ function appendix_plots()
         padding = (0, 5, 5, 0),
         halign = :right)
     end
+
+end
+
+function tikz_stuff()
+
+    fig = Figure(fontsize=15);
+
+    xs = LinRange(0, 3840, 129)
+    ys = LinRange(0, 3840, 129)
+
+    ax = Axis(fig[1, 1])
+
+    hm = heatmap!(
+        ax,
+        xs, ys,
+        Smulti2.Diag.CNNVars.Dhat ./ (Smulti2.grid.Δ * Smulti2.grid.scale) ,
+        colormap = :balance,
+        colorrange = (-abs.(maximum(Smulti2.Diag.CNNVars.ζ./ (Smulti2.grid.Δ * Smulti2.grid.scale))), abs.(maximum(Smulti2.Diag.CNNVars.ζ./ (Smulti2.grid.Δ * Smulti2.grid.scale))))
+    )
+    hidedecorations!(ax) 
+
 
 end

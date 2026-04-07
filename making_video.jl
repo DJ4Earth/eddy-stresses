@@ -24,26 +24,23 @@ fig = Figure(fontsize=15);
 
 fframerate = 15
 
-xs = LinRange(0, 3840, 1025)
-ys = LinRange(0, 3840, 1025)
+xs = LinRange(0, 3840, 129)
+ys = LinRange(0, 3840, 129)
 
 inv_scale = 1 / Shr.constants.scale
 # clim = maximum(abs.(ζhr[:,:,1000] .* inv_scale))  # compute ONCE
 clim = .0001
 
-ax = Axis(fig[1, 1],
-    xlabel = "km",
-    ylabel = "km",
-    title  = "3.75 km vorticity"
-)
+ax = Axis(fig[1, 1])
 
 hm = heatmap!(
     ax,
     xs, ys,
-    ζhr[:, :, 1096],
+    ζhrcg[:, :, 1096],
     colormap = :balance,
-    colorrange = (-clim, clim)
+    colorrange = (-.0001, .0001)
 )
+hidedecorations!(ax) 
 
 Colorbar(fig[1, 2], hm, label = "1/s")
 

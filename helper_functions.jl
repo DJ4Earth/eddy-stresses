@@ -1,3 +1,130 @@
+# computes the nonlinear advection term *approximation* using high-resolution snapshots
+function compute_hrS()
+
+    T = Float64
+    Shr = ShallowWaters.model_setup(T=T; output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=1
+    );
+
+    Slr = ShallowWaters.model_setup(T=T; output=false,
+        output_dt = 8,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=30
+    );
+    halo = Shr.grid.halo
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    halo = Slr.grid.halo
+    dT11dx = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy)         # derivative of T11 in the x-direction, u-grid
+    dT12dy = zeros(T,Slr.Diag.CNNVars.nux+halo,Slr.Diag.CNNVars.nuy)    # derivative of T12 in the y-direction, u-grid
+    dT12dx = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy+halo)    # derivative of T12 in the x-direction, v-grid
+    dT22dy = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)         # derivative of T22 in the y-direction, v-grid
+
+    S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy, 1096)             # total forcing in x-direction
+    S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy, 1096)             # total forcing in y-direction
+
+    s = Slr.grid.Δ^2
+    for t = 1:1096
+
+        # T11true = zeros(1024, 1024)
+        # T22true = zeros(1024, 1024)
+        # T12true = zeros(1025, 1025)
+
+        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),uhrall[:,:,t],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),vhrall[:,:,t],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+
+        # moving to hr corner grid and cut off the halo
+
+        uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
+        vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
+
+        uhrT = zeros(1024,1024)
+        vhrT = zeros(1024,1024)
+
+        ShallowWaters.Ixy!(uhrT,uhrq)
+        ShallowWaters.Ixy!(vhrT,vhrq)
+
+        # ubar = uhrT
+        # vbar = vhrT
+
+        ubar = imfilter(uhrT, reflect(ker))
+        vbar = imfilter(vhrT, reflect(ker))
+
+        # usqbar = ubar.^2
+        # vsqbar = vbar.^2
+
+        usqbar = imfilter(uhrT.^2, reflect(ker))
+        vsqbar = imfilter(vhrT.^2, reflect(ker))
+
+        # uvbar = uhrq .* vhrq
+        uvbar = imfilter(uhrq .* vhrq, reflect(ker))
+        ubarvbar = imfilter(uhrq, reflect(ker)) .* imfilter(vhrq, reflect(ker))
+
+        T11true = ubar .* ubar - usqbar
+        T22true = vbar .* vbar - vsqbar
+        T12true = ubarvbar - uvbar
+
+        # T11downsized = zeros(128, 128)
+        # T22downsized = zeros(128, 128)
+        # T12downsized = zeros(129, 129)
+
+        T11downsized = (T11true[4:8:end,4:8:end] .+ T11true[5:8:end,5:8:end] .+ T11true[4:8:end,5:8:end] .+ T11true[5:8:end,4:8:end]) ./ 4
+        T22downsized = (T22true[4:8:end,4:8:end] .+ T22true[5:8:end,5:8:end] .+ T22true[4:8:end,5:8:end] .+ T22true[5:8:end,4:8:end]) ./ 4
+        T12downsized = T12true[1:8:end,1:8:end]
+
+        ShallowWaters.∂x!(dT11dx, T11downsized)
+        ShallowWaters.∂y!(dT12dy, T12downsized)
+
+        ShallowWaters.∂x!(dT12dx, T12downsized)
+        ShallowWaters.∂y!(dT22dy, T22downsized)
+
+        @inbounds for j in 1:Slr.Diag.CNNVars.nuy
+            for k in 1:Slr.Diag.CNNVars.nux
+                S_u[k,j,t] = (dT11dx[k,j] + dT12dy[k+1,j]) / s
+            end
+        end
+
+        @inbounds for j in 1:Slr.Diag.CNNVars.nvy
+            for k in 1:Slr.Diag.CNNVars.nvx
+                S_v[k,j,t] = (dT22dy[k,j] + dT12dx[k,j+1]) / s
+            end
+        end
+
+    end
+
+    return S_u, S_v
+
+end
+
+# used to compute the SGS term S from a difference of time-derivatives (total tendencies)
 function compute_true_hrS()
 
     uhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u");
@@ -423,7 +550,6 @@ function single_step!(du, dv, deta, S, t)
 
 end
 
-
 function single_step_diff!(Mu, Mv, S, t)
 
     # uold = copy(S.Prog.u)
@@ -610,13 +736,13 @@ function save_viscosityterm()
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/v.nc", "v");
     # eta = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/eta.nc", "eta");
 
-    # u = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    # v = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    # eta = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    u = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    v = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    eta = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
-    u = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
-    v = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
-    eta = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
+    # u = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
+    # v = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
+    # eta = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
     Plr = ShallowWaters.Parameter(T=Float64,
         output=false,
@@ -654,16 +780,16 @@ function save_viscosityterm()
 
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
-    current = 1
-    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
-        for layers in m[1]
-            for array in layers
-                    sz = prod(size(array))
-                    array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
-                    current += sz
-            end
-        end
-    end
+    # current = 1
+    # for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+    #     for layers in m[1]
+    #         for array in layers
+    #                 sz = prod(size(array))
+    #                 array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
+    #                 current += sz
+    #         end
+    #     end
+    # end
 
     Slr_ = deepcopy(Slr)
 
