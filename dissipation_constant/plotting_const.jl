@@ -2294,10 +2294,10 @@ function energy_plots()
         multi10[j] = sum(abs2, umulti10[:,:,j]) + sum(abs2, vmulti10[:,:,j])
         multi20[j] = sum(abs2, umulti20[:,:,j]) + sum(abs2, vmulti20[:,:,j])
         # appendix stuff
-        kespec[j] = sum(abs2, ukespec[:,:,j]) + sum(abs2, vkespec[:,:,j])
-        hybrid[j] = sum(abs2, uhybrid[:,:,j]) + sum(abs2, vhybrid[:,:,j])
-        fourier[j] = sum(abs2, ufourier[:,:,j]) + sum(abs2, vfourier[:,:,j])
-        kespecpd[j] = sum(abs2, ukespecpd[:,:,j]) + sum(abs2, vkespecpd[:,:,j])
+        # kespec[j] = sum(abs2, ukespec[:,:,j]) + sum(abs2, vkespec[:,:,j])
+        # hybrid[j] = sum(abs2, uhybrid[:,:,j]) + sum(abs2, vhybrid[:,:,j])
+        # fourier[j] = sum(abs2, ufourier[:,:,j]) + sum(abs2, vfourier[:,:,j])
+        # kespecpd[j] = sum(abs2, ukespecpd[:,:,j]) + sum(abs2, vkespecpd[:,:,j])
         # push!(relu1day, sum(uonline1dayrelu[:,1:end-1,j].^2 .+ vonline1dayrelu[1:end-1,:,j].^2))
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
@@ -2588,7 +2588,7 @@ function energy_plots()
 
     # Diverging results
 
-    fig = Figure(size=(1100, 750), fontsize=15);
+    fig = Figure(size=(1000, 600), fontsize=15);
     ax = Axis(fig[1,1],
             # xlabel="Day",
             ylabel="Energy",
@@ -3238,7 +3238,7 @@ function computing_ketransfer()
     Suhr = true_S[1];
     Svhr = true_S[2];
 
-    approx_S = load_object("./dissipation_constant/SuSv_fromapprox_nottendencies_040726.jld2");
+    approx_S = load_object("./dissipation_constant/approxS_nonlinearadvec_nottendencies_hasextraDelta_SuSv_040726.jld2");
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
 
@@ -3717,6 +3717,17 @@ function ketransfer_plots()
     lr_freq = 1/30 .* freq(periodogram(u20s[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcgall[:,:,1]))
 
+    # this scaling s is determined as (1) a division of the total states we average over (1096), 
+    # (2) a division by \Delta, because I want to compare the S values that are multiplied by dt,
+    # and in Milan's code the forcing that is multiplied by dt has a division by \Delta, which is the
+    # \Delta that I divide by here. The final division is 64 = model.grid.scale, and this is divided because the 
+    # parameterizations are added to a haloed grid, which has a scale factor, and we don't want that scale factor when we compute
+    # the KE transfer
+    # Unfortunately, and confusingly, the hrcg and approx ones have different scalings. approximation to the true SGS forcing
+    # has no division by s because I never added the scaling factor, and the true SGS forcing doesn't because I divded by the scale
+    # when I computed it from my single step function. Lastly, the true SGS forcing has a multiplication by -1 because when you math
+    # out the nonlinear advection term, the nonlinear advection (and thus all the parameterizations), should be approximating -1 
+    # time the total tendency term that I computed and saved
     s = 1096 * 30000 * 64
     fig = Figure(size=(800, 300), fontsize=15);
     ax = Axis(fig[1,1],
@@ -3725,7 +3736,9 @@ function ketransfer_plots()
         ylabel="KE(k)",
         title="Kinetic energy transfer"
     )
-    lines!(ax, -lr_freq.*(totalu_hrcg + totalv_hrcg)/1096, label="SGS forcing", color=:black)
+    lines!(ax, -lr_freq.*(totalu_hrcg + totalv_hrcg)/(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
     lines!(ax, (lr_freq * 30000).*(totalu_approx + totalv_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
     lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB) ./ s, label="ZB20", color=colors[1])
     lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2) ./ s, label="Ensemble 2 day", color=colors[2])
@@ -3777,9 +3790,13 @@ end
 
 function parameterization_S_plots()
 
-    true_S = load_object("./dissipation_constant/trueS_fromtendencies_SuSv_032526.jld2");
+    true_S = load_object("./dissipation_constant/computing_trueS/trueS_fromtendencies_SuSv_first3years_dailysaves_032526.jld2");
     Suhr = true_S[1];
     Svhr = true_S[2];
+
+    approx_S = load_object("./dissipation_constant/computing_trueS/approxS_nonlinearadvec_nottendencies_hasextraDelta_SuSv_first3years_040726.jld2");
+    Suapprox = approx_S[1];
+    Svapprox = approx_S[2];
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,
@@ -4019,10 +4036,10 @@ function parameterization_S_plots()
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
 
     # S_u
-    fig = Figure(size=(1040, 520), fontsize=15);
+    fig = Figure(size=(900, 520), fontsize=15);
 
     Label(
-        fig[0, 3],
+        fig[0, 2],
         L"S_u(3 \text{ years}, x, y)",
         fontsize = 20,
         tellwidth = false
@@ -4034,61 +4051,69 @@ function parameterization_S_plots()
     Szb.Diag.ZBVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
 
-    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Soffline.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u ./ s)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    # Colorbar(fig[1,4], hm2, label=L"m/s^2")
 
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Smulti2.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[1,6], hm2, label=L"m/s^2")
+    # Colorbar(fig[1,6], hm2, label=L"m/s^2")
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Smulti3.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[2,2], hm2, label=L"m/s^2")
+    # Colorbar(fig[2,2], hm2, label=L"m/s^2")
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Smulti10.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[2,4], hm2, label=L"m/s^2")
+    # Colorbar(fig[2,4], hm2, label=L"m/s^2")
 
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     S30.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="30 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[2,6], hm2, label=L"m/s^2")
+    # Colorbar(fig[2,6], hm2, label=L"m/s^2")
+
+    Colorbar(fig[1:2,4], hm1, label=L"m/s^2")
 
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
     gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
@@ -4098,75 +4123,79 @@ function parameterization_S_plots()
     end
 
     # S_v
-   fig = Figure(size=(1040, 520), fontsize=15);
+    fig = Figure(size=(900, 520), fontsize=15);
 
     Label(
-        fig[0, 3],
+        fig[0, 2],
         L"S_v(3 \text{ years}, x, y)",
         fontsize = 20,
         tellwidth = false
     )
 
+    s = Szb.grid.Δ * Szb.grid.scale
     ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Szb.Diag.ZBVars.S_v,
+    Szb.Diag.ZBVars.S_v ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v)),maximum(abs.(Szb.Diag.ZBVars.S_v)))
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[1,2], hm1, label=L"m/s^2")
+    # Colorbar(fig[1,2], hm1, label=L"m/s^2")
 
-    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Soffline.Diag.CNNVars.S_v,
+    Soffline.Diag.CNNVars.S_v ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v)),maximum(abs.(Szb.Diag.ZBVars.S_v)))
-    );
-    Colorbar(fig[1,4], hm1, label=L"m/s^2")
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)    );
+    # Colorbar(fig[1,4], hm1, label=L"m/s^2")
 
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti2.Diag.CNNVars.S_v,
+    Smulti2.Diag.CNNVars.S_v ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v)),maximum(abs.(Szb.Diag.ZBVars.S_v)))
-    );
-    Colorbar(fig[1,6], hm1, label=L"m/s^2")
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)    );
+    # Colorbar(fig[1,6], hm1, label=L"m/s^2")
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti3.Diag.CNNVars.S_v,
+    Smulti3.Diag.CNNVars.S_v ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v)),maximum(abs.(Szb.Diag.ZBVars.S_v)))
-    );
-    Colorbar(fig[2,2], hm1, label=L"m/s^2")
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)    );
+    # Colorbar(fig[2,2], hm1, label=L"m/s^2")
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti10.Diag.CNNVars.S_v,
+    Smulti10.Diag.CNNVars.S_v ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v)),maximum(abs.(Szb.Diag.ZBVars.S_v)))
-    );
-    Colorbar(fig[2,4], hm1, label=L"m/s^2")
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)    );
+    # Colorbar(fig[2,4], hm1, label=L"m/s^2")
 
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    S30.Diag.CNNVars.S_v,
+    S30.Diag.CNNVars.S_v ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="30 day"),
-    colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v)),maximum(abs.(Szb.Diag.ZBVars.S_v)))
-    );
-    Colorbar(fig[2,6], hm1, label=L"m/s^2")
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)),maximum(abs.(Szb.Diag.ZBVars.S_v ./ s)))
+    colorrange=(-1.5e-5, 1.5e-5)    );
+    # Colorbar(fig[2,6], hm1, label=L"m/s^2")
+
+    Colorbar(fig[1:2,4], hm1, label=L"m/s^2")
 
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
     gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
@@ -4176,11 +4205,11 @@ function parameterization_S_plots()
     end
 
     # true S plots
-    fig = Figure(size=(900, 350), fontsize=15);
+    fig = Figure(size=(700, 325), fontsize=15);
     j = 1096
     Label(
-        fig[0, 2],
-        "True SGS forcing",
+        fig[0, 1:2],
+        L"S_u(3 \; \text{years}, x, y)",
         fontsize = 20,
         tellwidth = false
     )
@@ -4189,24 +4218,25 @@ function parameterization_S_plots()
     LinRange(0, 3840, 128),
     Suhr[:,:,j],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u-component"),
-    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
-    colorrange=(-2.5e-5, 2.5e-5)
+    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
 
-    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Svhr[:,:,j],
+    Smulti2.grid.Δ .* Suapprox[:,:,j],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="v-component"),
-    # colorrange=(-maximum(abs.(Svhr[:,:,j])),maximum(abs.(Svhr[:,:,j]))),
-    colorrange=(-2.5e-5, 2.5e-5)
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-5, 1.5e-5)
     );
-    Colorbar(fig[1,4], hm1, label=L"m/s^2")
+
+    Colorbar(fig[1,3], hm1, label=L"m/s^2")
     
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,

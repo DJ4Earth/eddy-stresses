@@ -143,8 +143,7 @@ function NLPModels.obj(model, param_guess)
     model.SNN = ShallowWaters.model_setup(PNN)
     model.J = 0
 
-    # adding up the difference for 5 different snapshots of the coarse-grained, hr states true Ts and 
-    # the output from the NN
+
     for j = 3:3:241
 
         current = 1
