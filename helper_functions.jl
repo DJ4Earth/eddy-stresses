@@ -1,5 +1,5 @@
 # computes the nonlinear advection term *approximation* using high-resolution snapshots
-function compute_hrS()
+function compute_approxhrS()
 
     T = Float64
     Shr = ShallowWaters.model_setup(T=T; output=false,
@@ -48,38 +48,28 @@ function compute_hrS()
     dT12dx = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy+halo)    # derivative of T12 in the x-direction, v-grid
     dT22dy = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)         # derivative of T22 in the y-direction, v-grid
 
-    S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy, 1096)             # total forcing in x-direction
-    S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy, 1096)             # total forcing in y-direction
+    S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy, 365)             # total forcing in x-direction
+    S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy, 365)             # total forcing in y-direction
+
+    uhrT = zeros(1024,1024)
+    vhrT = zeros(1024,1024)
 
     s = Slr.grid.Δ^2
-    for t = 1:1096
+    for t = 1:365
 
-        # T11true = zeros(1024, 1024)
-        # T22true = zeros(1024, 1024)
-        # T12true = zeros(1025, 1025)
-
-        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),uhrall[:,:,t],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),vhrall[:,:,t],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),uhrall[:,:,t+1096],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),vhrall[:,:,t+1096],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
 
         # moving to hr corner grid and cut off the halo
 
         uhrq = ShallowWaters.Iy(uhrh)[2:end-1,2:end-1]
         vhrq = ShallowWaters.Ix(vhrh)[2:end-1,2:end-1]
 
-        uhrT = zeros(1024,1024)
-        vhrT = zeros(1024,1024)
-
         ShallowWaters.Ixy!(uhrT,uhrq)
         ShallowWaters.Ixy!(vhrT,vhrq)
 
-        # ubar = uhrT
-        # vbar = vhrT
-
         ubar = imfilter(uhrT, reflect(ker))
         vbar = imfilter(vhrT, reflect(ker))
-
-        # usqbar = ubar.^2
-        # vsqbar = vbar.^2
 
         usqbar = imfilter(uhrT.^2, reflect(ker))
         vsqbar = imfilter(vhrT.^2, reflect(ker))
@@ -91,10 +81,6 @@ function compute_hrS()
         T11true = ubar .* ubar - usqbar
         T22true = vbar .* vbar - vsqbar
         T12true = ubarvbar - uvbar
-
-        # T11downsized = zeros(128, 128)
-        # T22downsized = zeros(128, 128)
-        # T12downsized = zeros(129, 129)
 
         T11downsized = (T11true[4:8:end,4:8:end] .+ T11true[5:8:end,5:8:end] .+ T11true[4:8:end,5:8:end] .+ T11true[5:8:end,4:8:end]) ./ 4
         T22downsized = (T22true[4:8:end,4:8:end] .+ T22true[5:8:end,5:8:end] .+ T22true[4:8:end,5:8:end] .+ T22true[5:8:end,4:8:end]) ./ 4
@@ -202,16 +188,16 @@ function compute_true_hrS()
     # this is where the total time derivative gets stored
     # u0,v0,η0 = Diag.RungeKutta
 
-    S_u = zeros(127,128,1096)
-    S_v = zeros(128,127,1096)
+    S_u = zeros(127,128,365)
+    S_v = zeros(128,127,365)
 
-    hr_du = zeros(1023,1024,1096)
-    hr_dv = zeros(1024, 1023,1096)
-    hr_deta = zeros(1024,1024,1096)
+    hr_du = zeros(1023,1024,365)
+    hr_dv = zeros(1024, 1023,365)
+    hr_deta = zeros(1024,1024,365)
 
-    hrcg_du = zeros(127,128,1096)
-    hrcg_dv = zeros(128,127,1096)
-    hrcg_deta = zeros(128,128,1096)
+    hrcg_du = zeros(127,128,365)
+    hrcg_dv = zeros(128,127,365)
+    hrcg_deta = zeros(128,128,365)
 
     Shr_ = deepcopy(Shr)
     Slr_ = deepcopy(Slr)
@@ -230,7 +216,7 @@ function compute_true_hrS()
     Mu = zeros(Slr.grid.nux, Slr.grid.nuy)
     Mv = zeros(Slr.grid.nvx, Slr.grid.nvy)
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
-    for n = 1:1096
+    for n = 1:365
 
         # if n ≤ 766
         #     uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr1[:,:,n], vhr1[:,:,n], etahr1[:,:,n], Shr)
@@ -238,26 +224,27 @@ function compute_true_hrS()
         #     uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr2[:,:,n-766+1], vhr2[:,:,n-766+1], etahr2[:,:,n-766+1], Shr)
         # end
 
-        # uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcg[:,:,n], vhrcg[:,:,n], etahrcg[:,:,n], Slr)
+        uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhrall[:,:,n+1096], vhrall[:,:,n+1096], etahrall[:,:,n+1096], Shr)
+        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcgall[:,:,n+1096], vhrcgall[:,:,n], etahrcgall[:,:,n+1096], Slr)
 
-        # Shr_.Prog.u = uhr_
-        # Shr_.Prog.v = vhr_
-        # Shr_.Prog.η = etahr_
+        Shr_.Prog.u = uhr_
+        Shr_.Prog.v = vhr_
+        Shr_.Prog.η = etahr_
 
-        # Slr_.Prog.u = uhrcg_
-        # Slr_.Prog.v = vhrcg_
-        # Slr_.Prog.η = etahrcg_
+        Slr_.Prog.u = uhrcg_
+        Slr_.Prog.v = vhrcg_
+        Slr_.Prog.η = etahrcg_
 
-        # single_step!(duhr, dvhr, detahr, Shr_, n*thr)
-        # single_step!(dulr, dvlr, detalr, Slr_, n*tlr)
+        single_step!(duhr, dvhr, detahr, Shr_, (n + 1096 + 6)*thr)
+        single_step!(dulr, dvlr, detalr, Slr_, (n + 1096 + 6)*tlr)
 
-        # @views hr_du[:,:,n] .= duhr
-        # @views hr_dv[:,:,n] .= dvhr
-        # @views hr_deta[:,:,n] .= detahr
+        @views hr_du[:,:,n] .= duhr
+        @views hr_dv[:,:,n] .= dvhr
+        @views hr_deta[:,:,n] .= detahr
 
-        # @views hrcg_du[:,:,n] .= dulr
-        # @views hrcg_dv[:,:,n] .= dvlr
-        # @views hrcg_deta[:,:,n] .= detalr
+        @views hrcg_du[:,:,n] .= dulr
+        @views hrcg_dv[:,:,n] .= dvlr
+        @views hrcg_deta[:,:,n] .= detalr
 
         # imfilter!(dufiltered, hr_du[:,:,n], reflect(ker))
         # imfilter!(dvfiltered, hr_dv[:,:,n], reflect(ker))
