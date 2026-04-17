@@ -640,7 +640,7 @@ end
 function run_manystate()
 
     T = Float64
-    Ndays = 3
+    Ndays = 10
     Plr = ShallowWaters.Parameter(T=T,
         output=false,
         L_ratio=1,
@@ -683,7 +683,8 @@ function run_manystate()
     lower_bound = -10000
     upper_bound = 10000
 
-    init_ts = [1,4,8,13,18,23,28,33,38,41,44,48,53,58,63,68,73,78,83,86] .* 3 .+ 1
+    # init_ts = [1,4,8,13,18,23,28,33,38,41,44,48,53,58,63,68,73,78,83,86] .* 3 .+ 1
+    init_ts = [2, 20, 30, 40, 50, 60, 70, 80] .* 3 .+ 1
 
     nlp = manystatenlp_Chkp{Float64}(Ndays,init_ts[8],param_guess,lower_bound,upper_bound);
 
@@ -693,12 +694,12 @@ function run_manystate()
         # linear_solver=LapackCPUSolver,
         hessian_approximation=MadNLP.CompactLBFGS,
         quasi_newton_options=qn_options,
-        max_iter=40
+        max_iter=25
     )
 
     # ipopt(nlp, hessian_approximation="limited-memory", limited_memory_max_history=50, max_iter=3)
 
-    jldsave("result_online_manyinitconds_initday33_3dayoptimzation_startfrom20dayoptimization_constantdissipation_40iterations_8hourdata_200maxhistory_fixedcfl.jld2", result=result)
+    jldsave("result_online_manyinitconds_initday80_10dayoptimzation_startfrom20dayoptimization_constantdissipation_25iterations_8hourdata_200maxhistory_fixedcfl.jld2", result=result)
 
     return nothing
 
@@ -843,22 +844,21 @@ function finite_difference_withnlp(Ndays, xcoord, ycoord)
 
 end
 
-# how to save with jld2
+function average_weights()
 
-# jldsave("exp3_minimizer_initcond_forcing_adjoint_042925.jld2",
-#     u = reshape(result.minimizer[1:17292], 131, 132),
-#     v = reshape(result.minimizer[17293:34584], 132, 131),
-#     eta = reshape(result.minimizer[34585:end-1], 130, 130),
-#     Fx0 = result.minimizer[end]
-# )
+    # initial days used for the 3 day optimizations
+    init_ts = [1,3,8,13,18,23,28,33,38,41,44,48,53,58,63,68,73,78,83,86]
+    average = zeros(length(load_object("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/result_online_manyinitconds_initday1_3dayoptimzation_startfrom20dayoptimization_constantdissipation_40iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution))
+    for t in init_ts
+        average += load_object(make_filename(t)).solution
+    end
 
-# temp = ShallowWaters.PrognosticVars{Float64}(ShallowWaters.remove_halo(
-#                 S.Prog.u,
-#                 S.Prog.v,
-#                 S.Prog.η,
-#                 S.Prog.sst,
-#                 S
-#             )...)
-# fig = Figure();
-# ax, hm = heatmap(fig[1,1],temp.v, colormap=:balance)
-# Colorbar(fig[1,2], hm)
+    average = average / length(init_ts)
+
+    return average
+end
+
+function make_filename(t)
+    return "./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/" *
+        "result_online_manyinitconds_initday$(t)_3dayoptimzation_startfrom20dayoptimization_constantdissipation_40iterations_8hourdata_200maxhistory_fixedcfl.jld2"
+end

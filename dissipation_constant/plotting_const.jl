@@ -175,7 +175,7 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
+        Ndays=Ndays
     );
 
     Soffline = ShallowWaters.model_setup(Poffline);
@@ -199,18 +199,18 @@ function create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 7*365
+    Ndays = 3*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_vars=["u", "v", "η", "ζ"],
         # output_dt = 1,
-        output_dt=168,
+        # output_dt=168,
         # output_dt=12600,
         L_ratio=1,
         g=9.81,
         H=500,
         cfl=.898,
-        ϕ = 50.,
+        ϕ = 45.,
         wind_forcing_x="double_gyre",
         Fx0=0.12,
         Lx=3840e3,
@@ -228,9 +228,7 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays,
-        initial_cond="ncfile",
-        initpath="./multi3_newlatitude_3years_dailysaves/"
+        Ndays=Ndays
     );
 
     Sonline = ShallowWaters.model_setup(Ponline);
@@ -246,8 +244,9 @@ function create_models()
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-3-4-6-8-10-13-15-18-23-28-30-33-35-38-41-44-46-48-51-52-53-55-58-60-63-64-65-68-73-78-83-86-88-89daystart_1dayoptimizationinitialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1:2:89initdaystart_1dayoptimization_initialweightsmulti3daystate_fewerinitconds_15iterations.jld2").solution;
 
-    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
+    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
+    onlineweights = load_object("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/average_allresults.jld2")
     current = 1
     for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
         for layers in m[1]
@@ -260,9 +259,9 @@ function create_models()
     end
     # Sonline.constants.cD = onlineweights[end]
 
-    # Sonline.Prog.u .= copy(initial_cond[1]);
-    # Sonline.Prog.v .= copy(initial_cond[2]);
-    # Sonline.Prog.η .= copy(initial_cond[3]);
+    Sonline.Prog.u .= copy(initial_cond[1]);
+    Sonline.Prog.v .= copy(initial_cond[2]);
+    Sonline.Prog.η .= copy(initial_cond[3]);
 
     P = ShallowWaters.time_integration(Sonline);
 
