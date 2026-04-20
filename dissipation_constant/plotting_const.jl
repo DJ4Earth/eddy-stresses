@@ -199,12 +199,12 @@ function create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 3*365
+    Ndays = 7*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_vars=["u", "v", "η", "ζ"],
         # output_dt = 1,
-        # output_dt=168,
+        output_dt=168,
         # output_dt=12600,
         L_ratio=1,
         g=9.81,
@@ -228,7 +228,9 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
+        initial_cond="ncfile",
+        initpath="./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves"
     );
 
     Sonline = ShallowWaters.model_setup(Ponline);
