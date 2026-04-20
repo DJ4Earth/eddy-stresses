@@ -439,19 +439,10 @@ function load_models()
     vmulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/v.nc", "v");
     etamulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/eta.nc", "eta");
 
-    # generalizability tests
-
-    uzb_lat = ncread("./ZB_newlat_3years_dailysaves/u.nc", "u");
-    vzb_lat = ncread("./ZB_newlat_3years_dailysaves/v.nc", "v");
-    etazb_lat = ncread("./ZB_newlat_3years_dailysaves/eta.nc", "eta");
-
-    umulti2_lat = ncread("./dissipation_constant/multi2_newlatitude_3years_dailysaves/u.nc", "u");
-    vmulti2_lat = ncread("./dissipation_constant/multi2_newlatitude_3years_dailysaves/v.nc", "v");
-    etamulti2_lat = ncread("./dissipation_constant/multi2_newlatitude_3years_dailysaves/eta.nc", "eta");
-
-    umulti3_lat = ncread("./dissipation_constant/multi3_newlatitude_3years_dailysaves/u.nc", "u");
-    vmulti3_lat = ncread("./dissipation_constant/multi3_newlatitude_3years_dailysaves/v.nc", "v");
-    etamulti3_lat = ncread("./dissipation_constant/multi3_newlatitude_3years_dailysaves/eta.nc", "eta");
+    # trying the averaging thing
+    u3avg = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/u.nc", "u");
+    v3avg = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/v.nc", "v");
+    eta3avg = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/eta.nc", "eta");
 
     # the following didn't work as loss functions
 
@@ -2271,6 +2262,8 @@ function energy_plots()
     multi10     = zeros(Float64, N)
     multi20     = zeros(Float64, N)
 
+    threedayavg = zeros(Float64, N)
+
     # appendix
 
     kespec = zeros(Float64, N)
@@ -2293,6 +2286,8 @@ function energy_plots()
         multi5[j] = sum(abs2, umulti5[:,:,j]) + sum(abs2, vmulti5[:,:,j])
         multi10[j] = sum(abs2, umulti10[:,:,j]) + sum(abs2, vmulti10[:,:,j])
         multi20[j] = sum(abs2, umulti20[:,:,j]) + sum(abs2, vmulti20[:,:,j])
+
+        threedayavg[j] = sum(abs2, u3avg[:,:,j]) + sum(abs2, v3avg[:,:,j])
         # appendix stuff
         # kespec[j] = sum(abs2, ukespec[:,:,j]) + sum(abs2, vkespec[:,:,j])
         # hybrid[j] = sum(abs2, uhybrid[:,:,j]) + sum(abs2, vhybrid[:,:,j])
@@ -2360,7 +2355,7 @@ function energy_plots()
             ylabel="Energy",
             title="Spatially averaged energy over 3 years"
     )
-    lines!(ax, LinRange(0, 3*365, 1096),  cghr ./ (128^2), label="Coarse-grained 3.75 km resolution", color=:black)
+    lines!(ax, LinRange(0, 3*365, 1096),  hrcg ./ (128^2), label="Coarse-grained 3.75 km resolution", color=:black)
     lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure", color=:gray)
     lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
     # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
@@ -2375,6 +2370,7 @@ function energy_plots()
     # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
     # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, batched 10 day")#, color=:teal)
     lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
+    lines!(ax, LinRange(0, 3*365, 1096), threedayavg ./ (128^2), label="Averaged three-day")
     Legend(fig[1, 2], ax)
 
     # 3 year relative error figure
