@@ -445,9 +445,29 @@ function load_models()
     etamulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/eta.nc", "eta");
 
     # trying the averaging thing
-    u3avg = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/u.nc", "u");
-    v3avg = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/v.nc", "v");
-    eta3avg = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/eta.nc", "eta");
+    u3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/u.nc", "u");
+    v3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/v.nc", "v");
+    eta3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/eta.nc", "eta");
+
+    u3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/u.nc", "u");
+    v3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/v.nc", "v");
+    eta3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/eta.nc", "eta");
+
+    u3avgall = cat(u3avg3, u3avg7[:,:,2:end]; dims=3);
+    v3avgall = cat(v3avg3, v3avg7[:,:,2:end]; dims=3);
+    eta3avgall = cat(eta3avg3, eta3avg7[:,:,2:end]; dims=3);
+
+    u10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/u.nc", "u");
+    v10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/v.nc", "v");
+    eta10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/eta.nc", "eta");
+
+    u10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/u.nc", "u");
+    v10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/v.nc", "v");
+    eta10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/eta.nc", "eta");
+
+    u10avgall = cat(u10avg3, u10avg7[:,:,2:end]; dims=3);
+    v10avgall = cat(v10avg3, v10avg7[:,:,2:end]; dims=3);
+    eta10avgall = cat(eta10avg3, eta10avg7[:,:,2:end]; dims=3);
 
     # the following didn't work as loss functions
 
@@ -2267,8 +2287,6 @@ function energy_plots()
     multi10     = zeros(Float64, N)
     multi20     = zeros(Float64, N)
 
-    threedayavg = zeros(Float64, N)
-
     # appendix
 
     kespec = zeros(Float64, N)
@@ -2292,7 +2310,6 @@ function energy_plots()
         multi10[j] = sum(abs2, umulti10[:,:,j]) + sum(abs2, vmulti10[:,:,j])
         multi20[j] = sum(abs2, umulti20[:,:,j]) + sum(abs2, vmulti20[:,:,j])
 
-        threedayavg[j] = sum(abs2, u3avg[:,:,j]) + sum(abs2, v3avg[:,:,j])
         # appendix stuff
         # kespec[j] = sum(abs2, ukespec[:,:,j]) + sum(abs2, vkespec[:,:,j])
         # hybrid[j] = sum(abs2, uhybrid[:,:,j]) + sum(abs2, vhybrid[:,:,j])
@@ -2339,8 +2356,13 @@ function energy_plots()
     end
 
     hrcg = zeros(Float64, 1461)
+    threedayavg = zeros(Float64, 1461)
+    tendayavg = zeros(Float64, 1461)
+
     for j = 1:1461
             hrcg[j] = sum(abs2, uhrcgall[:,:,j]) + sum(abs2, vhrcgall[:,:,j])
+            threedayavg[j] = sum(abs2, u3avgall[:,:,j]) + sum(abs2, v3avgall[:,:,j])
+            tendayavg[j] = sum(abs2, u10avgall[:,:,j]) + sum(abs2, v10avgall[:,:,j])
     end
 
     multi210p = zeros(Float64, 522)
@@ -2378,81 +2400,6 @@ function energy_plots()
     lines!(ax, LinRange(0, 3*365, 1096), threedayavg ./ (128^2), label="Averaged three-day")
     Legend(fig[1, 2], ax)
 
-    # 3 year relative error figure
-    fig = Figure(size=(1000, 500), fontsize=15);
-    
-    ax = Axis(fig[1,1],
-            xlabel="Day",
-            # ylabel="Energy",
-            title="Relative error in spatially averaged energy"
-    )
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.(noparam./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.(zb./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{ZB} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( thirtyday./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{30} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1_more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi2./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi2} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, batched 2 day")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi3more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi3} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi10./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi10} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    Legend(fig[1, 2], ax)
-
-    # combined three year figure plus the relative error figure
-
-    fig = Figure(size=(1000, 500), fontsize=15);
-    ax = Axis(fig[1,1],
-            xlabel="Day",
-            ylabel="Energy",
-            title="Spatially averaged energy over 3 years"
-    )
-    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure")
-    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
-    lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, batched 2 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, batched 3 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, batched 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    lines!(ax, LinRange(0, 3*365, 1096),  cghr ./ (128^2), label="Coarse-grained HR", color=:darkorchid)
-
-    Legend(fig[1, 2], ax)
-
-    ax2 = Axis(fig[2,1],
-            xlabel="Day",
-            # ylabel="Energy",
-            title="Relative error in spatially averaged energy"
-    )
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.(noparam./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.(zb./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{ZB} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.( thirtyday./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{30} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1_more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.( multi2./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi2} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, batched 2 day")
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.( multi3more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi3} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.( multi10./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi10} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")#, color=:teal)
-    lines!(ax2, LinRange(0, 3*365, 1096), (abs.( multi20./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi20} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}", color=:red3)
-    Legend(fig[2, 2], ax2)
-
     # 10 year figure
     cghr10_forplotting = cat(cghr10[1:7:1096], cghr10[1097:end]; dims=1)
     fig = Figure(size=(1000, 500), fontsize=15);
@@ -2473,31 +2420,6 @@ function energy_plots()
     lines!(ax, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Online closure, ensemble 3 day")
     lines!(ax, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Online closure, ensemble 10 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    Legend(fig[1, 2], ax)
-
-    # 10 year relative error figure
-    fig = Figure(size=(1000, 500), fontsize=15);
-    ax = Axis(fig[1,1],
-            xlabel="Day",
-            ylabel="Energy",
-            title="Spatially averaged energy over 3 years"
-    )
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.(noparam./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.(zb./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{ZB} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( thirtyday./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{30} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi1_more./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi1} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi2./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi2} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, batched 2 day")
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi3_new./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi3} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    lines!(ax, LinRange(0, 3*365, 1096), (abs.( multi10./ (128^2) .- cghr./ (128^2) ) ./ (cghr ./ (128^2)) ), label=L"|\mathcal{E}_{multi10} - \overline{\mathcal{E}}| / \overline{\mathcal{E}}")#, color=:teal)
-    # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
     Legend(fig[1, 2], ax)
 
     fig = Figure(size=(1100, 500), fontsize=15);
@@ -2543,6 +2465,9 @@ function energy_plots()
     # # Legend(fig[1, 2], ax)
 
     hrcg_10 = cat(hrcg[1:7:1096], hrcg[1097:end];dims=1)
+    avg3_10 = cat(threedayavg[1:7:1096], threedayavg[1097:end];dims=1)
+    avg10_10 = cat(tendayavg[1:7:1096], tendayavg[1097:end];dims=1)
+
     ax3 = Axis(fig[1,1],
         # xlabel="Day",
         ylabel="Energy",
@@ -2559,6 +2484,9 @@ function energy_plots()
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, batched 3 day, fewer initial conditions")
     lines!(ax3, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Ensemble 3 day",color=colors[2])
     lines!(ax3, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Ensemble 10 day",color=colors[3])
+    lines!(ax3, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged single initial conditions, 3 day optim.", color=colors[4])
+    lines!(ax3, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged single initial conditions, 10 day optim.", color=colors[5])
+
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
     # Legend(fig[2, 2], ax3)
 
@@ -2573,7 +2501,7 @@ function energy_plots()
 
     # Legend(fig[3, 2], ax4)
 
-    Legend(fig[3, 1], ax, orientation = :horizontal)
+    Legend(fig[3, 1], ax3, orientation = :horizontal)
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[2, 1] = GridLayout()
@@ -2600,16 +2528,18 @@ function energy_plots()
     lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20", color=:red)
     # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128^2), label="5 day")
     lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="10 day")
-    lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="20 day")
+    lines!(ax, LinRange(0, 3*365, 1096), threedayavg[1:1096] ./ (128^2), label="Averaged 3 day")
+    lines!(ax, LinRange(0, 3*365, 1096), tendayavg[1:1096] ./ (128^2), label="Averaged 3 day")
+    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="20 day")
     # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="30 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="30 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, ensemble 2 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, ensemble 3 day")
     # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
     # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, ensemble 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Ensemble 20 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Ensemble 20 day")
     # Legend(fig[1, 2], ax)
 
     ax3 = Axis(fig[2,1],
