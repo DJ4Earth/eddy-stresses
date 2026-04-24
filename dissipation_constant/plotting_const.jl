@@ -2346,7 +2346,7 @@ function energy_plots()
 
     for j = 1:522
 
-        # zb10[j] = sum(abs2, uzb10[:,:,j]) + sum(abs2, vzb10[:,:,j])
+        zb10[j] = sum(abs2, uzb10[:,:,j]) + sum(abs2, vzb10[:,:,j])
         noparam10[j] = sum(abs2, unoparam10[:,:,j]) + sum(abs2, vnoparam10[:,:,j])
 
         fiveday10[j] = sum(abs2, u5s10[:,:,j]) + sum(abs2, v5s10[:,:,j])
@@ -2382,6 +2382,10 @@ function energy_plots()
             multi210p[j] = sum(abs2, umulti210more[:,:,j]) + sum(abs2, vmulti210more[:,:,j])
             multi310p[j] = sum(abs2, umulti310more[:,:,j]) + sum(abs2, vmulti310more[:,:,j])
             avg3single[j] = sum(abs2, u3single[:,:,j]) + sum(abs2, v3single[:,:,j])
+    end
+
+    for j = 1:424
+            avg10single[j] = sum(abs2, u10single[:,:,j]) + sum(abs2, v10single[:,:,j])
     end
 
     multi2all = cat(multi210, multi210p[2:end]; dims=1);
@@ -2492,12 +2496,13 @@ function energy_plots()
     # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), twentyday./ (128^2), label="Online closure, 20 day")
     # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128^2), label="Online closure, 30 day")
-    lines!(ax3, LinRange(0, 10*365, 522), multi210 ./ (128^2), label="Ensemble 2 day",color=colors[1])
+    # lines!(ax3, LinRange(0, 10*365, 522), multi210 ./ (128^2), label="Ensemble 2 day",color=colors[1])
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, batched 3 day, fewer initial conditions")
-    lines!(ax3, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Ensemble 3 day",color=colors[2])
-    lines!(ax3, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Ensemble 10 day",color=colors[3])
+    # lines!(ax3, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Ensemble 3 day",color=colors[2])
+    # lines!(ax3, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Ensemble 10 day",color=colors[3])
     lines!(ax3, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged single initial conditions, 3 day optim.", color=colors[4])
     lines!(ax3, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged single initial conditions, 10 day optim.", color=colors[5])
+    lines!(ax3, LinRange(0, 10*365, 424), avg10single ./ (128^2), label="3 day optim.", color=colors[6])
 
     # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
     # Legend(fig[2, 2], ax3)
