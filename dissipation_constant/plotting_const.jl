@@ -457,6 +457,10 @@ function load_models()
     v3avgall = cat(v3avg3, v3avg7[:,:,2:end]; dims=3);
     eta3avgall = cat(eta3avg3, eta3avg7[:,:,2:end]; dims=3);
 
+    u3single = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/3dayoptimization_30dayinitcond_startfrom20dayweights_10years_weeklysaves/u.nc", "u");
+    v3single = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/3dayoptimization_30dayinitcond_startfrom20dayweights_10years_weeklysaves/v.nc", "v");
+    eta3single = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/3dayoptimization_30dayinitcond_startfrom20dayweights_10years_weeklysaves/eta.nc", "eta");
+
     u10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/u.nc", "u");
     v10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/v.nc", "v");
     eta10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/eta.nc", "eta");
@@ -468,6 +472,10 @@ function load_models()
     u10avgall = cat(u10avg3, u10avg7[:,:,2:end]; dims=3);
     v10avgall = cat(v10avg3, v10avg7[:,:,2:end]; dims=3);
     eta10avgall = cat(eta10avg3, eta10avg7[:,:,2:end]; dims=3);
+
+    u10single = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/10dayoptimization_startfrom20dayweights_10years_weeklysaves/u.nc", "u");
+    v10single = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/10dayoptimization_startfrom20dayweights_10years_weeklysaves/v.nc", "v");
+    eta10single = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/10dayoptimization_startfrom20dayweights_10years_weeklysaves/eta.nc", "eta");
 
     # the following didn't work as loss functions
 
@@ -2338,7 +2346,7 @@ function energy_plots()
 
     for j = 1:522
 
-        zb10[j] = sum(abs2, uzb10[:,:,j]) + sum(abs2, vzb10[:,:,j])
+        # zb10[j] = sum(abs2, uzb10[:,:,j]) + sum(abs2, vzb10[:,:,j])
         noparam10[j] = sum(abs2, unoparam10[:,:,j]) + sum(abs2, vnoparam10[:,:,j])
 
         fiveday10[j] = sum(abs2, u5s10[:,:,j]) + sum(abs2, v5s10[:,:,j])
@@ -2367,9 +2375,13 @@ function energy_plots()
 
     multi210p = zeros(Float64, 522)
     multi310p = zeros(Float64, 522)
+
+    avg3single = zeros(Float64, 522)
+    avg10single = zeros(Float64, 424)
     for j = 1:522
             multi210p[j] = sum(abs2, umulti210more[:,:,j]) + sum(abs2, vmulti210more[:,:,j])
             multi310p[j] = sum(abs2, umulti310more[:,:,j]) + sum(abs2, vmulti310more[:,:,j])
+            avg3single[j] = sum(abs2, u3single[:,:,j]) + sum(abs2, v3single[:,:,j])
     end
 
     multi2all = cat(multi210, multi210p[2:end]; dims=1);
