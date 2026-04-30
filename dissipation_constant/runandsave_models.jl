@@ -349,10 +349,10 @@ function online_runs(j)
     Sonline = ShallowWaters.model_setup(Ponline);
 
     # initial days used for the 3 day optimizations
-    # init_ts = [1,3,8,13,18,23,28,33,38,41,44,48,53,58,63,68,73,78,83,86]
+    init_ts = [1,3,8,13,18,23,28,33,38,41,44,48,53,58,63,68,73,78,83,86]
 
     # inital days used for the 10 day optimizations
-    init_ts = [2, 20, 30, 40, 50, 60, 70, 80]
+    # init_ts = [2, 20, 30, 40, 50, 60, 70, 80]
     t = init_ts[j]
     onlineweights = load_object(make_filename2(t)).solution;
 
@@ -376,8 +376,8 @@ function online_runs(j)
 end
 
 function make_filename2(t)
-    # return "./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/" *
-    #     "result_online_manyinitconds_initday$(t)_3dayoptimzation_startfrom20dayoptimization_constantdissipation_40iterations_8hourdata_200maxhistory_fixedcfl.jld2"
-    return "./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/" *
-          "result_online_manyinitconds_initday$(t)_10dayoptimzation_startfrom20dayoptimization_constantdissipation_25iterations_8hourdata_200maxhistory_fixedcfl.jld2"
+    return "./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/" *
+        "result_online_manyinitconds_initday$(t)_3dayoptimzation_startfrom20dayoptimization_constantdissipation_40iterations_8hourdata_200maxhistory_fixedcfl.jld2"
+    # return "./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/" *
+    #       "result_online_manyinitconds_initday$(t)_10dayoptimzation_startfrom20dayoptimization_constantdissipation_25iterations_8hourdata_200maxhistory_fixedcfl.jld2"
 end
