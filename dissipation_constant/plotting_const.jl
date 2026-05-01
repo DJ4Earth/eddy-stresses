@@ -171,39 +171,6 @@ function load_models()
     vmulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/v.nc", "v");
     etamulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/eta.nc", "eta");
 
-    # trying the averaging thing
-    u3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/u.nc", "u");
-    v3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/v.nc", "v");
-    eta3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/eta.nc", "eta");
-
-    u3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/u.nc", "u");
-    v3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/v.nc", "v");
-    eta3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/eta.nc", "eta");
-
-    u3avgall = cat(u3avg3, u3avg7[:,:,2:end]; dims=3);
-    v3avgall = cat(v3avg3, v3avg7[:,:,2:end]; dims=3);
-    eta3avgall = cat(eta3avg3, eta3avg7[:,:,2:end]; dims=3);
-
-    u3single = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/3dayoptimization_30dayinitcond_startfrom20dayweights_10years_weeklysaves/u.nc", "u");
-    v3single = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/3dayoptimization_30dayinitcond_startfrom20dayweights_10years_weeklysaves/v.nc", "v");
-    eta3single = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/3dayoptimization_30dayinitcond_startfrom20dayweights_10years_weeklysaves/eta.nc", "eta");
-
-    u10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/u.nc", "u");
-    v10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/v.nc", "v");
-    eta10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/eta.nc", "eta");
-
-    u10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/u.nc", "u");
-    v10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/v.nc", "v");
-    eta10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/eta.nc", "eta");
-
-    u10avgall = cat(u10avg3, u10avg7[:,:,2:end]; dims=3);
-    v10avgall = cat(v10avg3, v10avg7[:,:,2:end]; dims=3);
-    eta10avgall = cat(eta10avg3, eta10avg7[:,:,2:end]; dims=3);
-
-    u10single = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/10dayoptimization_startfrom20dayweights_10years_weeklysaves/u.nc", "u");
-    v10single = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/10dayoptimization_startfrom20dayweights_10years_weeklysaves/v.nc", "v");
-    eta10single = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/10dayoptimization_startfrom20dayweights_10years_weeklysaves/eta.nc", "eta");
-
     # the following didn't work as loss functions
 
     ukespec = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
@@ -279,6 +246,72 @@ function load_models()
     umulti20all = cat(umulti20, umulti2010[:,:,157:end]; dims=3);
     vmulti20all = cat(vmulti20, vmulti2010[:,:,157:end]; dims=3);
     etamulti20all = cat(etamulti20, etamulti2010[:,:,157:end]; dims=3);
+
+end
+
+function averaged_weights_models()
+
+    # trying the averaging thing
+    u3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/u.nc", "u");
+    v3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/v.nc", "v");
+    eta3avg3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_3years_dailysaves/eta.nc", "eta");
+
+    u3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/u.nc", "u");
+    v3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/v.nc", "v");
+    eta3avg7 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/128_averagedweights_3dayoptimizations_startfrom3years_7years_weeklysaves/eta.nc", "eta");
+
+    u3avgall = cat(u3avg3, u3avg7[:,:,2:end]; dims=3);
+    v3avgall = cat(v3avg3, v3avg7[:,:,2:end]; dims=3);
+    eta3avgall = cat(eta3avg3, eta3avg7[:,:,2:end]; dims=3);
+
+    u10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/u.nc", "u");
+    v10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/v.nc", "v");
+    eta10avg3 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_3years_dailysaves/eta.nc", "eta");
+
+    u10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/u.nc", "u");
+    v10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/v.nc", "v");
+    eta10avg7 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/128_averagedweights_10dayoptimizations_startfrom3year_7years_weeklysaves/eta.nc", "eta");
+
+    u10avgall = cat(u10avg3, u10avg7[:,:,2:end]; dims=3);
+    v10avgall = cat(v10avg3, v10avg7[:,:,2:end]; dims=3);
+    eta10avgall = cat(eta10avg3, eta10avg7[:,:,2:end]; dims=3);
+
+    # inidividual weight integrations
+    # 3 day
+
+    # 10 day
+    u10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday2_15years_weeklysaves/u.nc", "u");
+    v10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday2_15years_weeklysaves/v.nc", "v");
+    eta10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday2_15years_weeklysaves/eta.nc", "eta");
+
+    u10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday20_15years_weeklysaves/u.nc", "u");
+    v10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday20_15years_weeklysaves/v.nc", "v");
+    eta10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday20_15years_weeklysaves/eta.nc", "eta");
+
+    u10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday30_15years_weeklysaves/u.nc", "u");
+    v10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday30_15years_weeklysaves/v.nc", "v");
+    eta10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday30_15years_weeklysaves/eta.nc", "eta");
+
+    u10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday40_10years_weeklysaves/u.nc", "u");
+    v10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday40_10years_weeklysaves/v.nc", "v");
+    eta10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday40_10years_weeklysaves/eta.nc", "eta");
+    
+    u10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday50_15years_weeklysaves/u.nc", "u");
+    v10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday50_15years_weeklysaves/v.nc", "v");
+    eta10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday50_15years_weeklysaves/eta.nc", "eta");
+
+    u10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday60_15years_weeklysaves/u.nc", "u");
+    v10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday60_15years_weeklysaves/v.nc", "v");
+    eta10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday60_15years_weeklysaves/eta.nc", "eta");
+    
+    u10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday70_15years_weeklysaves/u.nc", "u");
+    v10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday70_15years_weeklysaves/v.nc", "v");
+    eta10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday70_15years_weeklysaves/eta.nc", "eta");
+    
+    u10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday80_15years_weeklysaves/u.nc", "u");
+    v10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday80_15years_weeklysaves/v.nc", "v");
+    eta10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday80_15years_weeklysaves/eta.nc", "eta");
+
 
 end
 
@@ -2077,7 +2110,7 @@ function energy_plots()
         noparam10[j] = sum(abs2, unoparam10[:,:,j]) + sum(abs2, vnoparam10[:,:,j])
 
         fiveday10[j] = sum(abs2, u5s10[:,:,j]) + sum(abs2, v5s10[:,:,j])
-        tenday10[j] = sum(abs2, u10new[:,:,j]) + sum(abs2, v10new[:,:,j])
+        tenday10[j] = sum(abs2, u10s10[:,:,j]) + sum(abs2, v10s10[:,:,j])
         twentyday10[j] = sum(abs2, u20s10[:,:,j]) + sum(abs2, v20s10[:,:,j])
         thirtyday10[j] = sum(abs2, u30s10[:,:,j]) + sum(abs2, v30s10[:,:,j])
 
@@ -2115,70 +2148,25 @@ function energy_plots()
             avg10single[j] = sum(abs2, u10single[:,:,j]) + sum(abs2, v10single[:,:,j])
     end
 
+    single102 = zeros(Float64, 783)
+    single1020 = zeros(Float64, 783)
+    single1030 = zeros(Float64, 783)
+    single1050 = zeros(Float64, 783)
+    single1060 = zeros(Float64, 783)
+    single1070 = zeros(Float64, 783)
+    single1080 = zeros(Float64, 783)
+    for j = 1:783
+        single102[j] = sum(abs2, u10single2[:,:,j]) + sum(abs2, v10single2[:,:,j])
+        single1020[j] = sum(abs2, u10single20[:,:,j]) + sum(abs2, v10single20[:,:,j])
+        single1030[j] = sum(abs2, u10single30[:,:,j]) + sum(abs2, v10single30[:,:,j])
+        single1050[j] = sum(abs2, u10single50[:,:,j]) + sum(abs2, v10single50[:,:,j])
+        single1060[j] = sum(abs2, u10single60[:,:,j]) + sum(abs2, v10single60[:,:,j])
+        single1070[j] = sum(abs2, u10single70[:,:,j]) + sum(abs2, v10single70[:,:,j])
+        single1080[j] = sum(abs2, u10single80[:,:,j]) + sum(abs2, v10single80[:,:,j])
+    end
+
     multi2all = cat(multi210, multi210p[2:end]; dims=1);
     multi3all = cat(multi3more10, multi310p[2:end]; dims=1);
-
-    # 3 year figure
-    fig = Figure(size=(1000, 500), fontsize=15);
-    ax = Axis(fig[1,1],
-            xlabel="Day",
-            ylabel="Energy",
-            title="Spatially averaged energy over 3 years"
-    )
-    lines!(ax, LinRange(0, 3*365, 1096),  hrcg ./ (128^2), label="Coarse-grained 3.75 km resolution", color=:black)
-    lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure", color=:gray)
-    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20")
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="Online closure, 30 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
-    lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, batched 2 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, batched 3 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, batched 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    lines!(ax, LinRange(0, 3*365, 1096), threedayavg ./ (128^2), label="Averaged three-day")
-    Legend(fig[1, 2], ax)
-
-    # 10 year figure
-    cghr10_forplotting = cat(cghr10[1:7:1096], cghr10[1097:end]; dims=1)
-    fig = Figure(size=(1000, 500), fontsize=15);
-    ax = Axis(fig[1,1],
-            xlabel="Day",
-            ylabel="Energy",
-            title="Spatially averaged energy over 10 years"
-    )
-    lines!(ax, LinRange(0, 10*365, 522),  cghr10_forplotting ./ (128^2), label="Filtered, coarse-grained 3.75 km")
-    lines!(ax, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20")
-    lines!(ax, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="30 km resolution, no closure")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday./ (128^2), label="Online closure, 10 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), twentyday./ (128^2), label="Online closure, 20 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128^2), label="Online closure, 30 day")
-    lines!(fig[1,1], LinRange(0, 10*365, 522), multi210 ./ (128^2), label="Online closure, ensemble 2 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, batched 3 day, fewer initial conditions")
-    lines!(ax, LinRange(0, 10*365, 522), multi3more10 ./ (128^2), label="Online closure, ensemble 3 day")
-    lines!(ax, LinRange(0, 10*365, 522), multi1010 ./ (128^2), label="Online closure, ensemble 10 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
-    Legend(fig[1, 2], ax)
-
-    fig = Figure(size=(1100, 500), fontsize=15);
-    ax = Axis(fig[1,1], xlabel="Day",ylabel="Energy",title="Spatially averaged energy over 3 years")
-    lines!(ax, LinRange(0, 3*365, 1096), hrcg[1:1096]./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black
-    )
-    # lines!(fig[1,1], LinRange(0, 3*365, 1096), noparam./ (128^2), label="30 km resolution, no closure")
-    lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20",color=:red)
-    lines!(ax, LinRange(0, 3*365, 1096), hybrid./ (128^2), label="Hybrid")
-    lines!(ax, LinRange(0, 3*365, 1096), kespec./ (128^2), label="KE spectrum")
-    lines!(ax, LinRange(0, 3*365, 1096), kespecpd./ (128^2), label="KE spectrum percent-difference")
-    lines!(ax, LinRange(0, 3*365, 1096), fourier./ (128^2), label="Fourier")
-    # axislegend(position = (0,1))
-
-    Legend(fig[2, 1], ax, orientation = :horizontal)
-
 
     # 3 year, 10 year, 20 year
 
@@ -2208,8 +2196,6 @@ function energy_plots()
     # # Legend(fig[1, 2], ax)
 
     hrcg_10 = cat(hrcg[1:7:1096], hrcg[1097:end];dims=1)
-    avg3_10 = cat(threedayavg[1:7:1096], threedayavg[1097:end];dims=1)
-    avg10_10 = cat(tendayavg[1:7:1096], tendayavg[1097:end];dims=1)
 
     ax3 = Axis(fig[1,1],
         # xlabel="Day",
@@ -2285,6 +2271,62 @@ function energy_plots()
     # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, ensemble 10 day")#, color=:teal)
     # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Ensemble 20 day")
     # Legend(fig[1, 2], ax)
+
+    ax3 = Axis(fig[2,1],
+        xlabel="Day",
+        ylabel="Energy",
+        title="Spatially averaged energy over ten years"
+    )
+    lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="No closure, 30 km",color=:gray)
+    lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
+    # lines!(ax3, LinRange(0, 10*365, 522), fiveday10./ (128^2), label="5 day")
+    lines!(ax3, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
+    lines!(ax3, LinRange(0, 10*365, 522), twentyday10./ (128^2), label="20 day")
+    lines!(ax3, LinRange(0, 10*365, 522), thirtyday10./ (128^2), label="30 day")
+    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128^2), label="Ensemble 20 day")
+
+    # Legend(fig[2, 2], ax3)
+
+    Legend(fig[3, 1], ax, orientation = :horizontal)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[2, 1] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+
+    # single initial condition runs
+
+    avg3_10 = cat(threedayavg[1:7:1096], threedayavg[1097:end];dims=1)
+    avg10_10 = cat(tendayavg[1:7:1096], tendayavg[1097:end];dims=1)
+
+    fig = Figure(size=(1000, 600), fontsize=15);
+    ax = Axis(fig[1,1],
+            # xlabel="Day",
+            ylabel="Energy",
+            title="10 day single runs"
+    )
+    lines!(ax, LinRange(0, 10*365, 522), hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
+    lines!(ax, LinRange(0, 10*365, 522), noparam10./ (128^2), label="No closure, 30 km",color=:gray)
+    # lines!(ax, LinRange(0, 10*365, 522), zb10./ (128^2), label="ZB20", color=:red)
+    # lines!(ax, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
+    # lines!(ax, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged 3 day")
+    lines!(ax, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged 10 day")
+    lines!(ax, LinRange(0, 10*365, 522), single102[1:522] ./ 128^2, label="2")
+    lines!(ax, LinRange(0, 10*365, 522), single1020[1:522] ./ 128^2, label="20")
+    lines!(ax, LinRange(0, 10*365, 522), single1030[1:522] ./ 128^2, label="30")
+    lines!(ax, LinRange(0, 10*365, 522), single1050[1:522] ./ 128^2, label="50")
+    lines!(ax, LinRange(0, 10*365, 522), single1060[1:522] ./ 128^2, label="60")
+    lines!(ax, LinRange(0, 10*365, 522), single1070[1:522] ./ 128^2, label="70")
+    lines!(ax, LinRange(0, 10*365, 522), single1080[1:522] ./ 128^2, label="80")
+    Legend(fig[1, 2], ax)
+
 
     ax3 = Axis(fig[2,1],
         xlabel="Day",
