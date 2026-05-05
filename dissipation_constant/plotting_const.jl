@@ -278,40 +278,128 @@ function averaged_weights_models()
 
     # inidividual weight integrations
     # 3 day
+    u3single1 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday1_15years_weeklysaves/u.nc", "u");
+    v3single1 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday1_15years_weeklysaves/v.nc", "v");
+    eta3single1 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday1_15years_weeklysaves/eta.nc", "eta");
+
+    u3single3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday3_15years_weeklysaves/u.nc", "u");
+    v3single3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday3_15years_weeklysaves/v.nc", "v");
+    eta3single3 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday3_15years_weeklysaves/eta.nc", "eta");
+
+    u3single8 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday8_15years_weeklysaves/u.nc", "u");
+    v3single8 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday8_15years_weeklysaves/v.nc", "v");
+    eta3single8 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday8_15years_weeklysaves/eta.nc", "eta");
+
+    u3single13 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday13_15years_weeklysaves/u.nc", "u");
+    v3single13 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday13_15years_weeklysaves/v.nc", "v");
+    eta3single13 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday13_15years_weeklysaves/eta.nc", "eta");
+
+    u3single23 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday23_15years_weeklysaves/u.nc", "u");
+    v3single23 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday23_15years_weeklysaves/v.nc", "v");
+    eta3single23 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday23_15years_weeklysaves/eta.nc", "eta");
+
+    u3single28 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday28_15years_weeklysaves/u.nc", "u");
+    v3single28 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday28_15years_weeklysaves/v.nc", "v");
+    eta3single28 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday28_15years_weeklysaves/eta.nc", "eta");
+
+    u3single33 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday33_15years_weeklysaves/u.nc", "u");
+    v3single33 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday33_15years_weeklysaves/v.nc", "v");
+    eta3single33 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday33_15years_weeklysaves/eta.nc", "eta");
+
+    u3single38 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday38_15years_weeklysaves/u.nc", "u");
+    v3single38 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday38_15years_weeklysaves/v.nc", "v");
+    eta3single38 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday38_15years_weeklysaves/eta.nc", "eta");
+
+    u3single41 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday41_15years_weeklysaves/u.nc", "u");
+    v3single41 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday41_15years_weeklysaves/v.nc", "v");
+    eta3single41 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday41_15years_weeklysaves/eta.nc", "eta");
+
+    u3single44 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday44_15years_weeklysaves/u.nc", "u");
+    v3single44 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday44_15years_weeklysaves/v.nc", "v");
+    eta3single44 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday44_15years_weeklysaves/eta.nc", "eta");
+
+    u3single48 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday48_15years_weeklysaves/u.nc", "u");
+    v3single48 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday48_15years_weeklysaves/v.nc", "v");
+    eta3single48 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday48_15years_weeklysaves/eta.nc", "eta");
+
+    u3single53 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday53_15years_weeklysaves/u.nc", "u");
+    v3single53 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday53_15years_weeklysaves/v.nc", "v");
+    eta3single53 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday53_15years_weeklysaves/eta.nc", "eta");
+
+    u3single58 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday58_15years_weeklysaves/u.nc", "u");
+    v3single58 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday58_15years_weeklysaves/v.nc", "v");
+    eta3single58 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday58_15years_weeklysaves/eta.nc", "eta");
+
+    u3single63 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday63_15years_weeklysaves/u.nc", "u");
+    v3single63 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday63_15years_weeklysaves/v.nc", "v");
+    eta3single63 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday63_15years_weeklysaves/eta.nc", "eta");
+
+    u3single68 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday68_15years_weeklysaves/u.nc", "u");
+    v3single68 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday68_15years_weeklysaves/v.nc", "v");
+    eta3single68 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday68_15years_weeklysaves/eta.nc", "eta");
+
+    u3single73 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday73_15years_weeklysaves/u.nc", "u");
+    v3single73 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday73_15years_weeklysaves/v.nc", "v");
+    eta3single73 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday73_15years_weeklysaves/eta.nc", "eta");
+
+    u3single78 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday78_15years_weeklysaves/u.nc", "u");
+    v3single78 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday78_15years_weeklysaves/v.nc", "v");
+    eta3single78 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday78_15years_weeklysaves/eta.nc", "eta");
+
+    u3single83 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday83_15years_weeklysaves/u.nc", "u");
+    v3single83 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday83_15years_weeklysaves/v.nc", "v");
+    eta3single83 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday83_15years_weeklysaves/eta.nc", "eta");
+
+    u3single86 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday86_15years_weeklysaves/u.nc", "u");
+    v3single86 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday86_15years_weeklysaves/v.nc", "v");
+    eta3single86 = ncread("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/3day_single_initday86_15years_weeklysaves/eta.nc", "eta");
 
     # 10 day
-    u10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday2_15years_weeklysaves/u.nc", "u");
-    v10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday2_15years_weeklysaves/v.nc", "v");
-    eta10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday2_15years_weeklysaves/eta.nc", "eta");
+    # day zero start
+    u10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday2_15years_weeklysaves/u.nc", "u");
+    v10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday2_15years_weeklysaves/v.nc", "v");
+    eta10single2 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday2_15years_weeklysaves/eta.nc", "eta");
 
-    u10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday20_15years_weeklysaves/u.nc", "u");
-    v10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday20_15years_weeklysaves/v.nc", "v");
-    eta10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday20_15years_weeklysaves/eta.nc", "eta");
+    u10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday20_15years_weeklysaves/u.nc", "u");
+    v10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday20_15years_weeklysaves/v.nc", "v");
+    eta10single20 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday20_15years_weeklysaves/eta.nc", "eta");
 
-    u10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday30_15years_weeklysaves/u.nc", "u");
-    v10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday30_15years_weeklysaves/v.nc", "v");
-    eta10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday30_15years_weeklysaves/eta.nc", "eta");
+    u10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday30_15years_weeklysaves/u.nc", "u");
+    v10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday30_15years_weeklysaves/v.nc", "v");
+    eta10single30 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday30_15years_weeklysaves/eta.nc", "eta");
 
-    u10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday40_10years_weeklysaves/u.nc", "u");
-    v10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday40_10years_weeklysaves/v.nc", "v");
-    eta10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday40_10years_weeklysaves/eta.nc", "eta");
+    u10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday40_10years_weeklysaves/u.nc", "u");
+    v10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday40_10years_weeklysaves/v.nc", "v");
+    eta10single40 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday40_10years_weeklysaves/eta.nc", "eta");
     
-    u10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday50_15years_weeklysaves/u.nc", "u");
-    v10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday50_15years_weeklysaves/v.nc", "v");
-    eta10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday50_15years_weeklysaves/eta.nc", "eta");
+    u10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday50_15years_weeklysaves/u.nc", "u");
+    v10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday50_15years_weeklysaves/v.nc", "v");
+    eta10single50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday50_15years_weeklysaves/eta.nc", "eta");
 
-    u10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday60_15years_weeklysaves/u.nc", "u");
-    v10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday60_15years_weeklysaves/v.nc", "v");
-    eta10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday60_15years_weeklysaves/eta.nc", "eta");
+    u10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday60_15years_weeklysaves/u.nc", "u");
+    v10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday60_15years_weeklysaves/v.nc", "v");
+    eta10single60 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday60_15years_weeklysaves/eta.nc", "eta");
     
-    u10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday70_15years_weeklysaves/u.nc", "u");
-    v10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday70_15years_weeklysaves/v.nc", "v");
-    eta10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday70_15years_weeklysaves/eta.nc", "eta");
-    
-    u10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday80_15years_weeklysaves/u.nc", "u");
-    v10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday80_15years_weeklysaves/v.nc", "v");
-    eta10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/10day_single_initday80_15years_weeklysaves/eta.nc", "eta");
+    u10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday70_15years_weeklysaves/u.nc", "u");
+    v10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday70_15years_weeklysaves/v.nc", "v");
+    eta10single70 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday70_15years_weeklysaves/eta.nc", "eta");
 
+    u10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday80_15years_weeklysaves/u.nc", "u");
+    v10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday80_15years_weeklysaves/v.nc", "v");
+    eta10single80 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day0initcond/10day_single_initday80_15years_weeklysaves/eta.nc", "eta");
+
+    # day 50 start
+    u10single30start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday30_15years_weeklysaves/u.nc", "u");
+    v10single30start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday30_15years_weeklysaves/v.nc", "v");
+    eta10single30start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday30_15years_weeklysaves/eta.nc", "eta");
+
+    u10single40start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday40_15years_weeklysaves/u.nc", "u");
+    v10single40start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday40_15years_weeklysaves/v.nc", "v");
+    eta10single40start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday40_15years_weeklysaves/eta.nc", "eta");
+
+    u10single50start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday50_15years_weeklysaves/u.nc", "u");
+    v10single50start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday50_15years_weeklysaves/v.nc", "v");
+    eta10single50start50 = ncread("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/individual_weight_integrations/day50initcond/10day_single_initday50_15years_weeklysaves/eta.nc", "eta");
 
 end
 
@@ -2148,6 +2236,26 @@ function energy_plots()
             avg10single[j] = sum(abs2, u10single[:,:,j]) + sum(abs2, v10single[:,:,j])
     end
 
+    single31 = zeros(Float64, 783)
+    single33 = zeros(Float64, 783)
+    single38 = zeros(Float64, 783)
+    single313 = zeros(Float64, 783)
+    single323 = zeros(Float64, 783)
+    single328 = zeros(Float64, 783)
+    single333 = zeros(Float64, 783)
+    single338 = zeros(Float64, 783)
+    single341 = zeros(Float64, 783)
+    single344 = zeros(Float64, 783)
+    single348 = zeros(Float64, 783)
+    single353 = zeros(Float64, 783)
+    single358 = zeros(Float64, 783)
+    single363 = zeros(Float64, 783)
+    single368 = zeros(Float64, 783)
+    single373 = zeros(Float64, 783)
+    single378 = zeros(Float64, 783)
+    single383 = zeros(Float64, 783)
+    single386 = zeros(Float64, 783)
+
     single102 = zeros(Float64, 783)
     single1020 = zeros(Float64, 783)
     single1030 = zeros(Float64, 783)
@@ -2155,7 +2263,33 @@ function energy_plots()
     single1060 = zeros(Float64, 783)
     single1070 = zeros(Float64, 783)
     single1080 = zeros(Float64, 783)
+
+    single1030_50 = zeros(Float64, 783)
+    single1040_50 = zeros(Float64, 783)
+    single1050_50 = zeros(Float64, 783)
+
     for j = 1:783
+
+        single31 = sum(abs2, u3single1[:,:,j]) + sum(abs2, v3single1[:,:,j])
+        single33 = sum(abs2, u3single3[:,:,j]) + sum(abs2, v3single3[:,:,j])
+        single38 = sum(abs2, u3single8[:,:,j]) + sum(abs2, v3single8[:,:,j])
+        single313 = sum(abs2, u3single13[:,:,j]) + sum(abs2, v3single13[:,:,j])
+        single323 = sum(abs2, u3single23[:,:,j]) + sum(abs2, v3single23[:,:,j])
+        single328 = sum(abs2, u3single28[:,:,j]) + sum(abs2, v3single8[:,:,j])
+        single333 = sum(abs2, u3single33[:,:,j]) + sum(abs2, v3single33[:,:,j])
+        single338 = sum(abs2, u3single38[:,:,j]) + sum(abs2, v3single38[:,:,j])
+        single341 = sum(abs2, u3single41[:,:,j]) + sum(abs2, v3single41[:,:,j])
+        single344 = sum(abs2, u3single44[:,:,j]) + sum(abs2, v3single44[:,:,j])
+        single348 = sum(abs2, u3single48[:,:,j]) + sum(abs2, v3single48[:,:,j])
+        single353 = sum(abs2, u3single53[:,:,j]) + sum(abs2, v3single53[:,:,j])
+        single358 = sum(abs2, u3single58[:,:,j]) + sum(abs2, v3single58[:,:,j])
+        single363 = sum(abs2, u3single63[:,:,j]) + sum(abs2, v3single63[:,:,j])
+        single368 = sum(abs2, u3single68[:,:,j]) + sum(abs2, v3single68[:,:,j])
+        single373 = sum(abs2, u3single73[:,:,j]) + sum(abs2, v3single73[:,:,j])
+        single378 = sum(abs2, u3single78[:,:,j]) + sum(abs2, v3single78[:,:,j])
+        single383 = sum(abs2, u3single83[:,:,j]) + sum(abs2, v3single83[:,:,j])
+        single386 = sum(abs2, u3single86[:,:,j]) + sum(abs2, v3single86[:,:,j])
+    
         single102[j] = sum(abs2, u10single2[:,:,j]) + sum(abs2, v10single2[:,:,j])
         single1020[j] = sum(abs2, u10single20[:,:,j]) + sum(abs2, v10single20[:,:,j])
         single1030[j] = sum(abs2, u10single30[:,:,j]) + sum(abs2, v10single30[:,:,j])
@@ -2163,6 +2297,10 @@ function energy_plots()
         single1060[j] = sum(abs2, u10single60[:,:,j]) + sum(abs2, v10single60[:,:,j])
         single1070[j] = sum(abs2, u10single70[:,:,j]) + sum(abs2, v10single70[:,:,j])
         single1080[j] = sum(abs2, u10single80[:,:,j]) + sum(abs2, v10single80[:,:,j])
+
+        single1030_50[j] = sum(abs2, u10single30start50[:,:,j]) + sum(abs2, v10single30start50[:,:,j])
+        single1040_50[j] = sum(abs2, u10single40start50[:,:,j]) + sum(abs2, v10single40start50[:,:,j])
+        single1050_50[j] = sum(abs2, u10single50start50[:,:,j]) + sum(abs2, v10single50start50[:,:,j])
     end
 
     multi2all = cat(multi210, multi210p[2:end]; dims=1);
@@ -2301,33 +2439,6 @@ function energy_plots()
     end
 
 
-    # single initial condition runs
-
-    avg3_10 = cat(threedayavg[1:7:1096], threedayavg[1097:end];dims=1)
-    avg10_10 = cat(tendayavg[1:7:1096], tendayavg[1097:end];dims=1)
-
-    fig = Figure(size=(1000, 600), fontsize=15);
-    ax = Axis(fig[1,1],
-            # xlabel="Day",
-            ylabel="Energy",
-            title="10 day single runs"
-    )
-    lines!(ax, LinRange(0, 10*365, 522), hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
-    lines!(ax, LinRange(0, 10*365, 522), noparam10./ (128^2), label="No closure, 30 km",color=:gray)
-    # lines!(ax, LinRange(0, 10*365, 522), zb10./ (128^2), label="ZB20", color=:red)
-    # lines!(ax, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
-    # lines!(ax, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged 3 day")
-    lines!(ax, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged 10 day")
-    lines!(ax, LinRange(0, 10*365, 522), single102[1:522] ./ 128^2, label="2")
-    lines!(ax, LinRange(0, 10*365, 522), single1020[1:522] ./ 128^2, label="20")
-    lines!(ax, LinRange(0, 10*365, 522), single1030[1:522] ./ 128^2, label="30")
-    lines!(ax, LinRange(0, 10*365, 522), single1050[1:522] ./ 128^2, label="50")
-    lines!(ax, LinRange(0, 10*365, 522), single1060[1:522] ./ 128^2, label="60")
-    lines!(ax, LinRange(0, 10*365, 522), single1070[1:522] ./ 128^2, label="70")
-    lines!(ax, LinRange(0, 10*365, 522), single1080[1:522] ./ 128^2, label="80")
-    Legend(fig[1, 2], ax)
-
-
     ax3 = Axis(fig[2,1],
         xlabel="Day",
         ylabel="Energy",
@@ -2355,6 +2466,51 @@ function energy_plots()
         padding = (0, 5, 5, 0),
         halign = :right)
     end
+
+    # single initial condition runs
+
+    # 10 day optimizations
+
+    avg3_10 = cat(threedayavg[1:7:1096], threedayavg[1097:end];dims=1)
+    avg10_10 = cat(tendayavg[1:7:1096], tendayavg[1097:end];dims=1)
+
+    fig = Figure(size=(1000, 600), fontsize=15);
+    ax = Axis(fig[1,1],
+            # xlabel="Day",
+            ylabel="Energy",
+            title="10 day single i.c. runs, day 0 initial condition"
+    )
+    lines!(ax, LinRange(0, 10*365, 522), hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
+    lines!(ax, LinRange(0, 10*365, 522), noparam10./ (128^2), label="No closure, 30 km",color=:gray)
+    # lines!(ax, LinRange(0, 10*365, 522), zb10./ (128^2), label="ZB20", color=:red)
+    # lines!(ax, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
+    # lines!(ax, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged 3 day")
+    lines!(ax, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged 10 day")
+    # lines!(ax, LinRange(0, 10*365, 522), single102[1:522] ./ 128^2, label="2")
+    # lines!(ax, LinRange(0, 10*365, 522), single1020[1:522] ./ 128^2, label="20")
+    # lines!(ax, LinRange(0, 10*365, 522), single1030[1:522] ./ 128^2, label="30")
+    lines!(ax, LinRange(0, 10*365, 522), single1050[1:522] ./ 128^2, label="50")
+    # lines!(ax, LinRange(0, 10*365, 522), single1060[1:522] ./ 128^2, label="60")
+    # lines!(ax, LinRange(0, 10*365, 522), single1070[1:522] ./ 128^2, label="70")
+    # lines!(ax, LinRange(0, 10*365, 522), single1080[1:522] ./ 128^2, label="80")
+    Legend(fig[1, 2], ax)
+
+    ax2 = Axis(fig[2,1],
+            # xlabel="Day",
+            ylabel="Energy",
+            title="10 day single runs, day 50 initial condition"
+    )
+    lines!(ax2, LinRange(0, 10*365, 522), hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
+    lines!(ax2, LinRange(0, 10*365, 522), noparam10./ (128^2), label="No closure, 30 km",color=:gray)
+    # lines!(ax, LinRange(0, 10*365, 522), zb10./ (128^2), label="ZB20", color=:red)
+    # lines!(ax, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
+    # lines!(ax, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged 3 day")
+    lines!(ax2, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged 10 day")
+    # lines!(ax2, LinRange(0, 10*365, 522), single1030_50[1:522] ./ 128^2, label="30")
+    # lines!(ax2, LinRange(0, 10*365, 522), single1040_50[1:522] ./ 128^2, label="40")
+    lines!(ax2, LinRange(0, 10*365, 522), single1050_50[1:522] ./ 128^2, label="50")
+    Legend(fig[2, 2], ax2)
+
 
 
 end
