@@ -630,9 +630,9 @@ function multistatenlp_Chkp{T}(Ndays,param_guess,lower_bound,upper_bound) where 
         α=2,
         nx=128,
         Ndays=Ndays
-    )
+    );
 
-    Slr = ShallowWaters.model_setup(Plr)
+    Slr = ShallowWaters.model_setup(Plr);
 
     # every 8 hours is when the timesteps matchup, so I'm doing that frequency for online data
     coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_90days_postspinup_8hoursaves.jld2");
