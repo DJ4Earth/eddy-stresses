@@ -537,7 +537,7 @@ function single_step!(du, dv, deta, S, t)
 
 end
 
-function single_step_diff!(Mu, Mv, S, t)
+function single_step_diff!(Bu, Bv, Mu, Mv, S, t)
 
     # uold = copy(S.Prog.u)
     # vold = copy(S.Prog.v)
@@ -709,11 +709,18 @@ function single_step_diff!(Mu, Mv, S, t)
     Mu .= S.Diag.Smagorinsky.LLu1[:,2:end-1] + S.Diag.Smagorinsky.LLu2[2:end-1,:]
     Mv .= S.Diag.Smagorinsky.LLv1[:,2:end-1] + S.Diag.Smagorinsky.LLv2[2:end-1,:]
 
+    Bu .= S.Diag.Bottomdrag.Bu[2:end-1,2:end-1]
+    Bv .= S.Diag.Bottomdrag.Bv[2:end-1,2:end-1]
+
     return nothing
 
 end
 
 function save_viscosityterm()
+
+    # u = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[1];
+    # v = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[2];
+    # eta = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[3];
 
     # u = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
@@ -731,7 +738,7 @@ function save_viscosityterm()
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
     # eta = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    Plr = ShallowWaters.Parameter(T=Float64,
+    P = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
         g=9.81,
@@ -746,61 +753,69 @@ function save_viscosityterm()
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
+        zb_forcing_dissipation=true,
         zb_filtered=true,
         nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
+        nn_forcing_dissipation=false,
         N=1,
         α=2,
         nx=128,
         Ndays=3*365
     );
-    Slr = ShallowWaters.model_setup(Plr);
+    S = ShallowWaters.model_setup(P);
 
-    for S in [Slr]
+    # for S in [Slr]
         # calculate layer thicknesses for initial conditions
         ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
         ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
         ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
         ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
-    end
+    # end
 
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
-    # current = 1
-    # for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
-    #     for layers in m[1]
-    #         for array in layers
-    #                 sz = prod(size(array))
-    #                 array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
-    #                 current += sz
-    #         end
-    #     end
-    # end
+    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution;
+    current = 1
+    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+    end
 
-    Slr_ = deepcopy(Slr)
+    # t = 1800 * S.grid.dtint
+    t = 225 * Slr.grid.dtint
+    Mu = zeros(S.grid.nux, S.grid.nuy)
+    Mv = zeros(S.grid.nvx, S.grid.nvy)
 
-    tlr = 225 * Slr.grid.dtint
-    Mu = zeros(Slr.grid.nux, Slr.grid.nuy)
-    Mv = zeros(Slr.grid.nvx, Slr.grid.nvy)
+    Bu = zeros(S.grid.nux, S.grid.nuy)
+    Bv = zeros(S.grid.nvx, S.grid.nvy)
 
-    Mu_all = zeros(Slr.grid.nux, Slr.grid.nuy,1096)
-    Mv_all = zeros(Slr.grid.nvx, Slr.grid.nvy,1096)
+    Mu_all = zeros(S.grid.nux, S.grid.nuy, 1096)
+    Mv_all = zeros(S.grid.nvx, S.grid.nvy, 1096)
+
+    Bu_all = zeros(S.grid.nux, S.grid.nuy, 1096)
+    Bv_all = zeros(S.grid.nvx, S.grid.nvy, 1096)
 
     for n = 1:1096
 
-        u_, v_, eta_ = ShallowWaters.add_halo(u[:,:,n], v[:,:,n], eta[:,:,n], Slr)
+        u_, v_, eta_ = ShallowWaters.add_halo(u[:,:,n], v[:,:,n], eta[:,:,n], S)
 
-        Slr_.Prog.u = u_
-        Slr_.Prog.v = v_
-        Slr_.Prog.η = eta_
+        S.Prog.u = u_
+        S.Prog.v = v_
+        S.Prog.η = eta_
 
-        single_step_diff!(Mu, Mv, Slr_, n*tlr)
+        single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
 
         @views Mu_all[:,:,n] .= Mu
         @views Mv_all[:,:,n] .= Mv
 
+        @views Bu_all[:,:,n] .= Bu
+        @views Bv_all[:,:,n] .= Bv
+
     end
 
 end
-

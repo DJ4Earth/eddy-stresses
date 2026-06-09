@@ -3,6 +3,26 @@ Mostly figure generation, I just wanted to be able to run include("technical_pap
 without all of this also running.
 """
 
+"""
+Note to self: 
+I want to compute the "true" advective SGS term, rather than the approximation
+Milan's code hides this away inside of p = 1/2 (u^2 + v^2) + gh and 
+q = f + \zeta / h. What gets added to the tendencies is ultimately
+    dudt = qhv - \partial_x p
+    dvdt = -qhu - \partial_y p
+Then we have
+    qhv = ((f + \zeta) / h) * h * v = (f + \zeta) * v = fv + \zeta v = fv + v_x v - u_y v
+    qhu = ((f + \zeta / h)) * h * u = (f + \zeta) * u = fu + \zeta u = fu + (u v_x - u u_y)
+    \partial_x p = .5 * (2 u_x + 2 v_x) + \partial_x (g h) = u u_x + v v_x + \partial_x (g h)
+    \partial_y p = u_y + v_y + \partial_y (g h)
+If I want to isolate u u_x + v u_y then I need to 
+    (1) find qhv = fv + v_x v - u_y v
+    (2) find \partial_x p = u u_x + v v_x + \partial_x (g h)
+    (3) Their difference is fv - v u_y - u u_x - \partial_x (g h)
+    (4) Then I just need to get rid of the Coriolis force and that partial term
+    (5) I might be able to find smaller pieces (i.e. before the Coriolis is added and go from there)
+"""
+
 function load_models()
 
     uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[1],
@@ -790,6 +810,93 @@ function prognostic_plots()
         halign = :right)
     end
 
+    # absolute difference in time-averaged ssh fields
+    index = vcat(1:7:1096, 1097:1461)
+    # index = 1:1096
+    # index = 1:366
+    total = length(index)
+    timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
+
+    fig = Figure(size=(850, 520), fontsize=15);
+    fig.layout.alignmode = Outside();
+    Label(
+        fig[0, 2],
+        "Absolute difference in 10-year averaged sea-surface height",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    ax, hm = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    timeavg_hr,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+
+    index=1:522
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(timeavg_hr .- sum(etanoparam10[:,:,index], dims=3)[:,:,1] ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="No closure, 30 km"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[1,4], hm1, label="m")
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(timeavg_hr .- sum(etazb10[:,:,index], dims=3)[:,:,1] ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[1,6], hm1, label="m")
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(timeavg_hr .- sum(etamulti210[:,:,index], dims=3)[:,:,1] ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[2,2], hm1, label="m")
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(timeavg_hr .- sum(etamulti3more10, dims=3)[:,:,1] ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[2,4], hm4, label="m")
+
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    abs.(timeavg_hr .- sum(etamulti1010, dims=3)[:,:,1] ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
+    );
+    # Colorbar(fig[2,6], hm1, label="m")
+
+    Colorbar(fig[1:2,4], hm, label="m")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
     # absolute difference in the time averaged ssh fields
     index = vcat(1:7:1096, 1097:1461)
     total = length(index)
@@ -1221,7 +1328,7 @@ function ssh_variability()
     fig.layout.alignmode = Outside();
     Label(
         fig[0, 2],
-        L"\text{Absolute difference between 10-year ssh variability in } \overline{\eta} \text{ and parameterized models}",
+        "Absolute difference in sea-surface height variability",
         fontsize = 20,
         tellwidth = false
     )
@@ -3093,7 +3200,7 @@ end
 #       T(k_x, k_y) = Re( F(u)^* F(S_x) + F(v)^* F(S_y) )
 # where ^* is the complex conjugate. It's not clear to me if S should come from the same
 # timestep or the prior, because the prior is what when into computing u and v
-function computing_ketransfer()
+function computing_ketransfer_fromS()
 
     # computing the true subgrid forcing
     duhrcg = load_object("./dissipation_constant/hrcgtendencies_dudvdeta.jld2")[1];
@@ -3115,8 +3222,8 @@ function computing_ketransfer()
         duhrdownsized = (dufiltered[8:8:end, 4:8:end] .+ dufiltered[8:8:end, 5:8:end]) .* 0.5
         dvhrdownsized = (dvfiltered[4:8:end, 8:8:end] .+ dvfiltered[5:8:end, 8:8:end]) .* 0.5
 
-        Su_true[:,:,j] .= (duhrcg[:,:,j]./384) - (duhrdownsized[:,:,1]./48)
-        Sv_true[:,:,j] .= (dvhrcg[:,:,j]./384) - (dvhrdownsized[:,:,1]./48)
+        Su_true[:,:,j] .=  (duhrdownsized[:,:,1]./48) - (duhrcg[:,:,j]./384)
+        Sv_true[:,:,j] .= (dvhrdownsized[:,:,1]./48) - (dvhrcg[:,:,j]./384)
 
     end
 
@@ -3453,11 +3560,16 @@ function computing_ketransfer()
 
     end
 
+end
+
+function computing_ketransfer_fromviscosity()
     # same as above but with the viscosity term
-    visc_multi2 = load_object("./dissipation_constant/results/viscosities/viscosity_multi2_3years_dailysaves.jld2");
-    visc_multi3 = load_object("./dissipation_constant/results/viscosities/viscosity_multi3_3years_dailysaves.jld2");
-    visc_multi10 = load_object("./dissipation_constant/results/viscosities/viscosity_multi3_3years_dailysaves.jld2");
-    visc_ZB20 = load_object("./dissipation_constant/results/viscosities/viscosity_ZB20_3years_dailysaves.jld2");
+    visc_multi2 = load_object("./dissipation_constant/alternate_S_files/viscosity_ensemble2day_3years_dailysaves_MuMv.jld2");
+    visc_multi3 = load_object("./dissipation_constant/alternate_S_files/viscosity_ensemble3day_3years_dailysaves_MuMv.jld2");
+    visc_multi10 = load_object("./dissipation_constant/alternate_S_files/viscosity_ensemble10day_3years_dailysaves_MuMv.jld2");
+    visc_ZB20 = load_object("./dissipation_constant/alternate_S_files/viscosity_ZB_3years_dailysaves_MuMv.jld2");
+
+    visc_hrcg = load_object("./dissipation_constant/alternate_S_files/viscosity_cghr_3years_dailysaves_MuMv.jld2");
 
     T = Float64
     Ponline = ShallowWaters.Parameter(T=T,
@@ -3514,17 +3626,10 @@ function computing_ketransfer()
     Shrcg = ShallowWaters.model_setup(Ponline);
     SZB = ShallowWaters.model_setup(PZB);
 
-    S10 = ShallowWaters.model_setup(Ponline);
-    S20 = ShallowWaters.model_setup(Ponline);
-    S5 = ShallowWaters.model_setup(Ponline);
-    S30 = ShallowWaters.model_setup(Ponline);
-
     Smulti2 = ShallowWaters.model_setup(Ponline);
     Smulti3 = ShallowWaters.model_setup(Ponline);
-    Smulti5 = ShallowWaters.model_setup(Ponline);
 
     Smulti10 = ShallowWaters.model_setup(Ponline);
-    Smulti20 = ShallowWaters.model_setup(Ponline);
 
     lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcgall[:,:,1]))
@@ -3575,7 +3680,17 @@ function computing_ketransfer()
     viscv_3 = zeros(65)
 
     totalstates = 1096
+
     for t = 1:totalstates
+
+        # from total viscosity, computing as \overline{visc(u)} - visc(\overline{u})
+        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], visc_hrcg[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
+        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], visc_hrcg[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
+
+        viscu_hrcg += outu_hrcg
+        viscv_hrcg += outv_hrcg
 
         # ZB20 ############################
 
@@ -3586,30 +3701,6 @@ function computing_ketransfer()
 
         viscu_ZB += outu_ZB
         viscv_ZB += outv_ZB
-
-        # 5 day optimization ################
-
-        # u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
-        # ShallowWaters.CNN_momentum(u5, v5, S5);
-        # outu_5, inputu_5, inputSu_5 = paddingu(u5day[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_5, rfft(inputu_5), rfft(inputSu_5), nfft...)
-        # outv_5, inputv_5, inputSv_5 = paddingv(v5day[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
-
-        # viscu_5 += outu_5
-        # viscv_5 += outv_5
-
-        # 20 day optimization ##############
-
-        # u20, v20, _ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S20);
-        # ShallowWaters.CNN_momentum(u20, v20, S20)
-        # outu_20, inputu_20, inputSu_20 = paddingu(u20s[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
-        # outv_20, inputv_20, inputSv_20 = paddingv(v20s[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
-
-        # viscu_20 += outu_20
-        # viscv_20 += outv_20
 
         # 30 day optimization ###############
 
@@ -3643,18 +3734,6 @@ function computing_ketransfer()
         viscu_multi3 += outu_multi3
         viscv_multi3 += outv_multi3
 
-        # batched 5 day ######################
-
-        # umulti5_, vmulti5_, _ = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
-        # ShallowWaters.CNN_momentum(umulti5_, vmulti5_, Smulti5)
-        # outu_multi5, inputu_multi5, inputSu_multi5 = paddingu(umulti5[:, :, t], Smulti5.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi5, rfft(inputu_multi5), rfft(inputSu_multi5), nfft...)
-        # outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[:, :, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi5, rfft(inputv_multi5), rfft(inputSv_multi5), nfft...)
-
-        # viscu_multi5 += outu_multi5
-        # viscv_multi5 += outv_multi5
-
         # batched 10 day #####################
 
         outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], visc_multi10[1][:,:,t], nfft[1])
@@ -3665,17 +3744,162 @@ function computing_ketransfer()
         viscu_multi10 += outu_multi10
         viscv_multi10 += outv_multi10
 
-        # batched 20 day #####################
+    end
 
-        # umulti20_, vmulti20_, _ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), Smulti20);
-        # ShallowWaters.CNN_momentum(umulti20_, vmulti20_, Smulti20)
-        # outu_multi20, inputu_multi20, inputSu_multi20 = paddingu(umulti20[:, :, t], Smulti20.Diag.CNNVars.S_u, nfft[1])
-        # fft2pow2radial!(outu_multi20, rfft(inputu_multi20), rfft(inputSu_multi20), nfft...)
-        # outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[:, :, t], Smulti20.Diag.CNNVars.S_v, nfft[1])
-        # fft2pow2radial!(outv_multi20, rfft(inputv_multi20), rfft(inputSv_multi20), nfft...)
+end
 
-        # viscu_multi20 += outu_multi20
-        # viscv_multi20 += outv_multi20
+function computing_ketransfer_frombottomdrag()
+
+    # Lastly, doing this with the bottom drag term
+    bd_multi2 = load_object("./dissipation_constant/alternate_S_files/bottomdrag_ensemble2day_3years_dailysaves_BuBv.jld2");
+    bd_multi3 = load_object("./dissipation_constant/alternate_S_files/bottomdrag_ensemble3day_3years_dailysaves_BuBv.jld2");
+    bd_multi10 = load_object("./dissipation_constant/alternate_S_files/bottomdrag_ensemble10day_3years_dailysaves_BuBv.jld2");
+    bd_ZB20 = load_object("./dissipation_constant/alternate_S_files/bottomdrag_ZB_3years_dailysaves_BuBv.jld2");
+
+    bd_hrcg = load_object("./dissipation_constant/alternate_S_files/bottomdrag_cghr_3years_dailysaves_BuBv.jld2");
+
+    T = Float64
+    Ponline = ShallowWaters.Parameter(T=T,
+        output=true,
+        output_dt=24,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    );
+
+    T = Float64
+    PZB = ShallowWaters.Parameter(T=T,
+        output=true,
+        output_dt=24,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=true,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=1
+    );
+
+    Shrcg = ShallowWaters.model_setup(Ponline);
+    SZB = ShallowWaters.model_setup(PZB);
+
+    Smulti2 = ShallowWaters.model_setup(Ponline);
+    Smulti3 = ShallowWaters.model_setup(Ponline);
+
+    Smulti10 = ShallowWaters.model_setup(Ponline);
+
+    lr_freq = 1/30 .* freq(periodogram(umulti2[:,:,10]; radialavg=true, radialsum=false));
+    nfft = nextfastfft(size(uhrcgall[:,:,1]))
+
+    bdu_hrcg = zeros(65)
+    bdv_hrcg = zeros(65)
+
+    bdu_multi2 = zeros(65)
+    bdv_multi2 = zeros(65)
+
+    bdu_multi3 = zeros(65)
+    bdv_multi3 = zeros(65)
+
+    bdu_multi10 = zeros(65)
+    bdv_multi10 = zeros(65)
+
+    bdu_ZB = zeros(65)
+    bdv_ZB = zeros(65)
+
+    totalstates = 1096
+
+    for t = 1:totalstates
+
+        # from coarse-grained high-resolution
+        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], bd_hrcg[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
+        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], bd_hrcg[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
+
+        bdu_hrcg += outu_hrcg
+        bdv_hrcg += outv_hrcg
+
+        # ZB20 ############################
+
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], bd_ZB20[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], bd_ZB20[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
+
+        bdu_ZB += outu_ZB
+        bdv_ZB += outv_ZB
+
+        # 30 day optimization ###############
+
+        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S30);
+        # ShallowWaters.CNN_momentum(u30, v30, S30)
+        # outu_30, inputu_30, inputSu_30 = paddingu(u30s[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
+        # fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
+        # outv_30, inputv_30, inputSv_30 = paddingv(v30s[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
+        # fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
+
+        # bdu_30 += outu_30
+        # bdv_30 += outv_30
+
+        # batched 2 day ##################################
+
+        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], bd_multi2[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
+        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], bd_multi2[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
+
+        bdu_multi2 += outu_multi2
+        bdv_multi2 += outv_multi2
+
+        # batched 3 day ###########################
+
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], bd_multi3[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], bd_multi3[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
+
+        bdu_multi3 += outu_multi3
+        bdv_multi3 += outv_multi3
+
+        # batched 10 day #####################
+
+        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], bd_multi10[1][:,:,t], nfft[1])
+        fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
+        outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], bd_multi10[2][:,:,t], nfft[1])
+        fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
+
+        bdu_multi10 += outu_multi10
+        bdv_multi10 += outv_multi10
 
     end
 
@@ -3744,15 +3968,17 @@ function ketransfer_plots()
     lr_freq = 1/30 .* freq(periodogram(u20s[:,:,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcgall[:,:,1]))
 
-    # this scaling s is determined as (1) a division of the total states we average over (1096), 
-    # (2) a division by \Delta, because I want to compare the S values that are multiplied by dt,
-    # and in Milan's code the forcing that is multiplied by dt has a division by \Delta, which is the
-    # \Delta that I divide by here. The final division is 64 = model.grid.scale, and this is divided because the 
-    # parameterizations are added to a haloed grid, which has a scale factor, and we don't want that scale factor when we compute
-    # the KE transfer
-    # Unfortunately, and confusingly, the hrcg and approx ones have different scalings. approximation to the true SGS forcing
+    # this scaling s is determined as 
+    #   (1) a division of the total states we average over (1096), 
+    #   (2) a division by \Delta, because I want to compare the S values that are multiplied by dt,
+    #       and in Milan's code the forcing that is multiplied by dt has a division by \Delta, which is the
+    #       \Delta that I divide by here. The final division is 64 = model.grid.scale, and this is divided because the 
+    #       parameterizations are added to a haloed grid, which has a scale factor, and we don't want that scale factor when we compute
+    #       the KE transfer
+    # Confusingly, the hrcg and approx ones have different scalings. Approximation to the true SGS forcing
     # has no division by s because I never added the scaling factor, and the true SGS forcing doesn't because I divded by the scale
-    # when I computed it from my single step function. Lastly, the true SGS forcing has a multiplication by -1 because when you math
+    # when I computed it from my single step function. 
+    # Lastly, the true SGS forcing has a multiplication by -1 because when you math
     # out the nonlinear advection term, the nonlinear advection (and thus all the parameterizations), should be approximating -1 
     # time the total tendency term that I computed and saved
     s = 1096 * 30000 * 64
@@ -3778,20 +4004,41 @@ function ketransfer_plots()
     axislegend(ax, position=:rt)
     # Legend(fig[1,2], ax)
 
+    fig = Figure(size=(800,350),fontsize=15);
     s = 1096 * 30000 * 64
-    ax = Axis(fig[2,1],
+    ax = Axis(fig[1,1],
         xscale = log10,
         xlabel="Wavenumber (1/km)",
         ylabel="KE(k)",
         title="Kinetic energy transfer of viscosity"
     )
-    lines!(ax, lr_freq.*(viscu_ZB + viscv_ZB) ./ s, label="ZB20", color=colors[2])
-    lines!(ax, lr_freq.*(viscu_multi2 + viscv_multi2) ./ s, label="Ensemble 2 day",color=colors[3])
-    lines!(ax, lr_freq.*(viscu_multi3 + viscv_multi3) ./ s, label="Ensemble 3 day",color=colors[4])
+    lines!(ax, lr_freq.*(viscu_hrcg + viscv_hrcg) ./ s, label="Total SGS forcing", color=:black)
+    lines!(ax, lr_freq.*(viscu_ZB + viscv_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax, lr_freq.*(viscu_multi2 + viscv_multi2) ./ s, label="Ensemble 2 day",color=colors[2])
+    lines!(ax, lr_freq.*(viscu_multi3 + viscv_multi3) ./ s, label="Ensemble 3 day",color=colors[3])
     # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
-    lines!(ax, lr_freq.*(viscu_multi10 + viscv_multi10) ./ s, label="Ensemble 10 day",color=colors[5])
+    lines!(ax, lr_freq.*(viscu_multi10 + viscv_multi10) ./ s, label="Ensemble 10 day",color=colors[4])
     # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
-    Legend(fig[2,2], ax)
+    axislegend(ax, position=:rb)
+    # Legend(fig[2,2], ax)
+
+    fig = Figure(size=(800,350),fontsize=15);
+    s = 1096 * 30000 * 64
+    ax = Axis(fig[1,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer of bottom drag"
+    )
+    lines!(ax, lr_freq.*(bdu_hrcg + bdv_hrcg) ./ s, label="Total SGS forcing", color=:black)
+    lines!(ax, lr_freq.*(bdu_ZB + bdv_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax, lr_freq.*(bdu_multi2 + bdv_multi2) ./ s, label="Ensemble 2 day",color=colors[2])
+    lines!(ax, lr_freq.*(bdu_multi3 + bdv_multi3) ./ s, label="Ensemble 3 day",color=colors[3])
+    # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
+    lines!(ax, lr_freq.*(bdu_multi10 + bdv_multi10) ./ s, label="Ensemble 10 day",color=colors[4])
+    # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
+    axislegend(ax, position=:rb)
+    # Legend(fig[2,2], ax)
 
     s = 1096 * 30000 * 64
     fig = Figure(size=(800, 300), fontsize=15);
@@ -3799,19 +4046,39 @@ function ketransfer_plots()
         xscale = log10,
         xlabel="Wavenumber (1/km)",
         ylabel="KE(k)",
-        title="Kinetic energy transfer of S + M"
+        title="Kinetic energy transfer of S + Viscosity"
     )
-    lines!(ax, lr_freq.*(totalu_hrcg + totalv_hrcg)/1096, label="Subgrid forcing")
-    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB + viscu_ZB + viscv_ZB) / s, label="ZB20")
-    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2 + viscu_multi2 + viscv_multi2) / s, label="Ensemble 2 day")
+    lines!(ax, lr_freq.*((-totalu_hrcg - totalv_hrcg)/1096 + (viscu_hrcg + viscv_hrcg)./s), label="Subgrid forcing",color=:black)
+    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB + viscu_ZB + viscv_ZB) / s, label="ZB20",color=colors[1])
+    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2 + viscu_multi2 + viscv_multi2) / s, label="Ensemble 2 day",color=colors[2])
 
     # lines!(ax, lr_freq.*(totalu_30 + totalv_30) / s, label="30 day")
     # lines!(ax, lr_freq.*(totalu_20 + totalv_20) / s, label="20 day")
-    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3 + viscu_multi3 + viscv_multi3) / s, label="Ensemble 3 day")
+    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3 + viscu_multi3 + viscv_multi3) / s, label="Ensemble 3 day",color=colors[3])
     # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
-    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10 + viscu_multi10 + viscv_multi10) / s, label="Ensemble 10 day")
+    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10 + viscu_multi10 + viscv_multi10) / s, label="Ensemble 10 day",color=colors[4])
     # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
-    Legend(fig[1,2], ax)
+    axislegend(ax, position=:rt)
+
+    s = 1096 * 30000 * 64
+    fig = Figure(size=(800, 300), fontsize=15);
+    ax = Axis(fig[1,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer of S + Viscosity + Bottom drag"
+    )
+    lines!(ax, lr_freq.*((-totalu_hrcg - totalv_hrcg)/1096 + (viscu_hrcg + viscv_hrcg + bdu_hrcg + bdv_hrcg)./s), label="Subgrid forcing",color=:black)
+    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB + viscu_ZB + viscv_ZB + bdu_ZB + bdv_ZB) / s, label="ZB20",color=colors[1])
+    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2 + viscu_multi2 + viscv_multi2 +bdu_multi2 + bdv_multi2) / s, label="Ensemble 2 day",color=colors[2])
+
+    # lines!(ax, lr_freq.*(totalu_30 + totalv_30) / s, label="30 day")
+    # lines!(ax, lr_freq.*(totalu_20 + totalv_20) / s, label="20 day")
+    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3 + viscu_multi3 + viscv_multi3 + bdu_multi3 + bdv_multi3) / s, label="Ensemble 3 day",color=colors[3])
+    # lines!(ax, lr_freq.*(totalu_multi5 + totalv_multi5) / 1096, label="Multi 5 day state optimization")
+    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10 + viscu_multi10 + viscv_multi10 + bdu_multi10 + bdv_multi10) / s, label="Ensemble 10 day",color=colors[4])
+    # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
+    axislegend(ax, position=:rt)
 
 end
 
@@ -3840,10 +4107,10 @@ function parameterization_S_plots()
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
+        zb_forcing_dissipation=true,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=true,
+        # nn_forcing_momentum=false,
+        # nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
@@ -4063,7 +4330,7 @@ function parameterization_S_plots()
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
 
     # S_u
-    fig = Figure(size=(900, 520), fontsize=15);
+    fig = Figure(size=(900, 780), fontsize=15);
 
     Label(
         fig[0, 2],
@@ -4072,8 +4339,30 @@ function parameterization_S_plots()
         tellwidth = false
     )
 
+    t = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -Suhr[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    Smulti2.grid.Δ .* Suapprox[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax2)
+
     s = Szb.grid.Δ * Szb.grid.scale
-    ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Szb.Diag.ZBVars.S_u ./ s,
     colormap=:balance,
@@ -4082,8 +4371,9 @@ function parameterization_S_plots()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidexdecorations!(ax3)
 
-    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Soffline.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
@@ -4092,8 +4382,9 @@ function parameterization_S_plots()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    hidedecorations!(ax4)
 
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Smulti2.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
@@ -4102,8 +4393,9 @@ function parameterization_S_plots()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[1,6], hm2, label=L"m/s^2")
+    hidedecorations!(ax5)
 
-    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax6, hm6 = heatmap(fig[3,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Smulti3.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
@@ -4113,7 +4405,7 @@ function parameterization_S_plots()
     );
     # Colorbar(fig[2,2], hm2, label=L"m/s^2")
 
-    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    ax7, hm7 = heatmap(fig[3,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Smulti10.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
@@ -4122,8 +4414,9 @@ function parameterization_S_plots()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[2,4], hm2, label=L"m/s^2")
+    hideydecorations!(ax7)
 
-    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax8, hm8 = heatmap(fig[3,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     S30.Diag.CNNVars.S_u ./ s,
     colormap=:balance,
@@ -4132,16 +4425,19 @@ function parameterization_S_plots()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[2,6], hm2, label=L"m/s^2")
+    hideydecorations!(ax8)
 
-    Colorbar(fig[1:2,4], hm1, label=L"m/s^2")
+    Colorbar(fig[1:3,4], hm1, label=L"m/s^2")
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 2] = GridLayout()
-    gc = fig[1, 3] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 2] = GridLayout()
-    gf = fig[2, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 2] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[3, 1] = GridLayout()
+    gg = fig[3, 2] = GridLayout()
+    gh = fig[3, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"], [ga, gb, gc, gd, ge, gf, gg, gh])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
         font = :bold,
@@ -4231,39 +4527,54 @@ function parameterization_S_plots()
         halign = :right)
     end
 
-    # true S plots
-    fig = Figure(size=(700, 325), fontsize=15);
+    # viscosity and bottom drag SGS contributions to S_tot
+
+    visc_hr = load_object("./dissipation_constant/alternate_S_files/viscosity_hr_3years_dailysaves_MuMv.jld2");
+    visc_hrcg = load_object("./dissipation_constant/alternate_S_files/viscosity_cghr_3years_dailysaves_MuMv.jld2");
+
+    bd_hr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_hr_3years_dailysaves_BuBv.jld2");
+    bd_cghr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_cghr_3years_dailysaves_BuBv.jld2");
+
+    # coarse-grain the high-resolution viscosity terms
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750));
+    Bufiltered = zeros(1023, 1024, 1096);
+    Bvfiltered = zeros(1024, 1023, 1096);
+
+    for t = 1:1096
+        @views Bufiltered[:,:,t] .= imfilter(bd_hr[1][:,:,t], reflect(ker))
+        @views Bvfiltered[:,:,t] .= imfilter(bd_hr[2][:,:,t], reflect(ker))
+    end
+
+    Bu_hrdownsized = (Bufiltered[8:8:end, 4:8:end,:] .+ Bufiltered[8:8:end, 5:8:end,:]) ./ 2;
+    Bv_hrdownsized = (Bvfiltered[4:8:end, 8:8:end,:] .+ Bvfiltered[5:8:end, 8:8:end,:]) ./ 2;
+
+    Mu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[1];
+    Mv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[2];
+
+    fig = Figure(size=(750, 325), fontsize=15);
     j = 1096
-    Label(
-        fig[0, 1:2],
-        L"S_u(3 \; \text{years}, x, y)",
-        fontsize = 20,
-        tellwidth = false
-    )
-
-    ax2, hm2 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Suhr[:,:,j],
+    (Mu_hrdownsized[:,:,j] .- visc_hrcg[1][:,:,j]) ./ s,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
-    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
-    colorrange=(-1.5e-5, 1.5e-5)
+    axis=(xlabel="km", ylabel="km", title=L"\overline{M_{MM}(3 \text{ years}, u)} - M_{MM}(3 \text{ years}, \overline{u})"),
+    colorrange=(-1.5e-6, 1.5e-6)
     );
-    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    Colorbar(fig[1,2], hm1, label=L"m/s^2")
 
-    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti2.grid.Δ .* Suapprox[:,:,j],
+    (Bu_hrdownsized[:,:,j] .- bd_cghr[1][:,:,j]) ./ s,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    axis=(xlabel="km", ylabel="km", title=L"\overline{M_{BF}(3 \text{ years}, u)} - M_{BF}(3 \text{ years}, \overline{u})"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
-    colorrange=(-1.5e-5, 1.5e-5)
+    colorrange=(-1.5e-7, 1.5e-7)
     );
-
-    Colorbar(fig[1,3], hm1, label=L"m/s^2")
+    Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    hideydecorations!(ax2)
     
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 2] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
@@ -4281,6 +4592,7 @@ function parameterization_S_plots()
     Colorbar(fig[1,2], hm)
     ax2, hm2 = heatmap(fig[2,1], dvhrcg[:,:,j] ./ 384,  colormap=:balance, colorrange=clims)
     Colorbar(fig[2,2], hm)
+
 
 end
 
