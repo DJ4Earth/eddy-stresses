@@ -246,15 +246,6 @@ function compute_true_hrS()
         @views hrcg_dv[:,:,n] .= dvlr
         @views hrcg_deta[:,:,n] .= detalr
 
-        # imfilter!(dufiltered, hr_du[:,:,n], reflect(ker))
-        # imfilter!(dvfiltered, hr_dv[:,:,n], reflect(ker))
-
-        # @views dudownsized = (dufiltered[8:8:end, 4:8:end, :] .+ dufiltered[8:8:end, 5:8:end, :]) ./ 2;
-        # @views dvdownsized = (dvfiltered[4:8:end, 8:8:end, :] .+ dvfiltered[5:8:end, 8:8:end, :]) ./ 2;
-
-        # @views S_u[:,:,n] .= hrcg_du[:,:,n] - dudownsized
-        # @views S_v[:,:,n] .= hrcg_dv[:,:,n] - dvdownsized
-
     end
 
 end
@@ -352,7 +343,29 @@ function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, u_fft::Matrix
     out
 end
 
-function single_step!(du, dv, deta, S, t)
+"""
+There are effectively two ways to compute S_tot, both are technically correct and its a question of which is the 
+"best" way to go about it. Given the equation
+    u_t = f(u),
+we have 
+    overline{u_t} = overline{f(u)}
+the coarse-grained high-resolution equation and we also have,
+    overline{u}_t = f(overline{u}) + S,
+the equation for a coarse-grained u. Then, as we want them equal this gives
+    S = S_{tot} = overline{f(u)} - f(overline{u})
+the first way of defining the total SGS forcing. But this doesn't take into account the discretization process.
+ShallowWaters uses RK4 by default for the time-stepping, and it's how I computed my high-resolution states. If we 
+discretize the first equation, we have
+    u_t = u_{t - Delta t} + Delta t f(u)
+If we only did a first order time-stepping scheme, then this would be the same as the first way of computing 
+S_{tot}. However, that's not the case, we have higher order terms that appear in RK4
+    u_t = u_{t - Delta t} + four terms
+which is *not* equal to the first order method, and thus not equal to the first way of computing S_{tot}. This leads to the 
+second way of getting at S_{tot}, which takes into account these higher order terms in the RK4 step. This second way is what I 
+used to compute S_{tot}, and what gave the figure currently in the manuscript. It's a question of which is better, I'd argue it's the 
+second, because again we used RK4 for our high-resolution variables, and it makes sense that the NN learned something about this
+"""
+function compute_tendencies_withrk4!(du, dv, deta, S, t)
 
     # uold = copy(S.Prog.u)
     # vold = copy(S.Prog.v)
@@ -388,7 +401,7 @@ function single_step!(du, dv, deta, S, t)
         fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
     end
 
-    for rki = 1:S.parameters.RKo
+    for rki = 1:1
         if rki > 1
             ShallowWaters.ghost_points!(
                 S.Diag.RungeKutta.u1,
@@ -716,7 +729,241 @@ function single_step_diff!(Bu, Bv, Mu, Mv, S, t)
 
 end
 
-function save_viscosityterm()
+function compute_advection!(adv_u, adv_v, S, t)
+
+    # uold = copy(S.Prog.u)
+    # vold = copy(S.Prog.v)
+    # etaold = copy(S.Prog.η)
+
+    # calculate PV terms for initial conditions
+    urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
+    vrhs = S.Diag.PrognosticVarsRHS.v .= S.Prog.v
+    ηrhs = S.Diag.PrognosticVarsRHS.η .= S.Prog.η
+
+    ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, S.Diag, S)
+    ShallowWaters.PVadvection!(S.Diag, S)
+
+    # propagate initial conditions
+    copyto!(S.Diag.RungeKutta.u0, S.Prog.u)
+    copyto!(S.Diag.RungeKutta.v0, S.Prog.v)
+    copyto!(S.Diag.RungeKutta.η0, S.Prog.η)
+
+    # store initial conditions of sst for relaxation
+    copyto!(S.Diag.SemiLagrange.sst_ref, S.Prog.sst)
+
+    # run a single step of integration loop
+
+    # ghost point copy for boundary conditions
+    ShallowWaters.ghost_points!(S.Prog.u, S.Prog.v, S.Prog.η, S)
+    copyto!(S.Diag.RungeKutta.u1, S.Prog.u)
+    copyto!(S.Diag.RungeKutta.v1, S.Prog.v)
+    copyto!(S.Diag.RungeKutta.η1, S.Prog.η)
+
+    if S.parameters.compensated
+        fill!(S.Diag.Tendencies.du_sum, zero(S.parameters.Tprog))
+        fill!(S.Diag.Tendencies.dv_sum, zero(S.parameters.Tprog))
+        fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
+    end
+
+    for rki = 1:S.parameters.RKo
+        if rki > 1
+            ShallowWaters.ghost_points!(
+                S.Diag.RungeKutta.u1,
+                S.Diag.RungeKutta.v1,
+                S.Diag.RungeKutta.η1,
+                S
+            )
+        end
+
+        # type conversion for mixed precision
+        u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
+        v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
+        η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
+
+        ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
+        ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
+
+        if rki < S.parameters.RKo
+            ShallowWaters.caxb!(
+                S.Diag.RungeKutta.u1,
+                S.Prog.u,
+                S.constants.RKbΔt[rki],
+                S.Diag.Tendencies.du
+            )
+            ShallowWaters.caxb!(
+                S.Diag.RungeKutta.v1,
+                S.Prog.v,
+                S.constants.RKbΔt[rki],
+                S.Diag.Tendencies.dv
+            )
+            ShallowWaters.caxb!(
+                S.Diag.RungeKutta.η1,
+                S.Prog.η,
+                S.constants.RKbΔt[rki],
+                S.Diag.Tendencies.dη
+            )
+        end
+
+        if S.parameters.compensated
+            ShallowWaters.axb!(S.Diag.Tendencies.du_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.du)
+            ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dv)
+            ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dη)
+        else
+            ShallowWaters.axb!(
+                S.Diag.RungeKutta.u0,
+                S.constants.RKaΔt[rki],
+                S.Diag.Tendencies.du
+            )
+            ShallowWaters.axb!(
+                S.Diag.RungeKutta.v0,
+                S.constants.RKaΔt[rki],
+                S.Diag.Tendencies.dv
+            )
+            ShallowWaters.axb!(
+                S.Diag.RungeKutta.η0,
+                S.constants.RKaΔt[rki],
+                S.Diag.Tendencies.dη
+            )
+        end
+    end
+
+    if S.parameters.compensated
+        ShallowWaters.axb!(S.Diag.Tendencies.du_sum, -1, S.Diag.Tendencies.du_comp)
+        ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, -1, S.Diag.Tendencies.dv_comp)
+        ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, -1, S.Diag.Tendencies.dη_comp)
+
+        ShallowWaters.axb!(S.Diag.RungeKutta.u0, 1, S.Diag.Tendencies.du_sum)
+        ShallowWaters.axb!(S.Diag.RungeKutta.v0, 1, S.Diag.Tendencies.dv_sum)
+        ShallowWaters.axb!(S.Diag.RungeKutta.η0, 1, S.Diag.Tendencies.dη_sum)
+
+        ShallowWaters.dambmc!(
+            S.Diag.Tendencies.du_comp,
+            S.Diag.RungeKutta.u0,
+            S.Prog.u,
+            S.Diag.Tendencies.du_sum
+        )
+        ShallowWaters.dambmc!(
+            S.Diag.Tendencies.dv_comp,
+            S.Diag.RungeKutta.v0,
+            S.Prog.v,
+            S.Diag.Tendencies.dv_sum
+        )
+        ShallowWaters.dambmc!(
+            S.Diag.Tendencies.dη_comp,
+            S.Diag.RungeKutta.η0,
+            S.Prog.η,
+            S.Diag.Tendencies.dη_sum
+        )
+    end
+
+    ShallowWaters.ghost_points!(
+        S.Diag.RungeKutta.u0,
+        S.Diag.RungeKutta.v0,
+        S.Diag.RungeKutta.η0,
+        S
+    )
+
+    u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
+    v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+    η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
+
+    # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
+        ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+    # end
+
+    # if (chkp.i % S.grid.nstep_diff) == 0
+        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        ShallowWaters.diffusion!(u0rhs, v0rhs, S.Diag, S)
+        ShallowWaters.add_drag_diff_tendencies!(
+            S.Diag.RungeKutta.u0,
+            S.Diag.RungeKutta.v0,
+            S.Diag,
+            S
+        )
+        ShallowWaters.ghost_points_uv!(
+            S.Diag.RungeKutta.u0,
+            S.Diag.RungeKutta.v0,
+            S
+        )
+    # end
+
+    t += S.grid.dtint
+
+    u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
+    v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+    # ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+
+    # copyto!(S.Prog.u, S.Diag.RungeKutta.u0)
+    # copyto!(S.Prog.v, S.Diag.RungeKutta.v0)
+    # copyto!(S.Prog.η, S.Diag.RungeKutta.η0)
+
+    ep = S.grid.ep
+    halo = S.grid.halo
+    p = S.Diag.Bernoulli.p
+
+    # Needed to recompute the relative vorticity term but without the Coriolis force,
+    # I do everything as its done in ShallowWaters but substract off f_q from the computation of q
+    @unpack U,V = S.Diag.VolumeFluxes
+    @unpack qhv,qhu = S.Diag.Vorticity
+    @unpack qα,qβ,qγ,qδ = S.Diag.ArakawaHsu
+    @unpack q,dvdx,dudy,h_q = S.Diag.Vorticity
+    @unpack ep = S.grid
+
+    m,n = size(q)
+    @inbounds for j ∈ 1:n
+        for i ∈ 1:m
+            q[i,j] = (dvdx[i+1,j+1] - dudy[i+1+ep,j+1]) / h_q[i,j]
+        end
+    end
+
+    @unpack qα,qβ,qγ,qδ = S.Diag.ArakawaHsu
+    ShallowWaters.AHα!(qα,q)
+    ShallowWaters.AHβ!(qβ,q)
+    ShallowWaters.AHγ!(qγ,q)
+    ShallowWaters.AHδ!(qδ,q)
+
+    # first computing components of the u portion of the advection term
+    ShallowWaters.∂x!(S.Diag.Bernoulli.dpdx, p .- ((S.constants.scale * S.constants.g) .* S.Prog.η))
+    m,n = size(qhv)
+    @inbounds for j ∈ 1:n
+        for i ∈ 1:m
+            qhv[i,j] = qα[1-ep+i,j]*V[2-ep+i,j+1] + qβ[1-ep+i,j]*V[1-ep+i,j+1] + qγ[1-ep+i,j]*V[1-ep+i,j] + qδ[1-ep+i,j]*V[2-ep+i,j]
+        end
+    end
+
+    # next computing components of the v portion
+    ShallowWaters.∂y!(S.Diag.Bernoulli.dpdy, p .- ((S.constants.scale * S.constants.g) .* S.Prog.η))
+    m,n = size(S.Diag.Vorticity.qhu)
+    m,n = size(qhu)
+    @inbounds for j ∈ 1:n
+        for i ∈ 1:m
+            qhu[i,j] = qα[i,j]*U[i,j+1] + qβ[i+1,j]*U[i+1,j+1] + qγ[i+1,j+1]*U[i+1,j+2] + qδ[i,j+1]*U[i,j+2]
+        end
+    end
+
+    m,n = size(S.Diag.Tendencies.du) .- (2*halo,2*halo)
+    for j = 1:n
+        for i = 1:m
+        adv_u[i,j] = S.Diag.Vorticity.qhv[i,j] - S.Diag.Bernoulli.dpdx[i+1-ep,j+1]
+        end
+    end
+
+    m,n = size(S.Diag.Tendencies.dv) .- (2*halo,2*halo)
+    for j = 1:n
+        for i = 1:m
+        adv_v[i,j] = -S.Diag.Vorticity.qhu[i,j] - S.Diag.Bernoulli.dpdy[i+1,j+1]
+        end
+    end
+
+    adv_u .= S.constants.scale_inv .* adv_u
+    adv_v .= S.constants.scale_inv .* adv_v
+
+    return nothing
+
+end
+
+function save_modelvariables()
 
     # u = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[1];
     # v = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[2];
@@ -730,9 +977,9 @@ function save_viscosityterm()
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/v.nc", "v");
     # eta = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/eta.nc", "eta");
 
-    u = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
-    v = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
-    eta = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
+    # u = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/u.nc", "u");
+    # v = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
+    # eta = ncread("./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
     # u = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
@@ -744,6 +991,7 @@ function save_viscosityterm()
         g=9.81,
         H=500,
         cfl=.898,
+        RKo=2,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -753,7 +1001,7 @@ function save_viscosityterm()
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
+        zb_forcing_dissipation=false,
         zb_filtered=true,
         nn_forcing_momentum=false,
         nn_forcing_dissipation=false,
@@ -787,18 +1035,32 @@ function save_viscosityterm()
     end
 
     # t = 1800 * S.grid.dtint
-    t = 225 * Slr.grid.dtint
-    Mu = zeros(S.grid.nux, S.grid.nuy)
-    Mv = zeros(S.grid.nvx, S.grid.nvy)
+    t = 225 * S.grid.dtint
 
-    Bu = zeros(S.grid.nux, S.grid.nuy)
-    Bv = zeros(S.grid.nvx, S.grid.nvy)
+    # Mu = zeros(S.grid.nux, S.grid.nuy)
+    # Mv = zeros(S.grid.nvx, S.grid.nvy)
 
-    Mu_all = zeros(S.grid.nux, S.grid.nuy, 1096)
-    Mv_all = zeros(S.grid.nvx, S.grid.nvy, 1096)
+    # Bu = zeros(S.grid.nux, S.grid.nuy)
+    # Bv = zeros(S.grid.nvx, S.grid.nvy)
 
-    Bu_all = zeros(S.grid.nux, S.grid.nuy, 1096)
-    Bv_all = zeros(S.grid.nvx, S.grid.nvy, 1096)
+    # Mu_all = zeros(S.grid.nux, S.grid.nuy, 1096)
+    # Mv_all = zeros(S.grid.nvx, S.grid.nvy, 1096)
+
+    # Bu_all = zeros(S.grid.nux, S.grid.nuy, 1096)
+    # Bv_all = zeros(S.grid.nvx, S.grid.nvy, 1096)
+
+    # adv_u = zeros(S.grid.nux, S.grid.nuy);
+    # adv_v = zeros(S.grid.nvx, S.grid.nvy);
+
+    # adv_u_all = zeros(S.grid.nux, S.grid.nuy, 1096);
+    # adv_v_all = zeros(S.grid.nvx, S.grid.nvy, 1096);
+
+    du = zeros(S.grid.nux, S.grid.nuy);
+    dv = zeros(S.grid.nvx, S.grid.nvy);
+    deta = zeros(S.grid.nx, S.grid.ny);
+    du_all = zeros(S.grid.nux, S.grid.nuy, 1096);
+    dv_all = zeros(S.grid.nvx, S.grid.nvy, 1096);
+    deta_all = zeros(S.grid.nx, S.grid.ny, 1096);
 
     for n = 1:1096
 
@@ -808,13 +1070,25 @@ function save_viscosityterm()
         S.Prog.v = v_
         S.Prog.η = eta_
 
-        single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
+        # single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
+        # compute_advection!(adv_u, adv_v, S, n*t)
+        compute_tendencies_withrk4!(du, dv, deta, S, n*t)
 
-        @views Mu_all[:,:,n] .= Mu
-        @views Mv_all[:,:,n] .= Mv
+        # saving tendencies
+        @views du_all[:,:,n] .= du
+        @views dv_all[:,:,n] .= dv
+        @views deta_all[:,:,n] .= deta
 
-        @views Bu_all[:,:,n] .= Bu
-        @views Bv_all[:,:,n] .= Bv
+        # saving the advection computed with the coarse-grained high-resolution states
+        # @views adv_u_all[:,:,n] .= adv_u
+        # @views adv_v_all[:,:,n] .= adv_v
+
+        # saving momentum terms (bottom drag and viscosity)
+        # @views Mu_all[:,:,n] .= Mu
+        # @views Mv_all[:,:,n] .= Mv
+
+        # @views Bu_all[:,:,n] .= Bu
+        # @views Bv_all[:,:,n] .= Bv
 
     end
 

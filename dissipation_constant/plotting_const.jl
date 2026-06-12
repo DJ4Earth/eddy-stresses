@@ -516,166 +516,6 @@ function prognostic_plots()
         halign = :right)
     end
 
-    # just u fields
-    t = 1096
-    fig = Figure(size=(700, 550), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uhrcg[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\overline{u}(30 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,2], hm1, label="m/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    unoparam[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u(30 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,4], hm2, label="m/s")
-
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uzb[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{\text{ZB20}}(30 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[2,2], hm3, label="m/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    umulti10[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{multi20}(30 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[2,4], hm4, label="m/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[2, 1] = GridLayout()
-    gd = fig[2, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # looking at u fields to see if additional state optimization helped
-    # just u fields
-    t = 7*52
-    fig = Figure(size=(700, 550), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    u5s[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_5(2 \; \text{years}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    colorrange=(-maximum(abs.(uzb[:,:,t])),maximum(abs.(uzb[:,:,t])))
-    );
-    Colorbar(fig[1,2], hm1, label="m/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    u10s[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{10}(2 \; \text{years}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    colorrange=(-maximum(abs.(uzb[:,:,t])),maximum(abs.(uzb[:,:,t])))
-    );
-    Colorbar(fig[1,4], hm2, label="m/s")
-
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    u20s[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{20}(2 \; \text{years}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    colorrange=(-maximum(abs.(uzb[:,:,t])),maximum(abs.(uzb[:,:,t])))    
-    );
-    Colorbar(fig[2,2], hm3, label="m/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    u30s[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{30}(2 \; \text{years}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    colorrange=(-maximum(abs.(uzb[:,:,t])),maximum(abs.(uzb[:,:,t])))
-    );
-    Colorbar(fig[2,4], hm4, label="m/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[2, 1] = GridLayout()
-    gd = fig[2, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # just eta fields
-    t = 90
-    fig = Figure(size=(700, 525), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etahrcg[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\overline{\eta}(90 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[1,2], hm1, label="m")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etazb[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\eta_{\text{ZB20}}(90 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[1,4], hm2, label="m")
-
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etamulti3_new[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\eta_{\text{multi}3}(90 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[2,2], hm3, label="m")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    eta30s[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\eta_{30}(90 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[2,4], hm4, label="m")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[2, 1] = GridLayout()
-    gd = fig[2, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
     # time-averaged eta fields
 
     # change this if you want ten year or 3 year
@@ -702,9 +542,10 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[1,2], hm1, label="m")
+    hidexdecorations!(ax)
 
     index=1:522
-    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etanoparam10[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
@@ -712,6 +553,7 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[1,4], hm1, label="m")
+    hidedecorations!(ax1)
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -721,6 +563,7 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[1,6], hm1, label="m")
+    hidedecorations!(ax2)
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -739,8 +582,9 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[2,4], hm4, label="m")
+    hideydecorations!(ax4)
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etamulti1010, dims=3)[:,:,1] ./ total,
     colormap=:balance,
@@ -748,6 +592,7 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[2,6], hm1, label="m")
+    hideydecorations!(ax5)
 
     Colorbar(fig[1:2,4], hm, label="m")
 
@@ -834,9 +679,10 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[1,2], hm1, label="m")
+    hidexdecorations!(ax)
 
     index=1:522
-    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     abs.(timeavg_hr .- sum(etanoparam10[:,:,index], dims=3)[:,:,1] ./ total),
     colormap=:balance,
@@ -844,6 +690,7 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[1,4], hm1, label="m")
+    hidedecorations!(ax1)
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -853,6 +700,7 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[1,6], hm1, label="m")
+    hidedecorations!(ax2)
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -871,8 +719,9 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[2,4], hm4, label="m")
+    hideydecorations!(ax4)
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     abs.(timeavg_hr .- sum(etamulti1010, dims=3)[:,:,1] ./ total),
     colormap=:balance,
@@ -880,6 +729,7 @@ function prognostic_plots()
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
     # Colorbar(fig[2,6], hm1, label="m")
+    hideydecorations!(ax5)
 
     Colorbar(fig[1:2,4], hm, label="m")
 
@@ -890,308 +740,6 @@ function prognostic_plots()
     ge = fig[2, 2] = GridLayout()
     gf = fig[2, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # absolute difference in the time averaged ssh fields
-    index = vcat(1:7:1096, 1097:1461)
-    total = length(index)
-    timeavg_hr = sum(etahrcgall[:,:,index],dims=3)[:,:,1] ./ total
-
-    fig = Figure(size=(1040, 520), fontsize=15);
-    fig.layout.alignmode = Outside();
-    Label(
-        fig[0, 3],
-        "Absolute difference between 1-year averages, new latitude and amplitude",
-        fontsize = 20,
-        tellwidth = false
-    )
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    timeavg_hr,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained 3.75 km"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[1,2], hm1, label="m")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    abs.(sum(etanoparam10, dims=3)[:,:,1] ./ total .- timeavg_hr),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="No closure"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[1,4], hm1, label="m")
-
-    ax2, hm2 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    abs.(sum(etazb_lat[:,:,index], dims=3)[:,:,1] ./ total .- timeavg_hr),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[1,6], hm1, label="m")
-
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    abs.(sum(etamulti2_latamp[:,:,index], dims=3)[:,:,1] ./ total .- timeavg_hr),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[2,2], hm3, label="m")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    abs.(sum(etamulti3_lat[:,:,index], dims=3)[:,:,1] ./ total .- timeavg_hr),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[2,4], hm4, label="m")
-
-    ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    abs.(sum(etamulti1010, dims=3)[:,:,1] ./ total .- timeavg_hr),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
-    );
-    Colorbar(fig[2,6], hm1, label="m")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # 1 + 5 state optimization versus ZB20
-
-    t = 182
-    fig = Figure(size=(700, 550), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    u5daystategelu[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(90 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,31])),maximum(abs.(uhrcg[:,:,31])))
-    );
-    Colorbar(fig[1,2], hm1, label="m")
-
-    # u and v fields
-    t = 46
-    fig = Figure(size=(1800, 800), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uhrcg[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained u(15 days, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,2], hm1)
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    unoparam[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), no closure"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,4], hm2)
-
-    ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uzb[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), ZB closure"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,6], hm3)
-
-    ax4, hm4 = heatmap(fig[1,7], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uonlinegelu[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="u(15 days, x, y), online closure"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    );
-    Colorbar(fig[1,8], hm4)
-
-    ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    vhrcg[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained v(15 days, x, y)"),
-    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
-    );
-    Colorbar(fig[2,2], hm1)
-
-    ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    vnoparam[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="v(15 days, x, y), no closure"),
-    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
-    );
-    Colorbar(fig[2,4], hm2)
-
-    ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    vzb[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="v(15 days, x, y), ZB closure"),
-    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
-    );
-    Colorbar(fig[2,6], hm3)
-
-    ax4, hm4 = heatmap(fig[2,7], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    vonlinegelu[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="v(15 days, x, y), online closure"),
-    colorrange=(-maximum(abs.(vhrcg[:,:,t])),maximum(abs.(vhrcg[:,:,t])))
-    );
-    Colorbar(fig[2,8], hm4)
-
-    # eta fields
-    t = 46
-    fig = Figure(size=(900, 800), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etahrcg[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Filtered, coarse-grained eta(15 days, x, y)"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[1,2], hm1)
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etanoparam[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="eta(15 days, x, y), no closure"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[1,4], hm2)
-
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etazb[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="eta(15 days, x, y), ZB closure"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[2,2], hm3)
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    etaonlinegelu[:,:,t],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="eta(15 days, x, y), online closure"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
-    );
-    Colorbar(fig[2,4], hm4)
-
-    # time-series of prognostic field computed with online parameterization
-    t = [46, 91, 136, 273]
-    fig = Figure(size=(700, 525), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ufourier[:,:,t[1]],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{1}(1 \text{ day}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
-    );
-    Colorbar(fig[1,2], hm1, label="m/s")
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ufourier[:,:,t[2]],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{1}(3 \text{ days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
-    );
-    Colorbar(fig[1,4], hm2, label="m/s")
-
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ufourier[:,:,t[3]],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{1}(15 \text{ days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
-    );
-    Colorbar(fig[2,2], hm3, label="m/s")
-
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ufourier[:,:,t[4]],
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"u_{1}(30 \text{ days}, x, y)"),
-    colorrange=(-maximum(abs.(uhrcg[:,:,t[2]])),maximum(abs.(uhrcg[:,:,t[2]])))
-    );
-    Colorbar(fig[2,4], hm4, label="m/s")
-
-    # ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # u5daystategelu[:,:,t[1]],
-    # colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(1 \text{ day}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    # );
-    # Colorbar(fig[2,2], hm1, label="m/s")
-
-    # ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # u5daystategelu[:,:,t[2]],
-    # colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(3 \text{ days}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    # );
-    # Colorbar(fig[2,4], hm2, label="m/s")
-
-    # ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # u5daystategelu[:,:,t[3]],
-    # colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(15 \text{ days}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    # );
-    # Colorbar(fig[2,6], hm3, label="m/s")
-
-    # ax4, hm4 = heatmap(fig[2,7], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # u5daystategelu[:,:,t[4]],
-    # colormap=:balance,
-    # axis=(xlabel="km", ylabel="km", title=L"u_{1+5}(30 \text{ days}, x, y)"),
-    # colorrange=(-maximum(abs.(uhrcg[:,:,t])),maximum(abs.(uhrcg[:,:,t])))
-    # );
-    # Colorbar(fig[2,8], hm4, label="m/s")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[2, 1] = GridLayout()
-    gd = fig[2, 3] = GridLayout()
-    # ge = fig[2, 1] = GridLayout()
-    # gf = fig[2, 3] = GridLayout()
-    # gg = fig[2, 5] = GridLayout()
-    # gh = fig[2, 7] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
         font = :bold,
@@ -1343,9 +891,10 @@ function ssh_variability()
     colorrange=(0,maximum(abs.(temp)))
     );
     # Colorbar(fig[1,2], hm1, label="m")
+    hidexdecorations!(ax)
 
     index=1:522
-    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     abs.(temp .- std(etanoparam10[:,:,index], dims=3)[:,:,1]),
     colormap=:amp,
@@ -1353,6 +902,7 @@ function ssh_variability()
     colorrange=(0,maximum(abs.(temp)))
     );
     # Colorbar(fig[1,4], hm1, label="m")
+    hidedecorations!(ax1)
 
     ax2, hm2 = heatmap(fig[1,3],LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -1362,6 +912,7 @@ function ssh_variability()
     colorrange=(0,maximum(abs.(temp)))
     );
     # Colorbar(fig[1,6], hm1, label="m")
+    hidedecorations!(ax2)
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -1380,8 +931,9 @@ function ssh_variability()
     colorrange=(0,maximum(abs.(temp)))
     );
     # Colorbar(fig[2,4], hm4, label="m")
+    hideydecorations!(ax4)
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     abs.(temp .- std(etamulti1010, dims=3)[:,:,1]),
     colormap=:amp,
@@ -1389,6 +941,7 @@ function ssh_variability()
     colorrange=(0,maximum(abs.(temp)))
     );
     # Colorbar(fig[2,6], hm1, label="m")
+    hideydecorations!(ax5)
 
     Colorbar(fig[1:2,4], hm, label="m")
 
@@ -1862,6 +1415,7 @@ function vorticity_plots()
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     # Colorbar(fig[1,2], hm1, label="1/s")
+    hidexdecorations!(ax1)
 
     ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -1871,8 +1425,9 @@ function vorticity_plots()
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     # Colorbar(fig[1,4], hm1, label="1/s")
+    hidedecorations!(ax2)
 
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζzb[:,:,t],
     colormap=:balance,
@@ -1880,6 +1435,7 @@ function vorticity_plots()
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     # Colorbar(fig[1,6], hm1, label="1/s")
+    hidedecorations!(ax3)
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -1890,7 +1446,7 @@ function vorticity_plots()
     );
     # Colorbar(fig[2,2], hm1, label="1/s")
 
-    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζmulti3more[:,:,t],
     colormap=:balance,
@@ -1898,8 +1454,9 @@ function vorticity_plots()
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     # Colorbar(fig[2,4], hm1, label="1/s")
+    hideydecorations!(ax5)
 
-    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax6, hm6 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     ζmulti10[:,:,t],
     colormap=:balance,
@@ -1907,6 +1464,7 @@ function vorticity_plots()
     colorrange=(-maximum(abs.(ζhrcg[:,:, t])),maximum(abs.(ζhrcg[:,:, t])))
     );
     # Colorbar(fig[2,6], hm1, label="1/s")
+    hideydecorations!(ax6)
 
     Colorbar(fig[1:2,4], hm1, label="1/s")
 
@@ -3203,11 +2761,17 @@ end
 function computing_ketransfer_fromS()
 
     # computing the true subgrid forcing
-    duhrcg = load_object("./dissipation_constant/hrcgtendencies_dudvdeta.jld2")[1];
-    dvhrcg = load_object("./dissipation_constant/hrcgtendencies_dudvdeta.jld2")[2];
+    duhrcg = load_object("./dissipation_constant/computing_trueS/hrcgtendencies_first3years_dailysaves_dudvdeta.jld2")[1];
+    dvhrcg = load_object("./dissipation_constant/computing_trueS/hrcgtendencies_first3years_dailysaves_dudvdeta.jld2")[2];
 
-    duhr = load_object("./dissipation_constant/hrtendencies_dudvdeta.jld2")[1];
-    dvhr = load_object("./dissipation_constant/hrtendencies_dudvdeta.jld2")[2];
+    duhr = load_object("./dissipation_constant/computing_trueS/hrtendencies_first3years_dailysaves_dudvdeta.jld2")[1];
+    dvhr = load_object("./dissipation_constant/computing_trueS/hrtendencies_first3years_dailysaves_dudvdeta.jld2")[2];
+
+    # advu_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2")[1];
+    # advv_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2")[2];
+
+    # advu_cg = load_object("./nonlinear_advec_fromcghrstates_advu_advv.jld2")[1];
+    # advv_cg = load_object("./nonlinear_advec_fromcghrstates_advu_advv.jld2")[2];
 
     Su_true = zeros(127, 128, 1096)
     Sv_true = zeros(128, 127, 1096)
@@ -3216,14 +2780,20 @@ function computing_ketransfer_fromS()
 
     for j = 1:1096
 
-        dufiltered = imfilter(@view(duhr[:, :, j]), reflect(ker))
+        dufiltered = imfilter(@view(duhr[:,:,j]), reflect(ker))
         dvfiltered = imfilter(@view(dvhr[:,:,j]), reflect(ker))
     
         duhrdownsized = (dufiltered[8:8:end, 4:8:end] .+ dufiltered[8:8:end, 5:8:end]) .* 0.5
         dvhrdownsized = (dvfiltered[4:8:end, 8:8:end] .+ dvfiltered[5:8:end, 8:8:end]) .* 0.5
 
-        Su_true[:,:,j] .=  (duhrdownsized[:,:,1]./48) - (duhrcg[:,:,j]./384)
-        Sv_true[:,:,j] .= (dvhrdownsized[:,:,1]./48) - (dvhrcg[:,:,j]./384)
+        # advufiltered = imfilter(@view(advu_hr[:,:,j]), reflect(ker))
+        # advvfiltered = imfilter(@view(advv_hr[:,:,j]), reflect(ker))
+
+        # advuhrdownsized = (advufiltered[8:8:end, 4:8:end] .+ advufiltered[8:8:end, 5:8:end]) .* 0.5
+        # advvhrdownsized = (advvfiltered[4:8:end, 8:8:end] .+ advvfiltered[5:8:end, 8:8:end]) .* 0.5
+
+        Su_true[:,:,j] .=  (advuhrdownsized[:,:,1]./48) - (advu_cg[:,:,j]./384)
+        Sv_true[:,:,j] .= (advvhrdownsized[:,:,1]./48) - (advv_cg[:,:,j]./384)
 
     end
 
@@ -4082,15 +3652,48 @@ function ketransfer_plots()
 
 end
 
-function parameterization_S_plots()
-
-    true_S = load_object("./dissipation_constant/computing_trueS/trueS_fromtendencies_SuSv_first3years_dailysaves_032526.jld2");
+function load_Sfiles()
+    true_S = load_object("./dissipation_constant/computing_trueS/trueS_fromtendencies_withrk4_SuSv_first3years_dailysaves_032526.jld2");
     Suhr = true_S[1];
     Svhr = true_S[2];
 
     approx_S = load_object("./dissipation_constant/computing_trueS/approxS_nonlinearadvec_nottendencies_hasextraDelta_SuSv_first3years_040726.jld2");
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
+
+    # visc_hr = load_object("./dissipation_constant/alternate_S_files/viscosity_hr_3years_dailysaves_MuMv.jld2");
+    visc_cg = load_object("./dissipation_constant/alternate_S_files/viscosity_cghr_3years_dailysaves_MuMv.jld2");
+
+    # bd_hr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_hr_3years_dailysaves_BuBv.jld2");
+    bd_cg = load_object("./dissipation_constant/alternate_S_files/bottomdrag_cghr_3years_dailysaves_BuBv.jld2");
+
+    # advec_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2");
+    advec_cg = load_object("./dissipation_constant/alternate_S_files/nonlinear_advec_fromcghrstates_advu_advv.jld2");
+
+    tend_cg = load_object("./dissipation_constant/computing_trueS/coarsegrain_tendencies_doverline_rk1_dudvdeta.jld2");
+    # tend_hr = load_object("./dissipation_constant/computing_trueS/highresolution_tendencies_rk1_dudvdeta.jld2");
+
+    # coarse-grain the high-resolution viscosity terms
+    # ker = ImageFiltering.Kernel.gaussian((30e3/3750));
+    # tendufiltered = zeros(1023, 1024, 1096);
+    # tendvfiltered = zeros(1024, 1023, 1096);
+
+    # for t = 1:1096
+    #     @views tendufiltered[:,:,t] .= imfilter(tend_hr[1][:,:,t], reflect(ker))
+    #     @views tendvfiltered[:,:,t] .= imfilter(tend_hr[2][:,:,t], reflect(ker))
+    # end
+
+    tendu_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[1];
+    tendv_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[2];
+
+    Mu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[1];
+    Mv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[2];
+
+    Bu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/bottomdrag_coarsegrained_hr_3years_dailysaves_overlineBuoverlineBv.jld2")[1];
+    Bv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/bottomdrag_coarsegrained_hr_3years_dailysaves_overlineBuoverlineBv.jld2")[2];
+
+    Advecu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_coarsegrainedhr_3years_dailysaves_overlineAdvecuoverlineAdvecv.jld2")[1];
+    Advecv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_coarsegrainedhr_3years_dailysaves_overlineAdvecuoverlineAdvecv.jld2")[2];
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,
@@ -4118,6 +3721,10 @@ function parameterization_S_plots()
         initial_cond="rest"
     );
     S = ShallowWaters.model_setup(P);
+
+end
+
+function parameterization_S_plots()
 
     Scghr = deepcopy(S);
     S5 = deepcopy(S);
@@ -4344,16 +3951,27 @@ function parameterization_S_plots()
     LinRange(0, 3840, 128),
     -Suhr[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, RK4"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[1,2], hm2, label=L"m/s^2")
     hidexdecorations!(ax1)
 
-    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    Smulti2.grid.Δ .* Suapprox[:,:,t],
+    tendu_hrdownsized[:,:,j]./48 .- tend_cg[1][:,:,j]./384,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, RK1"),
+    # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax0)
+    # Colorbar(fig[1,2], hm0)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    S.grid.Δ .* Suapprox[:,:,t],
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
@@ -4527,35 +4145,298 @@ function parameterization_S_plots()
         halign = :right)
     end
 
-    # viscosity and bottom drag SGS contributions to S_tot
 
-    visc_hr = load_object("./dissipation_constant/alternate_S_files/viscosity_hr_3years_dailysaves_MuMv.jld2");
-    visc_hrcg = load_object("./dissipation_constant/alternate_S_files/viscosity_cghr_3years_dailysaves_MuMv.jld2");
+    # computing u * S_u + v * S_v
+    s = Szb.grid.Δ * Szb.grid.scale
+    fig = Figure(size=(900, 780), fontsize=15);
 
-    bd_hr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_hr_3years_dailysaves_BuBv.jld2");
-    bd_cghr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_cghr_3years_dailysaves_BuBv.jld2");
+    Label(
+        fig[0, 2],
+        L"u S_u + v S_v",
+        fontsize = 20,
+        tellwidth = false
+    )
 
-    # coarse-grain the high-resolution viscosity terms
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750));
-    Bufiltered = zeros(1023, 1024, 1096);
-    Bvfiltered = zeros(1024, 1023, 1096);
+    t = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    - ShallowWaters.Iy(uhrcgall[:,:,t] .* Suhr[:,:,t]) - ShallowWaters.Ix(vhrcgall[:,:,t] .* Svhr[:,:,t]),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidexdecorations!(ax1)
 
-    for t = 1:1096
-        @views Bufiltered[:,:,t] .= imfilter(bd_hr[1][:,:,t], reflect(ker))
-        @views Bvfiltered[:,:,t] .= imfilter(bd_hr[2][:,:,t], reflect(ker))
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(S.grid.Δ .* (uhrcgall[:,:,t] .* Suapprox[:,:,t])) + ShallowWaters.Ix(S.grid.Δ .* (vhrcgall[:,:,t] .* Svapprox[:,:,t])),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-5e-5, 5e-5)
+    );
+    hidedecorations!(ax2)
+
+    s = Szb.grid.Δ * Szb.grid.scale
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uhrcgall[:,:,t] .* Szb.Diag.ZBVars.S_u ./ s) + ShallowWaters.Ix(vhrcgall[:,:,t] .* Szb.Diag.ZBVars.S_v ./ s),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidexdecorations!(ax3)
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uhrcgall[:,:,t] .* Soffline.Diag.CNNVars.S_u ./ s) + ShallowWaters.Ix(vhrcgall[:,:,t] .* Soffline.Diag.CNNVars.S_v ./ s),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    hidedecorations!(ax4)
+
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uhrcgall[:,:,t] .* Smulti2.Diag.CNNVars.S_u ./ s) + ShallowWaters.Ix(vhrcgall[:,:,t] .* Smulti2.Diag.CNNVars.S_v ./ s),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[1,6], hm2, label=L"m/s^2")
+    hidedecorations!(ax5)
+
+    ax6, hm6 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uhrcgall[:,:,t] .* Smulti3.Diag.CNNVars.S_u ./ s) + ShallowWaters.Ix(vhrcgall[:,:,t] .* Smulti3.Diag.CNNVars.S_v ./ s),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[2,2], hm2, label=L"m/s^2")
+
+    ax7, hm7 = heatmap(fig[3,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uhrcgall[:,:,t] .* Smulti10.Diag.CNNVars.S_u ./ s) + ShallowWaters.Ix(vhrcgall[:,:,t] .* Smulti10.Diag.CNNVars.S_v ./ s),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[2,4], hm2, label=L"m/s^2")
+    hideydecorations!(ax7)
+
+    ax8, hm8 = heatmap(fig[3,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uhrcgall[:,:,t] .* S30.Diag.CNNVars.S_u ./ s) + ShallowWaters.Ix(vhrcgall[:,:,t] .* S30.Diag.CNNVars.S_v ./ s),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="30 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-5e-5, 5e-5)
+    );
+    # Colorbar(fig[2,6], hm2, label=L"m/s^2")
+    hideydecorations!(ax8)
+
+    Colorbar(fig[1:3,4], hm1, label=L"m^2/s^3")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 2] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[3, 1] = GridLayout()
+    gg = fig[3, 2] = GridLayout()
+    gh = fig[3, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"], [ga, gb, gc, gd, ge, gf, gg, gh])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
     end
 
-    Bu_hrdownsized = (Bufiltered[8:8:end, 4:8:end,:] .+ Bufiltered[8:8:end, 5:8:end,:]) ./ 2;
-    Bv_hrdownsized = (Bvfiltered[4:8:end, 8:8:end,:] .+ Bvfiltered[5:8:end, 8:8:end,:]) ./ 2;
+    # computing u * S_u + v * S_v time-averaged
+    index = 1:1096
+    total = length(index)
 
-    Mu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[1];
-    Mv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[2];
+    # sum(etamulti210[:,:,index], dims=3)[:,:,1] ./ total)
+    uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcgall[:,:,t]), Float64.(vhrcgall[:,:,t]), Float64.(etahrcgall[:,:,t]), zeros(128,128), S);
+
+    uSuzb = zeros(size(uhrcgall[:,:,1]))
+    vSvzb = zeros(size(vhrcgall[:,:,1]))
+    uSu30 = zeros(size(uhrcgall[:,:,1]))
+    vSv30 = zeros(size(vhrcgall[:,:,1]))
+    uSumulti2 = zeros(size(uhrcgall[:,:,1]))
+    vSvmulti2 = zeros(size(vhrcgall[:,:,1]))
+    uSumulti3 = zeros(size(uhrcgall[:,:,1]))
+    vSvmulti3 = zeros(size(vhrcgall[:,:,1]))
+    uSumulti10 = zeros(size(uhrcgall[:,:,1]))
+    vSvmulti10 = zeros(size(vhrcgall[:,:,1]))
+    uSuoffline = zeros(size(uhrcgall[:,:,1]))
+    vSvoffline = zeros(size(vhrcgall[:,:,1]))
+
+    for t in index
+        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(Float64.(uhrcgall[:,:,t]), Float64.(vhrcgall[:,:,t]), Float64.(etahrcgall[:,:,t]), zeros(128,128), S);
+        ShallowWaters.ZB_momentum(uhrcg_, vhrcg_, Szb, Szb.Diag);
+        ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, S30);
+
+        ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Smulti2);
+        ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Smulti3);
+        ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Smulti10);
+        ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
+
+        uSuzb += @view uhrcgall[:,:,t] .* Szb.Diag.ZBVars.S_u ./ s
+        vSvzb += @view vhrcgall[:,:,t] .* Szb.Diag.ZBVars.S_v ./ s
+
+        uSu30 += @view uhrcgall[:,:,t] .* S30.Diag.CNNVars.S_u ./ s
+        vSv30 += @view vhrcgall[:,:,t] .* S30.Diag.CNNVars.S_v ./ s
+
+        uSumulti2 += @view uhrcgall[:,:,t] .* Smulti2.Diag.CNNVars.S_u ./ s
+        vSvmulti2 += @view vhrcgall[:,:,t] .* Smulti2.Diag.CNNVars.S_v ./ s
+
+        uSumulti3 += @view uhrcgall[:,:,t] .* Smulti3.Diag.CNNVars.S_u ./ s
+        vSvmulti3 += @view vhrcgall[:,:,t] .* Smulti3.Diag.CNNVars.S_v ./ s
+
+        uSumulti10 += @view uhrcgall[:,:,t] .* Smulti10.Diag.CNNVars.S_u ./ s
+        vSvmulti10 += @view vhrcgall[:,:,t] .* Smulti10.Diag.CNNVars.S_v ./ s
+
+        uSuoffline += @view uhrcgall[:,:,t] .* Soffline.Diag.CNNVars.S_u ./ s
+        vSvoffline += @view vhrcgall[:,:,t] .* Soffline.Diag.CNNVars.S_v ./ s
+    end
+
+    s = Szb.grid.Δ * Szb.grid.scale
+    fig = Figure(size=(900, 780), fontsize=15);
+
+    Label(
+        fig[0, 2],
+        L"u S_u + v S_v",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    t = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    - ShallowWaters.Iy((sum(uhrcgall[:,:,index] .* Suhr[:,:,index], dims=3) ./ total)[:,:,1])
+        - ShallowWaters.Ix((sum(vhrcgall[:,:,index] .* Svhr[:,:,index], dims=3) ./ total)[:,:,1]),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy((sum(uhrcgall[:,:,index] .* (S.grid.Δ .*Suapprox[:,:,index]), dims=3) ./ total)[:,:,1])
+        + ShallowWaters.Ix((sum(vhrcgall[:,:,index] .* (S.grid.Δ .* Svapprox[:,:,index]), dims=3) ./ total)[:,:,1]),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    hidedecorations!(ax2)
+
+    s = Szb.grid.Δ * Szb.grid.scale
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uSuzb ./ total) + ShallowWaters.Ix(vSvzb ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="ZB20"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidexdecorations!(ax3)
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uSuoffline ./ total) + ShallowWaters.Ix(vSvoffline ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    hidedecorations!(ax4)
+
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uSumulti2 ./ total) + ShallowWaters.Ix(vSvmulti2 ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[1,6], hm2, label=L"m/s^2")
+    hidedecorations!(ax5)
+
+    ax6, hm6 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uSumulti3 ./ total) + ShallowWaters.Ix(vSvmulti3 ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[2,2], hm2, label=L"m/s^2")
+
+    ax7, hm7 = heatmap(fig[3,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uSumulti10 ./ total) + ShallowWaters.Ix(vSvmulti10 ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[2,4], hm2, label=L"m/s^2")
+    hideydecorations!(ax7)
+
+    ax8, hm8 = heatmap(fig[3,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ShallowWaters.Iy(uSu30 ./ total) + ShallowWaters.Ix(vSv30 ./ total),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="30 day"),
+    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    # Colorbar(fig[2,6], hm2, label=L"m/s^2")
+    hideydecorations!(ax8)
+
+    Colorbar(fig[1:3,4], hm1, label=L"m^2/s^3")
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[2, 1] = GridLayout()
+    gd = fig[2, 2] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[3, 1] = GridLayout()
+    gg = fig[3, 2] = GridLayout()
+    gh = fig[3, 3] = GridLayout()
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"], [ga, gb, gc, gd, ge, gf, gg, gh])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
+    # viscosity and bottom drag SGS contributions to S_tot, also looking at the nonlinear advection
 
     fig = Figure(size=(750, 325), fontsize=15);
     j = 1096
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (Mu_hrdownsized[:,:,j] .- visc_hrcg[1][:,:,j]) ./ s,
+    (Mu_hrdownsized[:,:,j] .- visc_cg[1][:,:,j]) ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"\overline{M_{MM}(3 \text{ years}, u)} - M_{MM}(3 \text{ years}, \overline{u})"),
     colorrange=(-1.5e-6, 1.5e-6)
@@ -4564,7 +4445,7 @@ function parameterization_S_plots()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (Bu_hrdownsized[:,:,j] .- bd_cghr[1][:,:,j]) ./ s,
+    (Bu_hrdownsized[:,:,j] .- bd_cg[1][:,:,j]) ./ s,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title=L"\overline{M_{BF}(3 \text{ years}, u)} - M_{BF}(3 \text{ years}, \overline{u})"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
@@ -4583,16 +4464,149 @@ function parameterization_S_plots()
         halign = :right)
     end
 
-    # tendency plots
-    fig = Figure();
-    clims = (-abs.(maximum(dvhrdownsized[:,:,1]./ 48)), abs.(maximum(dvhrdownsized[:,:,1]./ 48)))
-    # clims = (-abs.(maximum(Suhr[:,:,j])), abs.(maximum(Suhr[:,:,j])))
+    # comparing "true" Su fields
+    s = S.grid.Δ * S.grid.scale
 
-    ax, hm = heatmap(fig[1,1], dvhrdownsized[:,:,1] ./ 48,colormap=:balance, colorrange=clims)
-    Colorbar(fig[1,2], hm)
-    ax2, hm2 = heatmap(fig[2,1], dvhrcg[:,:,j] ./ 384,  colormap=:balance, colorrange=clims)
-    Colorbar(fig[2,2], hm)
+    fig = Figure(size=(750, 400), fontsize=15);
 
+    Label(
+        fig[0, 3],
+        L"S_u(3 \text{ years}, x, y)",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    j = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -Suhr[:,:,j],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, RK4"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    Colorbar(fig[1,2], hm1)
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    tendu_hrdownsized[:,:,j]./48 .- tend_cg[1][:,:,j]./384,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, RK1"),
+    # colorrange=(-maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cghr[1][:,:,j]) ./ S.grid.Δ)),maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cghr[1][:,:,j]) ./ S.grid.Δ)))
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax2)
+    Colorbar(fig[1,4], hm2)
+
+    ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    - Advecu_hrdownsized[:,:,j]./ (S.grid.Δ)  .+ advec_cg[1][:,:,j]./(8 * S.grid.Δ),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection, not approx."),
+    # colorrange=(-maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cg[1][:,:,j]) ./ S.grid.Δ)),maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cg[1][:,:,j]) ./ S.grid.Δ)))
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax3)
+    Colorbar(fig[1,6], hm3)
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    S.grid.Δ .* Suapprox[:,:,j],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax4)
+    Colorbar(fig[2,2], hm4)
+
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (Bu_hrdownsized[:,:,j] .- bd_cg[1][:,:,j]) ./ s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{M_{BF}(3 \text{ years}, u)} - M_{BF}(3 \text{ years}, \overline{u})"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-7, 1.5e-7)
+    );
+    hidedecorations!(ax5)
+    Colorbar(fig[2,4], hm5)
+
+    ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (Mu_hrdownsized[:,:,j] .- visc_cg[1][:,:,j]) ./ s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{M_{MM}(3 \text{ years}, u)} - M_{MM}(3 \text{ years}, \overline{u})"),
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    Colorbar(fig[2,6], hm6)
+    hideydecorations!(ax6)
+
+    # comparing "true" Sv fields
+    s = S.grid.Δ * S.grid.scale
+
+    fig = Figure(size=(800, 400), fontsize=15);
+
+    Label(
+        fig[0, 3],
+        L"S_v(3 \text{ years}, x, y)",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    j = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -Svhr[:,:,j],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    Colorbar(fig[1,2], hm1)
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -(Advecv_hrdownsized[:,:,j] .- advec_cghr[2][:,:,j]) ./ S.grid.Δ,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection"),
+    # colorrange=(-maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cghr[1][:,:,j]) ./ S.grid.Δ)),maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cghr[1][:,:,j]) ./ S.grid.Δ)))
+    colorrange=(-6e-5, 6e-5)
+    );
+    hidedecorations!(ax2)
+    Colorbar(fig[1,4], hm2)
+
+    ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    S.grid.Δ .* Svapprox[:,:,j],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax3)
+    Colorbar(fig[1,6], hm3)
+
+    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (Bv_hrdownsized[:,:,j] .- bd_cghr[2][:,:,j]) ./ s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{M_{BF}(3 \text{ years}, u)} - M_{BF}(3 \text{ years}, \overline{u})"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
+    colorrange=(-1.5e-7, 1.5e-7)
+    );
+    Colorbar(fig[2,2], hm4)
+
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (Mv_hrdownsized[:,:,j] .- visc_hrcg[2][:,:,j]) ./ s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"\overline{M_{MM}(3 \text{ years}, u)} - M_{MM}(3 \text{ years}, \overline{u})"),
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    Colorbar(fig[2,4], hm5)
+    hideydecorations!(ax5)
 
 end
 
