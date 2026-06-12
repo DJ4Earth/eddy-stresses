@@ -1,3 +1,22 @@
+"""
+Note to self: 
+I want to compute the "true" advective SGS term, rather than the approximation
+Milan's code hides this away inside of p = 1/2 (u^2 + v^2) + gh and 
+q = f + \zeta / h. What gets added to the tendencies is ultimately
+    dudt = qhv - \partial_x p
+    dvdt = -qhu - \partial_y p
+Then we have
+    qhv = ((f + \zeta) / h) * h * v = (f + \zeta) * v = fv + \zeta v = fv + v_x v - u_y v
+    qhu = ((f + \zeta / h)) * h * u = (f + \zeta) * u = fu + \zeta u = fu + (u v_x - u u_y)
+    \partial_x p = .5 * (2 u_x + 2 v_x) + \partial_x (g h) = u u_x + v v_x + \partial_x (g h)
+    \partial_y p = u_y + v_y + \partial_y (g h)
+If I want to isolate u u_x + v u_y then I need to 
+    (1) find qhv = fv + v_x v - u_y v
+    (2) find \partial_x p = u u_x + v v_x + \partial_x (g h)
+    (3) Their difference is fv - v u_y - u u_x - \partial_x (g h)
+    (4) Then I just need to get rid of the Coriolis force and that partial term
+    (5) I might be able to find smaller pieces (i.e. before the Coriolis is added and go from there)
+"""
 # computes the nonlinear advection term *approximation* using high-resolution snapshots
 function compute_approxhrS()
 
@@ -107,146 +126,6 @@ function compute_approxhrS()
     end
 
     return S_u, S_v
-
-end
-
-# used to compute the SGS term S from a difference of time-derivatives (total tendencies)
-function compute_true_hrS()
-
-    uhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u");
-    vhr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/v.nc", "v");
-    etahr1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/eta.nc", "eta");
-
-    uhr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/u.nc", "u");
-    vhr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/v.nc", "v");
-    etahr2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/eta.nc", "eta");
-
-    coarse_grained_hrstates = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2");
-    uhrcg = coarse_grained_hrstates[1];
-    vhrcg = coarse_grained_hrstates[2];
-    etahrcg = coarse_grained_hrstates[3];
-
-    Phr = ShallowWaters.Parameter(T=Float64,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=1
-    );
-    Shr = ShallowWaters.model_setup(Phr);
-
-    Plr = ShallowWaters.Parameter(T=Float64,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        cfl=.898,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=128,
-        Ndays=3*365
-    );
-    Slr = ShallowWaters.model_setup(Plr);
-
-    for S in [Slr, Shr]
-        # calculate layer thicknesses for initial conditions
-        ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
-        ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
-        ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
-        ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
-    end
-
-    # this is where the total time derivative gets stored
-    # u0,v0,η0 = Diag.RungeKutta
-
-    S_u = zeros(127,128,365)
-    S_v = zeros(128,127,365)
-
-    hr_du = zeros(1023,1024,365)
-    hr_dv = zeros(1024, 1023,365)
-    hr_deta = zeros(1024,1024,365)
-
-    hrcg_du = zeros(127,128,365)
-    hrcg_dv = zeros(128,127,365)
-    hrcg_deta = zeros(128,128,365)
-
-    Shr_ = deepcopy(Shr)
-    Slr_ = deepcopy(Slr)
-
-    thr = 1800 * Shr.grid.dtint
-    tlr = 225  * Slr.grid.dtint
-
-    duhr = zeros(Shr.grid.nux, Shr.grid.nuy)
-    dvhr = zeros(Shr.grid.nvx, Shr.grid.nvy)
-    detahr = zeros(Shr.grid.nx, Shr.grid.ny)
-
-    dulr = zeros(Slr.grid.nux, Slr.grid.nuy)
-    dvlr = zeros(Slr.grid.nvx, Slr.grid.nvy)
-    detalr = zeros(Slr.grid.nx, Slr.grid.ny)
-
-    Mu = zeros(Slr.grid.nux, Slr.grid.nuy)
-    Mv = zeros(Slr.grid.nvx, Slr.grid.nvy)
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
-    for n = 1:365
-
-        # if n ≤ 766
-        #     uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr1[:,:,n], vhr1[:,:,n], etahr1[:,:,n], Shr)
-        # else
-        #     uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhr2[:,:,n-766+1], vhr2[:,:,n-766+1], etahr2[:,:,n-766+1], Shr)
-        # end
-
-        uhr_, vhr_, etahr_ = ShallowWaters.add_halo(uhrall[:,:,n+1096], vhrall[:,:,n+1096], etahrall[:,:,n+1096], Shr)
-        uhrcg_, vhrcg_, etahrcg_ = ShallowWaters.add_halo(uhrcgall[:,:,n+1096], vhrcgall[:,:,n], etahrcgall[:,:,n+1096], Slr)
-
-        Shr_.Prog.u = uhr_
-        Shr_.Prog.v = vhr_
-        Shr_.Prog.η = etahr_
-
-        Slr_.Prog.u = uhrcg_
-        Slr_.Prog.v = vhrcg_
-        Slr_.Prog.η = etahrcg_
-
-        single_step!(duhr, dvhr, detahr, Shr_, (n + 1096 + 6)*thr)
-        single_step!(dulr, dvlr, detalr, Slr_, (n + 1096 + 6)*tlr)
-
-        @views hr_du[:,:,n] .= duhr
-        @views hr_dv[:,:,n] .= dvhr
-        @views hr_deta[:,:,n] .= detahr
-
-        @views hrcg_du[:,:,n] .= dulr
-        @views hrcg_dv[:,:,n] .= dvlr
-        @views hrcg_deta[:,:,n] .= detalr
-
-    end
 
 end
 
@@ -365,7 +244,7 @@ second way of getting at S_{tot}, which takes into account these higher order te
 used to compute S_{tot}, and what gave the figure currently in the manuscript. It's a question of which is better, I'd argue it's the 
 second, because again we used RK4 for our high-resolution variables, and it makes sense that the NN learned something about this
 """
-function compute_tendencies_withrk4!(du, dv, deta, S, t)
+function compute_tendencies_withrk!(k, du, dv, deta, S, t)
 
     # uold = copy(S.Prog.u)
     # vold = copy(S.Prog.v)
@@ -1072,7 +951,7 @@ function save_modelvariables()
 
         # single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
         # compute_advection!(adv_u, adv_v, S, n*t)
-        compute_tendencies_withrk4!(du, dv, deta, S, n*t)
+        compute_tendencies_withrk!(1, du, dv, deta, S, n*t)
 
         # saving tendencies
         @views du_all[:,:,n] .= du
