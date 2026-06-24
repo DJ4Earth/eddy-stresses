@@ -52,9 +52,9 @@ function InitWeightsModel{T}() where {T<:AbstractFloat}
     end
 
     # these are the filtered, coarsegrained high resolution states
-    filteredstates = load_object("./offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
+    filteredstates = load_object("./dissipation_constant/offline_files/1024_filtered_downsized_uveta_10days_postspinup_hourlysaves_111925.jld2")
     # these are the true T values, computed from the above
-    true_Ts = load_object("./offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
+    true_Ts = load_object("./dissipation_constant/offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
 
     # for if we want to apply constraints to the value of the parameter being guessed
     # lvar is by default -Inf * ones(Float64, nvar)

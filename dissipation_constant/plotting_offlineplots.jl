@@ -3,15 +3,7 @@ really just used to show instability in offline prognostic field
 """
 function offline_plots()
 
-    # nc files
-    # u_zb, uhr
-    # jld2 files (my save states function)
-    # states_noparam, states_nn (untrained), states_trainednn_pd, states_trainednn_pd65, states_trainednn_kespec, states_trainednn_states
-
-    # to get coarse-grained states
-
-    # t is timestep, and I saved every 8 hours up to 30 days
-    # this means t can be anything between 1 (the initial condition) and 91 (the final step after 30 days)
+    # t is timestep, and I saved every 8 hours up to 3 days
 
     ###################################################################################
 

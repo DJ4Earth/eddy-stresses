@@ -2,18 +2,18 @@
 Note to self: 
 I want to compute the "true" advective SGS term, rather than the approximation
 Milan's code hides this away inside of p = 1/2 (u^2 + v^2) + gh and 
-q = f + \zeta / h. What gets added to the tendencies is ultimately
-    dudt = qhv - \partial_x p
-    dvdt = -qhu - \partial_y p
+q = f + zeta / h. What gets added to the tendencies is ultimately
+    dudt = qhv - partial_x p
+    dvdt = -qhu - partial_y p
 Then we have
-    qhv = ((f + \zeta) / h) * h * v = (f + \zeta) * v = fv + \zeta v = fv + v_x v - u_y v
-    qhu = ((f + \zeta / h)) * h * u = (f + \zeta) * u = fu + \zeta u = fu + (u v_x - u u_y)
-    \partial_x p = .5 * (2 u_x + 2 v_x) + \partial_x (g h) = u u_x + v v_x + \partial_x (g h)
-    \partial_y p = u_y + v_y + \partial_y (g h)
+    qhv = ((f + zeta) / h) * h * v = (f + zeta) * v = fv + zeta v = fv + v_x v - u_y v
+    qhu = ((f + zeta / h)) * h * u = (f + zeta) * u = fu + zeta u = fu + (u v_x - u u_y)
+    partial_x p = .5 * (2 u_x + 2 v_x) + partial_x (g h) = u u_x + v v_x + partial_x (g h)
+    partial_y p = u_y + v_y + partial_y (g h)
 If I want to isolate u u_x + v u_y then I need to 
     (1) find qhv = fv + v_x v - u_y v
-    (2) find \partial_x p = u u_x + v v_x + \partial_x (g h)
-    (3) Their difference is fv - v u_y - u u_x - \partial_x (g h)
+    (2) find partial_x p = u u_x + v v_x + partial_x (g h)
+    (3) Their difference is fv - v u_y - u u_x - partial_x (g h)
     (4) Then I just need to get rid of the Coriolis force and that partial term
     (5) I might be able to find smaller pieces (i.e. before the Coriolis is added and go from there)
 """

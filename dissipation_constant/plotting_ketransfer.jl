@@ -183,7 +183,7 @@ function computing_ketransfer_fromS()
         end
     end
 
-    true_S = load_object("./dissipation_constant/computing_trueS/trueS_fromtendencies_SuSv_first3years_dailysaves_032526.jld2");
+    true_S = load_object("./dissipation_constant/computing_trueS/trueS_fromtendencies_withRK4_SuSv_first3years_dailysaves_032526.jld2");
     Suhr = true_S[1];
     Svhr = true_S[2];
 
@@ -191,73 +191,79 @@ function computing_ketransfer_fromS()
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
 
-    lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
-    nfft = nextfastfft(size(uhrcgall[:,:,1]))
+    # for computing a KE transfer from some/all of the domain
+    # xvals = :
+    # xvals = Int((150/30)):Int((3840-150)/30)
+    xvals = Int((300/30)):Int((3840-300)/30)
+    yvals = xvals
 
-    totalu_hrcg = zeros(65)
-    totalv_hrcg = zeros(65)
+    lr_freq = 1/30 .* freq(periodogram(umulti1[xvals,yvals,10]; radialavg=true, radialsum=false));
+    nfft = nextfastfft(size(uhrcgall[xvals,yvals,1]))
 
-    totalu_approx = zeros(65)
-    totalv_approx = zeros(65)
+    totalu_hrcg = zeros(length(lr_freq))
+    totalv_hrcg = zeros(length(lr_freq))
 
-    totalu_hrcg2 = zeros(65)
-    totalv_hrcg2 = zeros(65)
+    totalu_approx = zeros(length(lr_freq))
+    totalv_approx = zeros(length(lr_freq))
 
-    totalu_5 = zeros(65)
-    totalv_5 = zeros(65)
+    totalu_hrcg2 = zeros(length(lr_freq))
+    totalv_hrcg2 = zeros(length(lr_freq))
 
-    totalu_10 = zeros(65)
-    totalv_10 = zeros(65)
+    totalu_5 = zeros(length(lr_freq))
+    totalv_5 = zeros(length(lr_freq))
 
-    totalu_20 = zeros(65)
-    totalv_20 = zeros(65)
+    totalu_10 = zeros(length(lr_freq))
+    totalv_10 = zeros(length(lr_freq))
+
+    totalu_20 = zeros(length(lr_freq))
+    totalv_20 = zeros(length(lr_freq))
     
-    totalu_30 = zeros(65)
-    totalv_30 = zeros(65)
+    totalu_30 = zeros(length(lr_freq))
+    totalv_30 = zeros(length(lr_freq))
 
-    totalu_multi1 = zeros(65)
-    totalv_multi1 = zeros(65)
+    totalu_multi1 = zeros(length(lr_freq))
+    totalv_multi1 = zeros(length(lr_freq))
 
-    totalu_multi1more = zeros(65)
-    totalv_multi1more = zeros(65)
+    totalu_multi1more = zeros(length(lr_freq))
+    totalv_multi1more = zeros(length(lr_freq))
 
-    totalu_multi2 = zeros(65)
-    totalv_multi2 = zeros(65)
+    totalu_multi2 = zeros(length(lr_freq))
+    totalv_multi2 = zeros(length(lr_freq))
 
-    totalu_multi3 = zeros(65)
-    totalv_multi3 = zeros(65)
+    totalu_multi3 = zeros(length(lr_freq))
+    totalv_multi3 = zeros(length(lr_freq))
 
-    totalu_multi5 = zeros(65)
-    totalv_multi5 = zeros(65)
+    totalu_multi5 = zeros(length(lr_freq))
+    totalv_multi5 = zeros(length(lr_freq))
 
-    totalu_multi10 = zeros(65)
-    totalv_multi10 = zeros(65)
+    totalu_multi10 = zeros(length(lr_freq))
+    totalv_multi10 = zeros(length(lr_freq))
 
-    totalu_multi20 = zeros(65)
-    totalv_multi20 = zeros(65)
+    totalu_multi20 = zeros(length(lr_freq))
+    totalv_multi20 = zeros(length(lr_freq))
 
-    totalu_ZB = zeros(65)
-    totalv_ZB = zeros(65)
+    totalu_ZB = zeros(length(lr_freq))
+    totalv_ZB = zeros(length(lr_freq))
 
-    totalu_3 = zeros(65)
-    totalv_3 = zeros(65)
+    totalu_3 = zeros(length(lr_freq))
+    totalv_3 = zeros(length(lr_freq))
 
     totalstates = 1096
     for t = 1:totalstates
 
         # from approximation to nonlinear advection
-        outu_approx, inputu_approx, inputSu_approx = paddingu(uhrcgall[:, :, t], Suapprox[:,:,t], nfft[1])
+        outu_approx, inputu_approx, inputSu_approx = paddingu(uhrcgall[xvals, yvals, t], Suapprox[xvals,yvals,t], nfft[1])
         fft2pow2radial!(outu_approx, rfft(inputu_approx), rfft(inputSu_approx), nfft...)
-        outv_approx, inputv_approx, inputSv_approx = paddingv(vhrcgall[:, :, t], Svapprox[:,:,t], nfft[1])
+        outv_approx, inputv_approx, inputSv_approx = paddingv(vhrcgall[xvals, yvals, t], Svapprox[xvals,yvals,t], nfft[1])
         fft2pow2radial!(outv_approx, rfft(inputv_approx), rfft(inputSv_approx), nfft...)
 
         totalu_approx += outu_approx
         totalv_approx += outv_approx
 
         # from total tendencies
-        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], Suhr[:,:,t], nfft[1])
+        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[xvals, yvals, t], Suhr[xvals,yvals,t], nfft[1])
         fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
-        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], Svhr[:,:,t], nfft[1])
+        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[xvals, yvals, t], Svhr[xvals,yvals,t], nfft[1])
         fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
 
         totalu_hrcg += outu_hrcg
@@ -268,9 +274,9 @@ function computing_ketransfer_fromS()
         uzb_, vzb_, _ = ShallowWaters.add_halo(Float64.(uzb[:,:,t]), Float64.(vzb[:,:,t]), Float64.(etazb[:,:,t]), zeros(128,128), SZB);
         ShallowWaters.ZB_momentum(uzb_, vzb_, SZB, SZB.Diag);
 
-        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], SZB.Diag.ZBVars.S_u, nfft[1])
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[xvals, yvals, t], SZB.Diag.ZBVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
-        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], SZB.Diag.ZBVars.S_v, nfft[1])
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[xvals, yvals, t], SZB.Diag.ZBVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
 
         totalu_ZB += outu_ZB
@@ -280,9 +286,9 @@ function computing_ketransfer_fromS()
 
         # u5, v5, eta5 = ShallowWaters.add_halo(Float64.(u5day[:,:,t]), Float64.(v5day[:,:,t]), Float64.(eta5day[:,:,t]), zeros(128,128), S5);
         # ShallowWaters.CNN_momentum(u5, v5, S5);
-        # outu_5, inputu_5, inputSu_5 = paddingu(u5day[:, :, t], S5.Diag.CNNVars.S_u, nfft[1])
+        # outu_5, inputu_5, inputSu_5 = paddingu(u5day[xvals, yvals, t], S5.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_5, rfft(inputu_5), rfft(inputSu_5), nfft...)
-        # outv_5, inputv_5, inputSv_5 = paddingv(v5day[:, :, t], S5.Diag.CNNVars.S_v, nfft[1])
+        # outv_5, inputv_5, inputSv_5 = paddingv(v5day[xvals, yvals, t], S5.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_5, rfft(inputv_5), rfft(inputSv_5), nfft...)
 
         # totalu_5 += outu_5
@@ -292,9 +298,9 @@ function computing_ketransfer_fromS()
 
         u20, v20, _ = ShallowWaters.add_halo(Float64.(u20s[:,:,t]), Float64.(v20s[:,:,t]), Float64.(eta20s[:,:,t]), zeros(128,128), S20);
         ShallowWaters.CNN_momentum(u20, v20, S20)
-        outu_20, inputu_20, inputSu_20 = paddingu(u20s[:, :, t], S20.Diag.CNNVars.S_u, nfft[1])
+        outu_20, inputu_20, inputSu_20 = paddingu(u20s[xvals, yvals, t], S20.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_20, rfft(inputu_20), rfft(inputSu_20), nfft...)
-        outv_20, inputv_20, inputSv_20 = paddingv(v20s[:, :, t], S20.Diag.CNNVars.S_v, nfft[1])
+        outv_20, inputv_20, inputSv_20 = paddingv(v20s[xvals, yvals, t], S20.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_20, rfft(inputv_20), rfft(inputSv_20), nfft...)
 
         totalu_20 += outu_20
@@ -304,9 +310,9 @@ function computing_ketransfer_fromS()
 
         u30, v30, _ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S30);
         ShallowWaters.CNN_momentum(u30, v30, S30)
-        outu_30, inputu_30, inputSu_30 = paddingu(u30s[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
+        outu_30, inputu_30, inputSu_30 = paddingu(u30s[xvals, yvals, t], S30.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
-        outv_30, inputv_30, inputSv_30 = paddingv(v30s[:, :, t], S30.Diag.CNNVars.S_v, nfft[1])
+        outv_30, inputv_30, inputSv_30 = paddingv(v30s[xvals, yvals, t], S30.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_30, rfft(inputv_30), rfft(inputSv_30), nfft...)
 
         totalu_30 += outu_30
@@ -317,9 +323,9 @@ function computing_ketransfer_fromS()
         umulti2_, vmulti2_, _ = ShallowWaters.add_halo(Float64.(umulti2[:,:,t]), Float64.(vmulti2[:,:,t]), Float64.(etamulti2[:,:,t]), zeros(128,128), Smulti2);
         ShallowWaters.CNN_momentum(umulti2_, vmulti2_, Smulti2)
 
-        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], Smulti2.Diag.CNNVars.S_u, nfft[1])
+        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[xvals, yvals, t], Smulti2.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
-        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], Smulti2.Diag.CNNVars.S_v, nfft[1])
+        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[xvals, yvals, t], Smulti2.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
 
         totalu_multi2 += outu_multi2
@@ -329,9 +335,9 @@ function computing_ketransfer_fromS()
 
         umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
         ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
-        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], Smulti3.Diag.CNNVars.S_u, nfft[1])
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[xvals, yvals, t], Smulti3.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
-        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], Smulti3.Diag.CNNVars.S_v, nfft[1])
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[xvals, yvals, t], Smulti3.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
 
         totalu_multi3 += outu_multi3
@@ -341,9 +347,9 @@ function computing_ketransfer_fromS()
 
         # umulti5_, vmulti5_, _ = ShallowWaters.add_halo(Float64.(umulti5[:,:,t]), Float64.(vmulti5[:,:,t]), Float64.(etamulti5[:,:,t]), zeros(128,128), Smulti5);
         # ShallowWaters.CNN_momentum(umulti5_, vmulti5_, Smulti5)
-        # outu_multi5, inputu_multi5, inputSu_multi5 = paddingu(umulti5[:, :, t], Smulti5.Diag.CNNVars.S_u, nfft[1])
+        # outu_multi5, inputu_multi5, inputSu_multi5 = paddingu(umulti5[xvals, yvals, t], Smulti5.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_multi5, rfft(inputu_multi5), rfft(inputSu_multi5), nfft...)
-        # outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[:, :, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
+        # outv_multi5, inputv_multi5, inputSv_multi5 = paddingv(vmulti5[xvals, yvals, t], Smulti5.Diag.CNNVars.S_v, nfft[1])
         # fft2pow2radial!(outv_multi5, rfft(inputv_multi5), rfft(inputSv_multi5), nfft...)
 
         # totalu_multi5 += outu_multi5
@@ -353,9 +359,9 @@ function computing_ketransfer_fromS()
 
         umulti10_, vmulti10_, _ = ShallowWaters.add_halo(Float64.(umulti10[:,:,t]), Float64.(vmulti10[:,:,t]), Float64.(etamulti10[:,:,t]), zeros(128,128), Smulti10);
         ShallowWaters.CNN_momentum(umulti10_, vmulti10_, Smulti10)
-        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], Smulti10.Diag.CNNVars.S_u, nfft[1])
+        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[xvals, yvals, t], Smulti10.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
-        outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], Smulti10.Diag.CNNVars.S_v, nfft[1])
+        outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[xvals, yvals, t], Smulti10.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
 
         totalu_multi10 += outu_multi10
@@ -365,9 +371,9 @@ function computing_ketransfer_fromS()
 
         umulti20_, vmulti20_, _ = ShallowWaters.add_halo(Float64.(umulti20[:,:,t]), Float64.(vmulti20[:,:,t]), Float64.(etamulti20[:,:,t]), zeros(128,128), Smulti20);
         ShallowWaters.CNN_momentum(umulti20_, vmulti20_, Smulti20)
-        outu_multi20, inputu_multi20, inputSu_multi20 = paddingu(umulti20[:, :, t], Smulti20.Diag.CNNVars.S_u, nfft[1])
+        outu_multi20, inputu_multi20, inputSu_multi20 = paddingu(umulti20[xvals, yvals, t], Smulti20.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_multi20, rfft(inputu_multi20), rfft(inputSu_multi20), nfft...)
-        outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[:, :, t], Smulti20.Diag.CNNVars.S_v, nfft[1])
+        outv_multi20, inputv_multi20, inputSv_multi20 = paddingv(vmulti20[xvals, yvals, t], Smulti20.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_multi20, rfft(inputv_multi20), rfft(inputSv_multi20), nfft...)
 
         totalu_multi20 += outu_multi20
@@ -499,9 +505,9 @@ function computing_ketransfer_fromviscosity()
     for t = 1:totalstates
 
         # from total viscosity, computing as \overline{visc(u)} - visc(\overline{u})
-        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], visc_hrcg[1][:,:,t], nfft[1])
+        outu_hrcg, inputu_hrcg, inputSu_hrcg = paddingu(uhrcgall[:, :, t], visc_hrcg[1][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outu_hrcg, rfft(inputu_hrcg), rfft(inputSu_hrcg), nfft...)
-        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], visc_hrcg[2][:,:,t], nfft[1])
+        outv_hrcg, inputv_hrcg, inputSv_hrcg = paddingv(vhrcgall[:, :, t], visc_hrcg[2][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outv_hrcg, rfft(inputv_hrcg), rfft(inputSv_hrcg), nfft...)
 
         viscu_hrcg += outu_hrcg
@@ -509,9 +515,9 @@ function computing_ketransfer_fromviscosity()
 
         # ZB20 ############################
 
-        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], visc_ZB20[1][:,:,t], nfft[1])
+        outu_ZB, inputu_ZB, inputSu_ZB = paddingu(uzb[:, :, t], visc_ZB20[1][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outu_ZB, rfft(inputu_ZB), rfft(inputSu_ZB), nfft...)
-        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], visc_ZB20[2][:,:,t], nfft[1])
+        outv_ZB, inputv_ZB, inputSv_ZB = paddingv(vzb[:, :, t], visc_ZB20[2][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outv_ZB, rfft(inputv_ZB), rfft(inputSv_ZB), nfft...)
 
         viscu_ZB += outu_ZB
@@ -519,7 +525,7 @@ function computing_ketransfer_fromviscosity()
 
         # 30 day optimization ###############
 
-        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30s[:,:,t]), Float64.(v30s[:,:,t]), Float64.(eta30s[:,:,t]), zeros(128,128), S30);
+        # u30, v30, _ = ShallowWaters.add_halo(Float64.(u30s[xvals, yvals, t]), Float64.(v30s[xvals, yvals, t]), Float64.(eta30s[xvals, yvals, t]), zeros(128,128), S30);
         # ShallowWaters.CNN_momentum(u30, v30, S30)
         # outu_30, inputu_30, inputSu_30 = paddingu(u30s[:, :, t], S30.Diag.CNNVars.S_u, nfft[1])
         # fft2pow2radial!(outu_30, rfft(inputu_30), rfft(inputSu_30), nfft...)
@@ -531,9 +537,9 @@ function computing_ketransfer_fromviscosity()
 
         # batched 2 day ##################################
 
-        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], visc_multi2[1][:,:,t], nfft[1])
+        outu_multi2, inputu_multi2, inputSu_multi2 = paddingu(umulti2[:, :, t], visc_multi2[1][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outu_multi2, rfft(inputu_multi2), rfft(inputSu_multi2), nfft...)
-        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], visc_multi2[2][:,:,t], nfft[1])
+        outv_multi2, inputv_multi2, inputSv_multi2 = paddingv(vmulti2[:, :, t], visc_multi2[2][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outv_multi2, rfft(inputv_multi2), rfft(inputSv_multi2), nfft...)
 
         viscu_multi2 += outu_multi2
@@ -541,9 +547,9 @@ function computing_ketransfer_fromviscosity()
 
         # batched 3 day ###########################
 
-        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], visc_multi3[1][:,:,t], nfft[1])
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[:, :, t], visc_multi3[1][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
-        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], visc_multi3[2][:,:,t], nfft[1])
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[:, :, t], visc_multi3[2][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
 
         viscu_multi3 += outu_multi3
@@ -551,7 +557,7 @@ function computing_ketransfer_fromviscosity()
 
         # batched 10 day #####################
 
-        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], visc_multi10[1][:,:,t], nfft[1])
+        outu_multi10, inputu_multi10, inputSu_multi10 = paddingu(umulti10[:, :, t], visc_multi10[1][xvals, yvals, t], nfft[1])
         fft2pow2radial!(outu_multi10, rfft(inputu_multi10), rfft(inputSu_multi10), nfft...)
         outv_multi10, inputv_multi10, inputSv_multi10 = paddingv(vmulti10[:, :, t], visc_multi10[2][:,:,t], nfft[1])
         fft2pow2radial!(outv_multi10, rfft(inputv_multi10), rfft(inputSv_multi10), nfft...)
@@ -780,8 +786,13 @@ function ketransfer_plots()
 
     colors = Makie.wong_colors()
 
-    lr_freq = 1/30 .* freq(periodogram(u20s[:,:,10]; radialavg=true, radialsum=false));
-    nfft = nextfastfft(size(uhrcgall[:,:,1]))
+    xvals = Int((300/30)):Int((3840-300)/30)
+    yvals = Int((300/30)):Int((3840-300)/30)
+    # xvals = :
+    # yvals = :
+
+    lr_freq = 1/30 .* freq(periodogram(umulti1[xvals,yvals,10]; radialavg=true, radialsum=false));
+    nfft = nextfastfft(size(uhrcgall[xvals,yvals,1]))
 
     # this scaling s is determined as 
     #   (1) a division of the total states we average over (1096), 
@@ -894,5 +905,72 @@ function ketransfer_plots()
     lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10 + viscu_multi10 + viscv_multi10 + bdu_multi10 + bdv_multi10) / s, label="Ensemble 10 day",color=colors[4])
     # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
     axislegend(ax, position=:rt)
+
+    s = 1096 * 30000 * 64
+    fig = Figure(size=(800, 600), fontsize=15);
+
+    lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
+    ax = Axis(fig[1,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer on whole domain, 3840 km by 3840 km"
+    )
+    lines!(ax, -lr_freq.*(wholedomain_hrcg)/(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
+    lines!(ax, (lr_freq * 30000).*(wholedomain_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax, lr_freq.*(wholedomain_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax, lr_freq.*(wholedomain_multi2) ./ s, label="Ensemble 2 day", color=colors[2])
+    lines!(ax, lr_freq.*(wholedomain_multi3) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax, lr_freq.*(wholedomain_multi10) ./ s, label="Ensemble 10 day", color=colors[4])
+
+    xvals = Int((150/30)):Int((3840-150)/30)
+    lr_freq = 1/30 .* freq(periodogram(umulti2[xvals,xvals,10]; radialavg=true, radialsum=false));
+    ax2 = Axis(fig[2,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer on subdomain of 3690 km by 3690 km"
+    )
+    lines!(ax2, -lr_freq.*(minus150_hrcg)/(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
+    lines!(ax2, (lr_freq * 30000).*(minus150_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax2, lr_freq.*(minus150_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax2, lr_freq.*(minus150_multi2) ./ s, label="Ensemble 2 day", color=colors[2])
+    lines!(ax2, lr_freq.*(minus150_multi3) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax2, lr_freq.*(minus150_multi10) ./ s, label="Ensemble 10 day", color=colors[4])
+
+    xvals = Int((300/30)):Int((3840-300)/30)
+    lr_freq = 1/30 .* freq(periodogram(umulti2[xvals,xvals,10]; radialavg=true, radialsum=false));
+    ax3 = Axis(fig[3,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="Kinetic energy transfer on subdomain of 3540 km by 3540 km"
+    )
+    lines!(ax3, -lr_freq.*(minus300_hrcg)/(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
+    lines!(ax3, (lr_freq * 30000).*(minus300_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax3, lr_freq.*(minus300_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax3, lr_freq.*(minus300_multi2) ./ s, label="Ensemble 2 day", color=colors[2])
+    lines!(ax3, lr_freq.*(minus300_multi3) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax3, lr_freq.*(minus300_multi10) ./ s, label="Ensemble 10 day", color=colors[4])
+
+    Legend(fig[1:3, 2], ax3, orientation = :vertical)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[2, 1] = GridLayout()
+    gc = fig[3, 1] = GridLayout()
+
+    for (label, layout) in zip(["(a)", "(b)", "(c)"], [ga, gb, gc])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
 
 end

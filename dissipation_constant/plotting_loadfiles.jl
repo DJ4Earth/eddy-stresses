@@ -194,9 +194,9 @@ function load_models()
     v5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
     eta5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
 
-    ukespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    vkespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    etakespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
+    # ukespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
+    # vkespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
+    # etakespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
@@ -303,7 +303,7 @@ function load_Sfiles()
         tracer_advection=false,
         tracer_relaxation=false,
         zb_forcing_momentum=false,
-        zb_forcing_dissipation=true,
+        zb_forcing_dissipation=false,
         zb_filtered=true,
         # nn_forcing_momentum=false,
         # nn_forcing_dissipation=true,

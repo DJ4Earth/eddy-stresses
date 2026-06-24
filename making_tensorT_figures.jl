@@ -26,7 +26,7 @@ function compute_Ts(j)
     );
     SNN = ShallowWaters.model_setup(PNN);
 
-    cgstates = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
+    cgstates = load_object("./dissipation_constant/offline_files/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
     ucg = cgstates[1]
     vcg = cgstates[2]
     etacg = cgstates[3]
@@ -34,7 +34,7 @@ function compute_Ts(j)
     u, v, eta = ShallowWaters.add_halo(ucg[:,:,j], vcg[:,:,j], etacg[:,:,j], zeros(128,128), SNN)
     snapshot = [u, v]
 
-    param_guess = load_object("./dissipation_smagorinsky/tuned_weights_newdissipation/result_offline_150iterations_geluactivation_smag.jld2").solution;
+    param_guess = load_object("./dissipation_constant/tuned_weights/result_offline_150iterations_geluactivation_smag.jld2").solution;
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]
@@ -54,7 +54,7 @@ function compute_Ts(j)
     T22_NN = SNN.Diag.CNNVars.T22;
 
     # high-resolution T's
-    true_Ts = load_object("./dissipation_smagorinsky/spinup_files_newdissipation/trueTs_downsized_90days_8hoursaves_T11T22T12.jld2")
+    true_Ts = load_object("./dissipation_constant/offline_files/trueTs_filtered_downsized_T11T22T12_hourlysaves_111925.jld2")
 
     T11_true = true_Ts[1][:,:,j];
     T22_true = true_Ts[2][:,:,j];
@@ -88,16 +88,14 @@ PZB = ShallowWaters.Parameter(T=Float64;
     α=2,
     nx=128,
     Ndays=1,
-    initial_cond="ncfile",
-    initpath="./dissipation_smagorinsky/spinup_files_newdissipation/128_3yearpostspinup_cginitcond_smag_noslipbc_8hoursaves",
-    init_starti=1
+    initial_cond="rest"
 );
 SZB = ShallowWaters.model_setup(PZB);
 
-# j is the snapshot to use, can be anything within j = 1:273
-# these are the values the offline weights were trained on
-# (every 8 hours for 90 days)
-j = 25
+# j can be anything between 1 and 241
+# the offline weights were only trained on snapshots taken every 3 hour though, so multiples of 3 should
+# theoretically produce better T fields
+j = 100
 T11_true, T12_true, T22_true, T11_NN, T12_NN, T22_NN = compute_Ts(j);
 denom = SZB.grid.Δ^2 * SZB.grid.scale
 
@@ -114,6 +112,7 @@ colorrange=(-maximum(abs.(T11_true)),
 maximum(abs.(T11_true)))
 );
 Colorbar(fig[1,2], hm1, label=L"(m/s)^2")
+hidexdecorations!(ax1)
 
 ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
@@ -124,6 +123,7 @@ colorrange=(-maximum(abs.(T12_true)),
 maximum(abs.(T12_true)))
 );
 Colorbar(fig[1,4], hm2, label=L"(m/s)^2")
+hidedecorations!(ax2)
 
 ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
@@ -134,36 +134,39 @@ colorrange=(-maximum(abs.(T22_true)),
 maximum(abs.(T22_true)))
 );
 Colorbar(fig[1,6], hm3, label=L"(m/s)^2")
+hidedecorations!(ax3)
 
-ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T11_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{11}"),
+axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{11}"),
 colorrange=(-maximum(abs.(T11_true)),
 maximum(abs.(T11_true)))
 );
 Colorbar(fig[2,2], hm1, label=L"(m/s)^2")
 
-ax2, hm2 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T12_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{12}"),
+axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{12}"),
 colorrange=(-maximum(abs.(T12_true)),
 maximum(abs.(T12_true)))
 );
 Colorbar(fig[2,4], hm2, label=L"(m/s)^2")
+hideydecorations!(ax5)
 
-ax3, hm3 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
 LinRange(0, 3840, 128),
 T22_NN,
 colormap=:balance,
-axis=(xlabel="km", ylabel="km", title=L"\tilde{T}_{22}"),
+axis=(xlabel="km", ylabel="km", title=L"\hat{T}_{22}"),
 colorrange=(-maximum(abs.(T22_true)),
 maximum(abs.(T22_true)))
 );
 Colorbar(fig[2,6], hm3, label=L"(m/s)^2")
+hideydecorations!(ax6)
 
 ga = fig[1, 1] = GridLayout()
 gb = fig[1, 3] = GridLayout()
