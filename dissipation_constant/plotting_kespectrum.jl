@@ -87,25 +87,29 @@ function spectrum_plots()
     # up_reluKEspecpd = zeros(65,totalstates)
     # vp_reluKEspecpd = zeros(65,totalstates)
 
+    alpha = 0.1
+    winu = tukey((127, 128), alpha)
+    winv = tukey((128,127), alpha)
+
     @views for t = 1:totalstates
 
         # up_hr[:,t] = power(periodogram(uhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
         # vp_hr[:,t] = power(periodogram(vhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
 
-        up_zb[:,t] = power(periodogram(uzball[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_zb[:,t] = power(periodogram(vzball[:, :, t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_zb[:,t] = power(periodogram(uzball[:, :, t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_zb[:,t] = power(periodogram(vzball[:, :, t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_hrcg[:,t] = power(periodogram(uhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_hrcg[:,t] = power(periodogram(vhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_hrcg[:,t] = power(periodogram(uhrcgall[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg[:,t] = power(periodogram(vhrcgall[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_20day[:,t] = power(periodogram(u20sall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_20day[:,t] = power(periodogram(v20sall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_20day[:,t] = power(periodogram(u20sall[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_20day[:,t] = power(periodogram(v20sall[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_30day[:,t] = power(periodogram(u30sall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_30day[:,t] = power(periodogram(v30sall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_30day[:,t] = power(periodogram(u30sall[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_30day[:,t] = power(periodogram(v30sall[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_noparam[:,t] = power(periodogram(unoparamall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_noparam[:,t] = power(periodogram(vnoparamall[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_noparam[:,t] = power(periodogram(unoparamall[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_noparam[:,t] = power(periodogram(vnoparamall[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
         # up_gelu5day[:,t] = power(periodogram(u5s[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         # vp_gelu5day[:,t] = power(periodogram(v5s[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
@@ -113,23 +117,17 @@ function spectrum_plots()
         # up_multi1[:,t] = power(periodogram(umulti1[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         # vp_multi1[:,t] = power(periodogram(vmulti1[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        up_multi2[:,t] = power(periodogram(umulti2all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_multi2[:,t] = power(periodogram(vmulti2all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_multi2[:,t] = power(periodogram(umulti2all[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_multi2[:,t] = power(periodogram(vmulti2all[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_multi10[:,t] = power(periodogram(umulti10all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_multi10[:,t] = power(periodogram(vmulti10all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_multi10[:,t] = power(periodogram(umulti10all[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_multi10[:,t] = power(periodogram(vmulti10all[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_multi20[:,t] = power(periodogram(umulti20all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_multi20[:,t] = power(periodogram(vmulti20all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_multi20[:,t] = power(periodogram(umulti20all[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_multi20[:,t] = power(periodogram(vmulti20all[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
-        up_multi3[:,t] = power(periodogram(umulti3all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        vp_multi3[:,t] = power(periodogram(vmulti3all[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-
-        # up_multi3more[:,t] = power(periodogram(umulti3more[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        # vp_multi3more[:,t] = power(periodogram(vmulti3more[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-
-        # up_gelu1day[:,t] = power(periodogram(u1daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        # vp_gelu1day[:,t] = power(periodogram(v1daystategelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
+        up_multi3[:,t] = power(periodogram(umulti3all[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_multi3[:,t] = power(periodogram(vmulti3all[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
         # up_geluKEspecpd[:,t] = power(periodogram(ukespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         # vp_geluKEspecpd[:,t] = power(periodogram(vkespecpd[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
@@ -143,18 +141,12 @@ function spectrum_plots()
         # up_gelufourier[:,t] = power(periodogram(ufourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         # vp_gelufourier[:,t] = power(periodogram(vfourier[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
-        # up_relu1day[:,t] = power(periodogram(u1daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        # vp_relu1day[:,t] = power(periodogram(v1daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-
-        # up_relu5day[:,t] = power(periodogram(u5daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-        # vp_relu5day[:,t] = power(periodogram(v5daystaterelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
-
         # up_reluKEspecpd[:,t] = power(periodogram(ukespecpdrelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
         # vp_reluKEspecpd[:,t] = power(periodogram(vkespecpdrelu[:,:,t]; radialavg=true, radialsum=false)) ./ 128^2
 
     end
 
-    lr_wl = (1 ./ freq(periodogram(uzb[:,:,10]; radialavg=true, radialsum=false))) * 30;
+    lr_wl = (1 ./ freq(periodogram(uzb[:,:,10].*winu; radialavg=true, radialsum=false))) * 30;
     nnu_freq = LinRange(0, 64, 65)
     nnu_freq = nnu_freq ./ 65
     nnu_freq = 1 ./ nnu_freq 
@@ -166,7 +158,7 @@ function spectrum_plots()
 
     fig = Figure(size=(1000, 500), fontsize=15);
     t = 360
-    ax = Axis(
+    ax = Axis(fig[1,1],
         xscale=log10,
         yscale=log10,
         xlabel="Wavelength (km)",

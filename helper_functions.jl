@@ -20,6 +20,10 @@ If I want to isolate u u_x + v u_y then I need to
 # computes the nonlinear advection term *approximation* using high-resolution snapshots
 function compute_approxhrS()
 
+    @views u = uhrall;
+    @views v = vhrall;
+    @views eta = etahrall;
+
     T = Float64
     Shr = ShallowWaters.model_setup(T=T; output=false,
         L_ratio=1,
@@ -43,6 +47,7 @@ function compute_approxhrS()
         output_dt = 8,
         L_ratio=1,
         g=9.81,
+        cfl=.898,
         H=500,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
@@ -67,17 +72,21 @@ function compute_approxhrS()
     dT12dx = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy+halo)    # derivative of T12 in the x-direction, v-grid
     dT22dy = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy)         # derivative of T22 in the y-direction, v-grid
 
-    S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy, 365)             # total forcing in x-direction
-    S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy, 365)             # total forcing in y-direction
+    S_u = zeros(T,Slr.Diag.CNNVars.nux,Slr.Diag.CNNVars.nuy, 1096)             # total forcing in x-direction
+    S_v = zeros(T,Slr.Diag.CNNVars.nvx,Slr.Diag.CNNVars.nvy, 1096)             # total forcing in y-direction
 
     uhrT = zeros(1024,1024)
     vhrT = zeros(1024,1024)
 
     s = Slr.grid.Δ^2
-    for t = 1:365
+    alpha = 0.1
+    winu = tukey((Shr.grid.nux, Shr.grid.nuy), alpha)
+    winv = tukey((Shr.grid.nvx,Shr.grid.nvy), alpha)
+    totalstates = 1096
+    for t = 1:totalstates
 
-        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),uhrall[:,:,t+1096],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
-        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),vhrall[:,:,t+1096],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
+        uhrh = cat(zeros(T,1023+2*halo,halo),cat(zeros(T,halo,1024),winu.*u[:,:,t],zeros(T,halo,1024),dims=1),zeros(T,1023+2*halo,halo),dims=2)
+        vhrh = cat(zeros(T,1024+2*halo,halo),cat(zeros(T,halo,1023),winv.*v[:,:,t],zeros(T,halo,1023),dims=1),zeros(T,1024+2*halo,halo),dims=2)
 
         # moving to hr corner grid and cut off the halo
 
@@ -280,7 +289,7 @@ function compute_tendencies_withrk!(k, du, dv, deta, S, t)
         fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
     end
 
-    for rki = 1:1
+    for rki = 1:S.parameters.RKo
         if rki > 1
             ShallowWaters.ghost_points!(
                 S.Diag.RungeKutta.u1,
@@ -844,9 +853,13 @@ end
 
 function save_modelvariables()
 
-    # u = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[1];
-    # v = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[2];
-    # eta = load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_3years_postspinup_dailysaves.jld2")[3];
+    # @views u = uhrcgall;
+    # @views v = vhrcgall;
+    # @views eta = etahrcgall;
+
+    @views u = uhrall;
+    @views v = vhrall;
+    @views eta = etahrall;
 
     # u = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
@@ -864,13 +877,38 @@ function save_modelvariables()
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
     # eta = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    P = ShallowWaters.Parameter(T=Float64,
+    Phr = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        # cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=3*365
+    );
+    Shr = ShallowWaters.model_setup(Phr);
+
+    Plr = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
         g=9.81,
         H=500,
         cfl=.898,
-        RKo=2,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -889,8 +927,9 @@ function save_modelvariables()
         nx=128,
         Ndays=3*365
     );
-    S = ShallowWaters.model_setup(P);
+    Slr = ShallowWaters.model_setup(Plr);
 
+    S = Shr
     # for S in [Slr]
         # calculate layer thicknesses for initial conditions
         ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
@@ -901,20 +940,23 @@ function save_modelvariables()
 
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
-    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution;
-    current = 1
-    for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
-        for layers in m[1]
-            for array in layers
-                    sz = prod(size(array))
-                    array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
-                    current += sz
-            end
-        end
-    end
+    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution;
+    # current = 1
+    # for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
+    #     for layers in m[1]
+    #         for array in layers
+    #                 sz = prod(size(array))
+    #                 array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
+    #                 current += sz
+    #         end
+    #     end
+    # end
 
-    # t = 1800 * S.grid.dtint
-    t = 225 * S.grid.dtint
+    # high-resolution model
+    t = 1800 * S.grid.dtint
+
+    # low-resolution model
+    # t = 225 * S.grid.dtint
 
     # Mu = zeros(S.grid.nux, S.grid.nuy)
     # Mv = zeros(S.grid.nvx, S.grid.nvy)
@@ -939,11 +981,28 @@ function save_modelvariables()
     deta = zeros(S.grid.nx, S.grid.ny);
     du_all = zeros(S.grid.nux, S.grid.nuy, 1096);
     dv_all = zeros(S.grid.nvx, S.grid.nvy, 1096);
-    deta_all = zeros(S.grid.nx, S.grid.ny, 1096);
+    # deta_all = zeros(S.grid.nx, S.grid.ny, 1096);
+
+    alpha = 0.1
+    winu = tukey((Shr.grid.nux, Shr.grid.nuy), alpha)
+    winv = tukey((Shr.grid.nvx, Shr.grid.nvy), alpha)
+    # wineta = tukey((Shr.grid.nx, Shr.grid.ny), alpha)
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
     for n = 1:1096
 
-        u_, v_, eta_ = ShallowWaters.add_halo(u[:,:,n], v[:,:,n], eta[:,:,n], S)
+        # ufiltered = imfilter(winu.*u[:,:,n], reflect(ker))
+        # vfiltered = imfilter(winv.*v[:,:,n], reflect(ker))
+        # etafiltered = imfilter(eta[:,:,n], reflect(ker))
+
+        # @views windowuhrdownsized = (ufiltered[8:8:end, 4:8:end] .+ ufiltered[8:8:end, 5:8:end]) .* 0.5
+        # @views windowvhrdownsized = (vfiltered[4:8:end, 8:8:end] .+ vfiltered[5:8:end, 8:8:end]) .* 0.5
+        # @views windowetahrdownsized = (etafiltered[4:8:end,4:8:end] .+ etafiltered[5:8:end,5:8:end] .+ etafiltered[4:8:end,5:8:end] .+ etafiltered[5:8:end,4:8:end]) ./ 4
+
+        # u_, v_, eta_ = ShallowWaters.add_halo(windowuhrdownsized, windowvhrdownsized, windowetahrdownsized, S)
+
+        u_, v_, eta_ = ShallowWaters.add_halo(winu.*u[:,:,n], winv.*v[:,:,n], Float64.(eta[:,:,n]), S)
 
         S.Prog.u = u_
         S.Prog.v = v_
@@ -951,12 +1010,12 @@ function save_modelvariables()
 
         # single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
         # compute_advection!(adv_u, adv_v, S, n*t)
-        compute_tendencies_withrk!(1, du, dv, deta, S, n*t)
+        compute_tendencies_withrk!(4, du, dv, deta, S, n*t)
 
         # saving tendencies
         @views du_all[:,:,n] .= du
         @views dv_all[:,:,n] .= dv
-        @views deta_all[:,:,n] .= deta
+        # @views deta_all[:,:,n] .= deta
 
         # saving the advection computed with the coarse-grained high-resolution states
         # @views adv_u_all[:,:,n] .= adv_u

@@ -220,7 +220,7 @@ function offline_S_firstthreeyears()
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
 
     # S_u
-    fig = Figure(size=(900, 780), fontsize=15);
+    fig = Figure(size=(900, 300), fontsize=15);
 
     Label(
         fig[0, 2],
@@ -238,7 +238,6 @@ function offline_S_firstthreeyears()
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
-    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
     hidexdecorations!(ax1)
 
     ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
@@ -249,7 +248,8 @@ function offline_S_firstthreeyears()
     # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
-    hidedecorations!(ax0)
+    hidedecorations!(ax0)    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+
     # Colorbar(fig[1,2], hm0)
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
@@ -1066,5 +1066,60 @@ function extras()
     );
     Colorbar(fig[2,4], hm5)
     hideydecorations!(ax5)
+
+    # windowed velocity stuff
+
+
+    Subefore = load_object("./dissipation_constant/ke_transfers/trueS_fromwindowedtendencies_withRK4_SuSv_first3years_dailysaves_S(overline(window(u))).jld2")[1];
+    Subefore_noeta = load_object("./dissipation_constant/ke_transfers/trueS_fromwindowedtendencies_withRK4_SuSv_first3years_dailysaves_S(overline(window(u)))_nowindowedeta.jld2")[1];
+    
+    fig = Figure(size=(800, 800), fontsize=15);
+    Label(
+        fig[0, 2],
+        L"S_u(3 \text{ years}, x, y)",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    t = 1096
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -Suhr[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, no window"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -winubefore .* Suhr[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, window after"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hideydecorations!(ax1)
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -Subefore[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, window before"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    -Subefore_noeta[:,:,t],
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, window before, did not window eta"),
+    # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+
+    Colorbar(fig[1:2,3], hm1)
 
 end

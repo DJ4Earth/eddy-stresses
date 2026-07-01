@@ -5,12 +5,13 @@
 # timestep or the prior, because the prior is what when into computing u and v
 function computing_ketransfer_fromS()
 
-    # computing the true subgrid forcing
-    duhrcg = load_object("./dissipation_constant/computing_trueS/hrcgtendencies_first3years_dailysaves_dudvdeta.jld2")[1];
-    dvhrcg = load_object("./dissipation_constant/computing_trueS/hrcgtendencies_first3years_dailysaves_dudvdeta.jld2")[2];
+    # computing the total subgrid forcing
 
-    duhr = load_object("./dissipation_constant/computing_trueS/hrtendencies_first3years_dailysaves_dudvdeta.jld2")[1];
-    dvhr = load_object("./dissipation_constant/computing_trueS/hrtendencies_first3years_dailysaves_dudvdeta.jld2")[2];
+    # duhrcg = load_object("./dissipation_constant/computing_trueS/hrcgtendencies_first3years_dailysaves_dudvdeta.jld2")[1];
+    # dvhrcg = load_object("./dissipation_constant/computing_trueS/hrcgtendencies_first3years_dailysaves_dudvdeta.jld2")[2];
+
+    # duhr = load_object("./dissipation_constant/computing_trueS/hrtendencies_first3years_dailysaves_dudvdeta.jld2")[1];
+    # dvhr = load_object("./dissipation_constant/computing_trueS/hrtendencies_first3years_dailysaves_dudvdeta.jld2")[2];
 
     # advu_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2")[1];
     # advv_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2")[2];
@@ -18,8 +19,20 @@ function computing_ketransfer_fromS()
     # advu_cg = load_object("./nonlinear_advec_fromcghrstates_advu_advv.jld2")[1];
     # advv_cg = load_object("./nonlinear_advec_fromcghrstates_advu_advv.jld2")[2];
 
-    Su_true = zeros(127, 128, 1096)
-    Sv_true = zeros(128, 127, 1096)
+    # duhrcg = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhrcg_dwindowvhrcg_dwindowetahrcg_overline(window(state)).jld2")[1];
+    # dvhrcg = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhrcg_dwindowvhrcg_dwindowetahrcg_overline(window(state)).jld2")[2];
+
+    # duhr = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhr_dwindowvhr_dwindowetahr.jld2")[1];
+    # dvhr = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhr_dwindowvhr_dwindowetahr.jld2")[2];
+
+    duhrcg = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhrcg_dwindowvhrcg_nodeta_didnotapplywindowtoeta_overline(window(state)).jld2")[1];
+    dvhrcg = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhrcg_dwindowvhrcg_nodeta_didnotapplywindowtoeta_overline(window(state)).jld2")[2];
+
+    duhr = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhr_dwindowvhr_nodeta_didnotapplywindowtoeta.jld2")[1];
+    dvhr = load_object("./dissipation_constant/ke_transfers/tendencies_dwindowuhr_dwindowvhr_nodeta_didnotapplywindowtoeta.jld2")[2];
+
+    Su_true_noetawindow = zeros(127, 128, 1096)
+    Sv_true_noetawindow = zeros(128, 127, 1096)
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
@@ -37,8 +50,8 @@ function computing_ketransfer_fromS()
         # advuhrdownsized = (advufiltered[8:8:end, 4:8:end] .+ advufiltered[8:8:end, 5:8:end]) .* 0.5
         # advvhrdownsized = (advvfiltered[4:8:end, 8:8:end] .+ advvfiltered[5:8:end, 8:8:end]) .* 0.5
 
-        @views Su_true[:,:,j] .=  (duhrdownsized[:,:,1]./48) - (duhrcg[:,:,j]./384)
-        @views Sv_true[:,:,j] .= (dvhrdownsized[:,:,1]./48) - (dvhrcg[:,:,j]./384)
+        @views Su_true_noetawindow[:,:,j] .= -(duhrdownsized[:,:,1]./48) + (duhrcg[:,:,j]./384)
+        @views Sv_true_noetawindow[:,:,j] .= -(dvhrdownsized[:,:,1]./48) + (dvhrcg[:,:,j]./384)
 
     end
 
@@ -128,7 +141,7 @@ function computing_ketransfer_fromS()
         for layers in m[1]
             for array in layers
                     sz = prod(size(array))
-                    array .= reshape(load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_30dayoptimzation_startfrom30day6iterations_constantdissipation_15iterations_21totaliterations_8hourdata_200maxhistory_fixedcfl.jld2").solution[current:(current + sz - 1)], size(array)...)
+                    array .= reshape(load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_30dayoptimzation_startfrom20day_constantdissipation_6iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution[current:(current + sz - 1)], size(array)...)
                     current += sz
             end
         end
@@ -192,12 +205,12 @@ function computing_ketransfer_fromS()
     Svapprox = approx_S[2];
 
     # for computing a KE transfer from some/all of the domain
-    # xvals = :
+    xvals = :
     # xvals = Int((150/30)):Int((3840-150)/30)
-    xvals = Int((300/30)):Int((3840-300)/30)
+    # xvals = Int((300/30)):Int((3840-300)/30)
     yvals = xvals
 
-    lr_freq = 1/30 .* freq(periodogram(umulti1[xvals,yvals,10]; radialavg=true, radialsum=false));
+    lr_freq = 1/30 .* freq(periodogram(umulti2all[xvals,yvals,10]; radialavg=true, radialsum=false));
     nfft = nextfastfft(size(uhrcgall[xvals,yvals,1]))
 
     totalu_hrcg = zeros(length(lr_freq))
@@ -815,7 +828,7 @@ function ketransfer_plots()
         ylabel="KE(k)",
         title="Kinetic energy transfer"
     )
-    lines!(ax, -lr_freq.*(totalu_hrcg + totalv_hrcg)/(1096), label="Total SGS forcing", color=:black)
+    # lines!(ax, -lr_freq.*(totalu_hrcg + totalv_hrcg)./(1096), label="Total SGS forcing", color=:black)
     # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
     # this one has a multiplication by \Delta
     lines!(ax, (lr_freq * 30000).*(totalu_approx + totalv_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
@@ -972,5 +985,74 @@ function ketransfer_plots()
         padding = (0, 5, 5, 0),
         halign = :right)
     end
+
+    # comparing windowed results
+    s = 1096 * 30000 * 64
+    fig = Figure(size=(800, 600), fontsize=15);
+
+    lr_freq = 1/30 .* freq(periodogram(umulti1[:,:,10]; radialavg=true, radialsum=false));
+    ax = Axis(fig[1,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="KE transfer, no window"
+    )
+    lines!(ax, -lr_freq.*(totalu_hrcg + totalv_hrcg)./(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
+    lines!(ax, (lr_freq * 30000).*(totalu_approx + totalv_approx) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax, lr_freq.*(totalu_ZB + totalv_ZB) ./ s, label="ZB20", color=colors[1])
+    lines!(ax, lr_freq.*(totalu_multi2 + totalv_multi2) ./ s, label="Ensemble 2 day", color=colors[2])
+    lines!(ax, lr_freq.*(totalu_multi3 + totalv_multi3) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax, lr_freq.*(totalu_multi10 + totalv_multi10) ./ s, label="Ensemble 10 day", color=colors[4])
+    # lines!(ax, lr_freq.*(totalu_multi20 + totalv_multi20) / s, label="Ensemble 20 day")
+
+    ax2 = Axis(fig[2,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="KE transfer, window after"
+    )
+    lines!(ax2, -lr_freq.*(totalu_hrcg_windowafter + totalv_hrcg_windowafter)./(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
+    lines!(ax2, (lr_freq * 30000).*(totalu_approx_windowafter + totalv_approx_windowafter) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax2, lr_freq.*(totalu_ZB_windowafter + totalv_ZB_windowafter) ./ s, label="ZB20", color=colors[1])
+    lines!(ax2, lr_freq.*(totalu_multi2_windowafter + totalv_multi2_windowafter) ./ s, label="Ensemble 2 day", color=colors[2])
+    lines!(ax2, lr_freq.*(totalu_multi3_windowafter + totalv_multi3_windowafter) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax2, lr_freq.*(totalu_multi10_windowafter + totalv_multi10_windowafter) ./ s, label="Ensemble 10 day", color=colors[4])
+    # lines!(ax2, lr_freq.*(totalu_multi20_windowafter + totalv_multi20_windowafter) / s, label="Ensemble 20 day")
+
+    ax3 = Axis(fig[3,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="KE transfer, window before"
+    )
+    # lines!(ax3, -lr_freq.*(totalu_hrcg_windowbefore + totalv_hrcg_windowbefore)./(1096), label="Total SGS forcing", color=:black)
+    # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
+    # this one has a multiplication by \Delta
+    lines!(ax3, (lr_freq * 30000).*(totalu_approx_windowbefore + totalv_approx_windowbefore) ./ (1096), label="Approximate SGS forcing", color=:red)
+    lines!(ax3, lr_freq.*(totalu_ZB_windowbefore + totalv_ZB_windowbefore) ./ s, label="ZB20", color=colors[1])
+    lines!(ax3, lr_freq.*(totalu_multi2_windowbefore + totalv_multi2_windowbefore) ./ s, label="Ensemble 2 day", color=colors[2])
+    lines!(ax3, lr_freq.*(totalu_multi3_windowbefore + totalv_multi3_windowbefore) ./ s, label="Ensemble 3 day", color=colors[3])
+    lines!(ax3, lr_freq.*(totalu_multi10_windowbefore + totalv_multi10_windowbefore) ./ s, label="Ensemble 10 day", color=colors[4])
+    # lines!(ax3, lr_freq.*(totalu_multi20_windowbefore + totalv_multi20_windowbefore) / s, label="Ensemble 20 day")
+    Legend(fig[1:3, 2], ax, orientation = :vertical)
+
+
+    fig = Figure(size=(700, 500));
+    ax = Axis(fig[1,1],
+        xscale = log10,
+        xlabel="Wavenumber (1/km)",
+        ylabel="KE(k)",
+        title="KE transfer, computed three ways"
+    )
+    lines!(ax, (-lr_freq ).*(totalu_hrcg + totalv_hrcg)./1096, label="Total SGS forcing, no window", color=colors[1])
+    lines!(ax, (-lr_freq ).*(totalu_hrcg_windowafter + totalv_hrcg_windowafter)./1096, label="Total SGS forcing, window after", color=colors[2])
+    lines!(ax, (-lr_freq ).*(totalu_hrcg_windowbefore + totalv_hrcg_windowbefore)./1096, label="Total SGS forcing, window before", color=colors[3])
+    lines!(ax, (-lr_freq ).*(totalu_hrcg_windowbefore_noeta + totalv_hrcg_windowbefore_noeta)./1096, label="Total SGS forcing, window before", color=colors[4])
+
+    axislegend(ax, position=:rt)
 
 end

@@ -28,6 +28,7 @@ function offline_plots()
     colorrange=(-maximum(abs.(uofflinegelu[:,:,t])),maximum(abs.(uofflinegelu[:,:,t])))
     );
     Colorbar(fig[1,4], hm2, label="m/s")
+    hideydecorations!(ax2)
 
     ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -37,6 +38,7 @@ function offline_plots()
     colorrange=(-maximum(abs.(vofflinegelu[:,:,t])),maximum(abs.(vofflinegelu[:,:,t])))
     );
     Colorbar(fig[1,6], hm3, label="m/s")
+    hideydecorations!(ax3)
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
