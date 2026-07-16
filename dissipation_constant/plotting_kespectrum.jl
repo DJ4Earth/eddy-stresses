@@ -18,6 +18,9 @@ function spectrum_plots()
     up_hr = zeros(513, totalstates)
     vp_hr = zeros(513, totalstates)
 
+    up_filtered = zeros(513, totalstates)
+    vp_filtered = zeros(513, totalstates)
+
     up_zb = zeros(65,totalstates)
     vp_zb = zeros(65,totalstates)
 
@@ -87,14 +90,17 @@ function spectrum_plots()
     # up_reluKEspecpd = zeros(65,totalstates)
     # vp_reluKEspecpd = zeros(65,totalstates)
 
-    alpha = 0.1
+    alpha = 0.5
     winu = tukey((127, 128), alpha)
     winv = tukey((128,127), alpha)
 
     @views for t = 1:totalstates
 
-        # up_hr[:,t] = power(periodogram(uhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
-        # vp_hr[:,t] = power(periodogram(vhr[:,:,t]; radialavg=true, radialsum=false)) ./ 1024^2
+        up_filtered[:,t] = power(periodogram(ufiltered[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        vp_filtered[:,t] = power(periodogram(vfiltered[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+
+        # up_hr[:,t] = power(periodogram(uhrall[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        # vp_hr[:,t] = power(periodogram(vhrall[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
 
         up_zb[:,t] = power(periodogram(uzball[:, :, t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
         vp_zb[:,t] = power(periodogram(vzball[:, :, t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
@@ -254,8 +260,14 @@ function spectrum_plots()
     # up_reluKEspec_avg = zeros(65)
     # vp_reluKEspec_avg = zeros(65)
 
+    up_filtered_avg = zeros(513)
+    vp_filtered_avg = zeros(513)
+
     totalstates = 1096
     for t = 1:totalstates
+
+        up_filtered_avg += up_filtered[:,t]
+        vp_filtered_avg += vp_filtered[:,t]
 
         up_noparam_avg += up_noparam[:,t]
         vp_noparam_avg += vp_noparam[:,t]
@@ -269,8 +281,8 @@ function spectrum_plots()
         up_30day_avg += up_30day[:, t]
         vp_30day_avg += vp_30day[:, t]
 
-        # up_hr_avg += up_hr[:,t]
-        # vp_hr_avg += vp_hr[:,t]
+        up_hr_avg += up_hr[:,t]
+        vp_hr_avg += vp_hr[:,t]
 
         up_filter_avg += up_hrfilter[:,t]
         vp_filter_avg += vp_hrfilter[:,t]
@@ -373,42 +385,139 @@ function spectrum_plots()
 
     # up_hr, up_hrfilter, up_hrcg
 
-    true_wl = (1 ./ freq(periodogram(uhr[:,:,1]; radialavg=true))) * 3.75;
+    true_wl = (1 ./ freq(periodogram(uhrall[:,:,1]; radialavg=true))) * 3.75;
     true_wl[1] = 1100
     cg_wl = (1 ./ freq(periodogram(uhrcg[:,:,1]; radialavg=true, radialsum=false))) * 30;
     cg_wl[1] = 1100
 
-    t = 1
-    fig = Figure();
-    lines(fig[1,1], true_wl[2:end], up_hr[2:end,t] + vp_hr[2:end,t], label="3.75 km resolution", axis=(
-            xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2], title="HR energy spectrum")
-    )
-    lines!(fig[1,1], cg_wl[2:end], up_hrcg[2:end,t] + vp_hrcg[2:end,t], label="Filtered, coarsened HR spectrum")
-    lines!(fig[1,1], true_wl[2:end], up_hrfilter[2:end,t] + vp_hrfilter[2:end,t], label="Filtered HR spectrum")
-    axislegend()
+    fig = Figure(title="Time-averaged KE spectrum");
+    ax = Axis(fig[1,1],xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2])
+    lines!(ax, true_wl[2:end], (up_hr_avg[2:end] + vp_hr_avg[2:end])./totalstates, label="3.75 km resolution")
+    lines!(ax, true_wl[2:end], (up_filtered_avg[2:end] + vp_filtered_avg[2:end])./totalstates, label="Filtered 3.75 km resolution")
+    lines!(ax, cg_wl[2:end], (up_hrcg_nowindow_avg[2:end] + vp_hrcg_nowindow_avg[2:end])./totalstates, label="Filtered, coarse-grained 3.75 km resolution")
+    axislegend(position=:lb)
+    # window discussion
 
-    figu = Figure();
-    lines(figu[1,1], true_wl[2:65], up_hr[2:65,t], label="HR", axis=(
-            xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
-    )
-    lines!(figu[1,1], cg_wl[2:end], up_hrcg[2:end,t], label="Coarse-grained HR")
-    lines!(figu[1,1], true_wl[2:end], up_hrfilter[2:end,t], label="Filtered HR")
-    axislegend()
+    up_hrcg_nowindow = zeros(65,totalstates)
+    vp_hrcg_nowindow = zeros(65,totalstates)
 
-    figv = Figure();
-        lines(figv[1,1], true_wl[2:65], vp_hr[2:65,t], label="HR", axis=(
-            xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
-    )
-    lines!(figv[1,1], cg_wl[2:end], vp_hrcg[2:end,t], label="Coarse-grained HR")
-    lines!(figv[1,1], true_wl[2:65], vp_hrfilter[2:65,t], label="Filtered HR")
-    axislegend()
+    up_hrcg_reflected = zeros(129,totalstates)
+    vp_hrcg_reflected = zeros(129, totalstates)
 
-    figeta = Figure();
-        lines(figeta[1,1], true_wl[2:65], etap_hr[2:65,t], label="HR", axis=(
-            xscale=log10,yscale=log10, ylabel="KE(k)", xreversed=true,  title="HR")
+    up_hrcg_alphapoint05 = zeros(65,totalstates)
+    vp_hrcg_alphapoint05 = zeros(65,totalstates)
+
+    up_hrcg_alphapoint1 = zeros(65,totalstates)
+    vp_hrcg_alphapoint1 = zeros(65,totalstates)
+
+    up_hrcg_alphapoint3 = zeros(65,totalstates)
+    vp_hrcg_alphapoint3 = zeros(65,totalstates)
+
+    up_hrcg_alphapoint5 = zeros(65,totalstates)
+    vp_hrcg_alphapoint5 = zeros(65,totalstates)
+
+    winu05 = tukey((127, 128), 0.05)
+    winv05 = tukey((128,127), 0.05)
+
+    winu1 = tukey((127, 128), 0.1)
+    winv1 = tukey((128,127), 0.1)
+
+    winu3 = tukey((127, 128), 0.3)
+    winv3 = tukey((128,127), 0.3)
+
+    winu5 = tukey((127, 128), 0.5)
+    winv5 = tukey((128,127), 0.5)
+
+    function reflect2d(A)
+        left = vcat(A, A[end:-1:1, :])      # A stacked over its vertical flip
+        return hcat(left, left[:, end:-1:1]) # then mirror horizontally
+    end
+
+    for t = 1:totalstates
+
+        up_hrcg_reflected[:,t] = power(periodogram(reflect2d(uhrcgall[:,:,t]); radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg_reflected[:,t] = power(periodogram(reflect2d(vhrcgall[:,:,t]); radialavg=true, radialsum=false)) ./ (128*127)
+
+        up_hrcg_nowindow[:,t] = power(periodogram(uhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg_nowindow[:,t] = power(periodogram(vhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127)
+
+        up_hrcg_alphapoint05[:,t] = power(periodogram(uhrcgall[:,:,t].*winu05; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg_alphapoint05[:,t] = power(periodogram(vhrcgall[:,:,t].*winv05; radialavg=true, radialsum=false)) ./ (128*127)
+
+        up_hrcg_alphapoint1[:,t] = power(periodogram(uhrcgall[:,:,t].*winu1; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg_alphapoint1[:,t] = power(periodogram(vhrcgall[:,:,t].*winv1; radialavg=true, radialsum=false)) ./ (128*127)
+
+        up_hrcg_alphapoint3[:,t] = power(periodogram(uhrcgall[:,:,t].*winu3; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg_alphapoint3[:,t] = power(periodogram(vhrcgall[:,:,t].*winv3; radialavg=true, radialsum=false)) ./ (128*127)
+
+        up_hrcg_alphapoint5[:,t] = power(periodogram(uhrcgall[:,:,t].*winu5; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg_alphapoint5[:,t] = power(periodogram(vhrcgall[:,:,t].*winv5; radialavg=true, radialsum=false)) ./ (128*127)
+
+    end
+
+    up_hrcg_reflected_avg = zeros(129)
+    vp_hrcg_reflected_avg = zeros(129)
+
+    up_hrcg_nowindow_avg = zeros(65)
+    vp_hrcg_nowindow_avg = zeros(65)
+
+    up_hrcg_alphapoint05_avg = zeros(65)
+    vp_hrcg_alphapoint05_avg = zeros(65)
+
+    up_hrcg_alphapoint1_avg = zeros(65)
+    vp_hrcg_alphapoint1_avg = zeros(65)
+
+    up_hrcg_alphapoint3_avg = zeros(65)
+    vp_hrcg_alphapoint3_avg = zeros(65)
+
+    up_hrcg_alphapoint5_avg = zeros(65)
+    vp_hrcg_alphapoint5_avg = zeros(65)
+    totalstates = 1096
+    for t = 1:totalstates
+
+        up_hrcg_reflected_avg += up_hrcg_reflected[:,t]
+        vp_hrcg_reflected_avg += vp_hrcg_reflected[:,t]
+
+        up_hrcg_nowindow_avg += up_hrcg_nowindow[:,t]
+        vp_hrcg_nowindow_avg += vp_hrcg_nowindow[:,t]
+
+        up_hrcg_alphapoint05_avg += up_hrcg_alphapoint05[:,t]
+        vp_hrcg_alphapoint05_avg += vp_hrcg_alphapoint05[:,t]
+
+        up_hrcg_alphapoint1_avg += up_hrcg_alphapoint1[:,t]
+        vp_hrcg_alphapoint1_avg += vp_hrcg_alphapoint1[:,t]
+
+        up_hrcg_alphapoint3_avg += up_hrcg_alphapoint3[:,t]
+        vp_hrcg_alphapoint3_avg += vp_hrcg_alphapoint3[:,t]
+
+        up_hrcg_alphapoint5_avg += up_hrcg_alphapoint5[:,t]
+        vp_hrcg_alphapoint5_avg += vp_hrcg_alphapoint5[:,t]
+
+    end
+
+    cg_wl = (1 ./ freq(periodogram(uhrcgall[:,:,1]; radialavg=true, radialsum=false))) .* 30;
+    cg_wl[1] = 1100
+    true_wl = (1 ./ freq(periodogram(uhrall[:,:,1]; radialavg=true, radialsum=false))) .* 3.75;
+    true_wl[1] = 1100
+
+    fig = Figure(size=(700,350));
+    ax = Axis(fig[1,1],
+        xscale=log10,
+        yscale=log10,
+        xlabel="Wavelength (km)",
+        ylabel=L"\text{KE(k) } (m^3/s^2)", xreversed=true,
+        xticks=[700, 400, 100, 30, 10, 2],
+        title="3-year averaged kinetic energy spectrum, from HR and HRCG data"
     )
-    lines!(figeta[1,1], cg_wl[2:end], etap_hrcg[2:end,t], label="Coarse-grained HR")
-    lines!(figeta[1,1], cg_wl[2:end], etap_hrfilter[2:end,t], label="Filtered HR")
-    axislegend()
+    lines!(ax, true_wl[2:65], (up_hr_avg[2:65] + vp_hr_avg[2:65])/(sum(up_hr_avg[1:end] + vp_hr_avg[1:end])), label="High-resolution")
+    lines!(ax, true_wl[2:65], (up_filtered_avg[2:65] + vp_filtered_avg[2:65])/(sum(up_filtered_avg[1:end] + vp_filtered_avg[1:end])), label="Filtered high-resolution")
+    lines!(ax, cg_wl[2:end], (up_hrcg_nowindow_avg[2:end] + vp_hrcg_nowindow_avg[2:end])/(sum(up_hrcg_nowindow_avg[1:end] + vp_hrcg_nowindow_avg[1:end])), label="CG, filtered high-resolution, no window", linestyle=:dash)
+    lines!(ax, cg_wl[2:end], (up_hrcg_alphapoint05_avg[2:end] + vp_hrcg_alphapoint05_avg[2:end])/sum(up_hrcg_alphapoint05_avg[1:end] + vp_hrcg_alphapoint05_avg[1:end]), label=L"\alpha = .05",linestyle=:dashdotdot)
+    lines!(ax, cg_wl[2:end], (up_hrcg_alphapoint1_avg[2:end] + vp_hrcg_alphapoint1_avg[2:end])/sum(up_hrcg_alphapoint1_avg[1:end] + vp_hrcg_alphapoint1_avg[1:end]), label=L"\alpha = .1",linestyle=:dashdot)
+    lines!(ax, cg_wl[2:end], (up_hrcg_alphapoint3_avg[2:end] + vp_hrcg_alphapoint3_avg[2:end])/sum(up_hrcg_alphapoint3_avg[1:end] + vp_hrcg_alphapoint3_avg[1:end]), label=L"\alpha = .3",linestyle=:dot)
+    lines!(ax, cg_wl[2:end], (up_hrcg_alphapoint5_avg[2:end] + vp_hrcg_alphapoint5_avg[2:end])/sum(up_hrcg_alphapoint5_avg[1:end] + vp_hrcg_alphapoint5_avg[1:end]), label=L"\alpha = .5",linestyle=:dashdotdot)
+    axislegend(position=:lb)
+    # Legend(fig[1,2], ax)
+
 
 end

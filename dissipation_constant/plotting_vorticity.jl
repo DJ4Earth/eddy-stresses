@@ -69,7 +69,7 @@ function computing_vorticity()
         @views @inbounds ζhr[:,:,t] .= (dvdx[2:end-1, 2:end-1] .- dudy[2:end-1, 2:end-1]) ./ 3750
     end
 
-    # 30 km relative vorticity probability distribution over the first three years
+    # 30 km relative vorticity over the first three years
     ζzb = zeros(129,129,1096);
     ζnoparam = zeros(129,129,1096);
     ζmulti3more = zeros(129,129,1096);
@@ -285,17 +285,17 @@ function vorticity_plots()
         title = "Ten-year relative vorticity probability density"
         # yscale = log10
     )
-    lines!(ax, hr10.x, hr10.density, label="3.75 km", color=colors[1])
+    # lines!(ax, hr10.x, hr10.density, label="3.75 km", color=colors[1])
     lines!(ax, hrcg10.x, hrcg10.density, label="Filtered, coarse-grained 3.75 km",color=:black)
     lines!(ax, zb10.x, zb10.density, label="ZB20", color=:red)
     lines!(ax, noparam10.x, noparam10.density, label="No closure, 30 km",color=:gray)
-    # lines!(ax, multi210.x, multi210.density, label="Ensemble 2 day", color=colors[2])
-    # lines!(ax, multi3more10.x, multi3more10.density, label="Ensemble 3 day", color=colors[3])
-    # lines!(ax, multi1010.x, multi1010.density, label="Ensemble 10 day", color=colors[4])
-    lines!(ax, ten10.x, ten10.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
-    lines!(ax, twenty10.x, twenty10.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
-    lines!(ax, thirty10.x, thirty10.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
-    lines!(ax, multi2010.x, multi2010.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
+    lines!(ax, multi210.x, multi210.density, label="Ensemble 2 day", color=colors[1])
+    lines!(ax, multi3more10.x, multi3more10.density, label="Ensemble 3 day", color=colors[2])
+    lines!(ax, multi1010.x, multi1010.density, label="Ensemble 10 day", color=colors[3])
+    # lines!(ax, ten10.x, ten10.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
+    # lines!(ax, twenty10.x, twenty10.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
+    # lines!(ax, thirty10.x, thirty10.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
+    # lines!(ax, multi2010.x, multi2010.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
 
     Legend(fig[1,2], ax)
     xlims!(ax, -0.000007, 0.000007)

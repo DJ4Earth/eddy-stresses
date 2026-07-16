@@ -220,7 +220,7 @@ function offline_S_firstthreeyears()
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
 
     # S_u
-    fig = Figure(size=(900, 300), fontsize=15);
+    fig = Figure(size=(900, 780), fontsize=15);
 
     Label(
         fig[0, 2],
@@ -242,9 +242,9 @@ function offline_S_firstthreeyears()
 
     ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    tendu_hrdownsized[:,:,t]./48 .- tend_cg[1][:,:,t]./384,
+    2 .* (tendu_hrdownsized[1][:,:,t]./48 .- tend_cg[1][:,:,t]./384),
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Total tendencies, RK1"),
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, Euler"),
     # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
@@ -372,9 +372,9 @@ function offline_S_firstthreeyears()
 
     ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    tendv_hrdownsized[:,:,t]./48 .- tend_cg[2][:,:,t]./384,
+    2 .* (tendv_hrdownsized[:,:,t]./48 .- tend_cg[2][:,:,t]./384),
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Total tendencies, RK1"),
+    axis=(xlabel="km", ylabel="km", title="Total tendencies, Euler"),
     # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );

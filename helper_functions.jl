@@ -289,7 +289,7 @@ function compute_tendencies_withrk!(k, du, dv, deta, S, t)
         fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
     end
 
-    for rki = 1:S.parameters.RKo
+    for rki = 1:k
         if rki > 1
             ShallowWaters.ghost_points!(
                 S.Diag.RungeKutta.u1,
@@ -885,6 +885,7 @@ function save_modelvariables()
         # cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
+        RKo=2,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
@@ -911,6 +912,7 @@ function save_modelvariables()
         cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
+        RKo=2,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
@@ -1002,7 +1004,7 @@ function save_modelvariables()
 
         # u_, v_, eta_ = ShallowWaters.add_halo(windowuhrdownsized, windowvhrdownsized, windowetahrdownsized, S)
 
-        u_, v_, eta_ = ShallowWaters.add_halo(winu.*u[:,:,n], winv.*v[:,:,n], Float64.(eta[:,:,n]), S)
+        u_, v_, eta_ = ShallowWaters.add_halo(u[:,:,n], v[:,:,n], eta[:,:,n], S)
 
         S.Prog.u = u_
         S.Prog.v = v_
@@ -1010,7 +1012,7 @@ function save_modelvariables()
 
         # single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
         # compute_advection!(adv_u, adv_v, S, n*t)
-        compute_tendencies_withrk!(4, du, dv, deta, S, n*t)
+        compute_tendencies_withrk!(1, du, dv, deta, S, n*t)
 
         # saving tendencies
         @views du_all[:,:,n] .= du

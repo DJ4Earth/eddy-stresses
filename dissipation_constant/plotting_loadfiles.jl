@@ -263,8 +263,9 @@ function load_Sfiles()
     # advec_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2");
     advec_cg = load_object("./dissipation_constant/alternate_S_files/nonlinear_advec_fromcghrstates_advu_advv.jld2");
 
-    tend_cg = load_object("./dissipation_constant/computing_trueS/coarsegrain_tendencies_doverline_rk1_dudvdeta.jld2");
+    # tend_cg = load_object("./dissipation_constant/computing_trueS/coarsegrain_tendencies_doverline_rk1_dudvdeta.jld2");
     # tend_hr = load_object("./dissipation_constant/computing_trueS/highresolution_tendencies_rk1_dudvdeta.jld2");
+    tend_cg = load_object("./cgtendencies_euler_rk2coeff_dudv.jld2");
 
     # coarse-grain the high-resolution viscosity terms
     # ker = ImageFiltering.Kernel.gaussian((30e3/3750));
@@ -276,8 +277,9 @@ function load_Sfiles()
     #     @views tendvfiltered[:,:,t] .= imfilter(tend_hr[2][:,:,t], reflect(ker))
     # end
 
-    tendu_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[1];
-    tendv_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[2];
+    tendu_hrdownsized = load_object("./hrcgtendencies_euler_rk2coeff_dudv.jld2");
+    # tendu_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[1];
+    # tendv_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[2];
 
     Mu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[1];
     Mv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[2];
@@ -311,7 +313,8 @@ function load_Sfiles()
         α=2,
         nx=128,
         Ndays=2,
-        initial_cond="rest"
+        initial_cond="ncfile",
+        initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
     );
     S = ShallowWaters.model_setup(P);
 

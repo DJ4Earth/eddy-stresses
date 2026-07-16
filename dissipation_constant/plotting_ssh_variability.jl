@@ -121,17 +121,16 @@ function ssh_variability()
     end
 
     # absolute different in variability
-    fig = Figure(size=(850, 520), fontsize=15);
+    temp = std(etahrcgall[:,:,index], dims=[3])[:,:,1]
+
+    fig = Figure(size=(720, 600), fontsize=15);
     fig.layout.alignmode = Outside();
     Label(
         fig[0, 2],
-        "Absolute difference in sea-surface height variability",
+        "Difference in sea-surface height variability",
         fontsize = 20,
         tellwidth = false
     )
-
-    temp = std(etahrcgall[:,:,index], dims=[3])[:,:,1]
-
     ax, hm = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     temp,
@@ -139,67 +138,67 @@ function ssh_variability()
     axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
     colorrange=(0,maximum(abs.(temp)))
     );
-    # Colorbar(fig[1,2], hm1, label="m")
+    Colorbar(fig[1,1:2], hm, label="m")
     hidexdecorations!(ax)
 
     index=1:522
-    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(temp .- std(etanoparam10[:,:,index], dims=3)[:,:,1]),
-    colormap=:amp,
+    (temp .- std(etanoparam10[:,:,index], dims=3)[:,:,1]),
+    colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="No closure, 30 km"),
-    colorrange=(0,maximum(abs.(temp)))
+    colorrange=(-1.5,1.5)
     );
     # Colorbar(fig[1,4], hm1, label="m")
-    hidedecorations!(ax1)
+    hidexdecorations!(ax1)
 
-    ax2, hm2 = heatmap(fig[1,3],LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[2,2],LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(temp .- std(etazb10[:,:,index], dims=3)[:,:,1]),
-    colormap=:amp,
+    (temp .- std(etazb10[:,:,index], dims=3)[:,:,1]),
+    colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
-    colorrange=(0,maximum(abs.(temp)))
+    colorrange=(-1.5,1.5)
     );
     # Colorbar(fig[1,6], hm1, label="m")
     hidedecorations!(ax2)
 
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[3,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(temp .- std(etamulti210[:,:,index], dims=3)[:,:,1]),
-    colormap=:amp,
+    (temp .- std(etamulti210[:,:,index], dims=3)[:,:,1]),
+    colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
-    colorrange=(0,maximum(abs.(temp)))
+    colorrange=(-1.5,1.5)
     );
     # Colorbar(fig[2,2], hm1, label="m")
 
-    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[3,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(temp .- std(etamulti3more10, dims=3)[:,:,1]),
-    colormap=:amp,
+    (temp .- std(etamulti3more10, dims=3)[:,:,1]),
+    colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
-    colorrange=(0,maximum(abs.(temp)))
+    colorrange=(-1.5,1.5)
     );
     # Colorbar(fig[2,4], hm4, label="m")
     hideydecorations!(ax4)
 
-    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[3,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(temp .- std(etamulti1010, dims=3)[:,:,1]),
-    colormap=:amp,
+    (temp .- std(etamulti1010, dims=3)[:,:,1]),
+    colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
-    colorrange=(0,maximum(abs.(temp)))
+    colorrange=(-1.5,1.5)
     );
     # Colorbar(fig[2,6], hm1, label="m")
     hideydecorations!(ax5)
 
-    Colorbar(fig[1:2,4], hm, label="m")
+    Colorbar(fig[2:3,4], hm5, label="m")
 
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 2] = GridLayout()
-    gc = fig[1, 3] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 2] = GridLayout()
-    gf = fig[2, 3] = GridLayout()
+    gb = fig[2, 1] = GridLayout()
+    gc = fig[2, 2] = GridLayout()
+    gd = fig[3, 1] = GridLayout()
+    ge = fig[3, 2] = GridLayout()
+    gf = fig[3, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,

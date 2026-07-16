@@ -192,53 +192,19 @@ end
 
 function filter()
 
-    # u1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/u.nc", "u");
-    # v1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/v.nc", "v");
-    # eta1 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day1-766saves/eta.nc", "eta");
-
-    # u2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/u.nc", "u");
-    # v2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/v.nc", "v");
-    # eta2 = ncread("./dissipation_constant/spinup_files/1024_postspinup_3years_dailysaves_correctedsetup/1024_postspinup_day766-end/eta.nc", "eta");
-
-    # u = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/u.nc", "u");
-    # v = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/v.nc", "v");
-    # eta = ncread("./dissipation_constant/spinup_files/1024_7years_startfrom3yearpostspinup_weeklysaves/eta.nc", "eta");
-
-    # u1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/u.nc", "u");
-    # v1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/v.nc", "v");
-    # eta1 = ncread("./dissipation_constant/spinup_files/1024_spinup_newwindamp/1024_spinup_newwindamp_days1-374/eta.nc", "eta");
-
-    # u2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/u.nc", "u");
-    # v2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/v.nc", "v");
-    # eta2 = ncread("./dissipation_constant/spinup_files/1024_spinup_newlatandwindamp/eta.nc", "eta");
-
-    u1 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlatitude_days1-367/u.nc", "u");
-    v1 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlatitude_days1-367/v.nc", "v");
-    eta1 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlatitude_days1-367/eta.nc", "eta");
-
-    u2 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlat_days367-end/u.nc", "u");
-    v2 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlat_days367-end/v.nc", "v");
-    eta2 = ncread("./dissipation_constant/generalizability_files/1024_postspinup_newlat_days367-end/eta.nc", "eta");
-
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
-    ufiltered = zeros(1023, 1024, 366);
-    vfiltered = zeros(1024, 1023, 366);
-    etafiltered = zeros(1024, 1024, 366);
+    ufiltered = zeros(1023, 1024, 1096);
+    vfiltered = zeros(1024, 1023, 1096);
+    etafiltered = zeros(1024, 1024, 1096);
 
-    for j = 1:366
-        ufiltered[:,:,j] .= imfilter(u[:,:,j], reflect(ker))
-        vfiltered[:,:,j] .= imfilter(v[:,:,j], reflect(ker))
-        etafiltered[:,:,j] .= imfilter(eta[:,:,j], reflect(ker))
+    for j = 1:1096
+        ufiltered[:,:,j] .= imfilter(uhrall[:,:,j], reflect(ker))
+        vfiltered[:,:,j] .= imfilter(vhrall[:,:,j], reflect(ker))
+        etafiltered[:,:,j] .= imfilter(etahrall[:,:,j], reflect(ker))
     end
 
-    for j = 2:end
-        ufiltered[:,:,j+766] .= imfilter(u2[:,:,j+1], reflect(ker))
-        vfiltered[:,:,j+766] .= imfilter(v2[:,:,j+1], reflect(ker))
-        etafiltered[:,:,j+766] .= imfilter(eta2[:,:,j+1], reflect(ker))
-    end
-
-    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
 
 end
 
