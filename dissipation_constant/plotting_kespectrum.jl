@@ -4,7 +4,7 @@ function spectrum_plots()
     # KE spectrum #############################################################
 
     # to get coarse-grained states
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750)/2)
     # imfilter(hru[:,:,j], reflect(ker))
 
     # for first three years
@@ -18,14 +18,23 @@ function spectrum_plots()
     up_hr = zeros(513, totalstates)
     vp_hr = zeros(513, totalstates)
 
+    up_filtered_NA = zeros(513, totalstates)
+    vp_filtered_NA = zeros(513, totalstates)
+
     up_filtered = zeros(513, totalstates)
     vp_filtered = zeros(513, totalstates)
 
+    up_filtered_larger = zeros(513, totalstates)
+    vp_filtered_larger = zeros(513, totalstates)
+
+    up_winfiltered = zeros(513, totalstates)
+    vp_winfiltered = zeros(513, totalstates)
+
+    up_filtered_zero = zeros(513, totalstates)
+    vp_filtered_zero = zeros(513, totalstates)
+
     up_zb = zeros(65,totalstates)
     vp_zb = zeros(65,totalstates)
-
-    up_hrfilter = zeros(513,totalstates)
-    vp_hrfilter = zeros(513,totalstates)
 
     up_hrcg = zeros(65,totalstates)
     vp_hrcg = zeros(65,totalstates)
@@ -90,23 +99,32 @@ function spectrum_plots()
     # up_reluKEspecpd = zeros(65,totalstates)
     # vp_reluKEspecpd = zeros(65,totalstates)
 
-    alpha = 0.5
-    winu = tukey((127, 128), alpha)
-    winv = tukey((128,127), alpha)
+    alpha = 0.1
+    winu = tukey((1023, 1024), alpha)
+    winv = tukey((1024, 1023), alpha)
 
     @views for t = 1:totalstates
+
+        up_filtered_zero[:,t] = power(periodogram(ufiltered_zero[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        vp_filtered_zero[:,t] = power(periodogram(vfiltered_zero[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+
+        up_filtered_larger[:,t] = power(periodogram(ufiltered[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        vp_filtered_larger[:,t] = power(periodogram(vfiltered[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
 
         up_filtered[:,t] = power(periodogram(ufiltered[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
         vp_filtered[:,t] = power(periodogram(vfiltered[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
 
-        # up_hr[:,t] = power(periodogram(uhrall[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
-        # vp_hr[:,t] = power(periodogram(vhrall[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        up_hr[:,t] = power(periodogram(uhrall[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        vp_hr[:,t] = power(periodogram(vhrall[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+
+        up_filtered_NA[:,t] = power(periodogram(ufiltered_NA[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+        vp_filtered_NA[:,t] = power(periodogram(vfiltered_NA[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
+
+        up_hrcg[:,t] = power(periodogram(uhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127)
+        vp_hrcg[:,t] = power(periodogram(vhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127)
 
         up_zb[:,t] = power(periodogram(uzball[:, :, t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
         vp_zb[:,t] = power(periodogram(vzball[:, :, t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
-
-        up_hrcg[:,t] = power(periodogram(uhrcgall[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
-        vp_hrcg[:,t] = power(periodogram(vhrcgall[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
 
         up_20day[:,t] = power(periodogram(u20sall[:,:,t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
         vp_20day[:,t] = power(periodogram(v20sall[:,:,t].*winv; radialavg=true, radialsum=false)) ./ (128*127)
@@ -159,7 +177,7 @@ function spectrum_plots()
     nnu_freq[1] =  1000
     lr_wl[1] = 1000
 
-    hr_wl = 1 ./ freq(periodogram(uhr[:,:,3]; radialavg=true)) * 3.75;
+    hr_wl = 1 ./ freq(periodogram(uhrall[:,:,3]; radialavg=true)) * 3.75;
     hr_wl[1] = 1100
 
     fig = Figure(size=(1000, 500), fontsize=15);
@@ -263,8 +281,20 @@ function spectrum_plots()
     up_filtered_avg = zeros(513)
     vp_filtered_avg = zeros(513)
 
+    up_filteredNA_avg = zeros(513)
+    vp_filteredNA_avg = zeros(513)
+
     totalstates = 1096
     for t = 1:totalstates
+
+        up_filter_avg += up_hrfilter[:,t]
+        vp_filter_avg += vp_hrfilter[:,t]
+
+        up_hr_avg += up_hr[:,t]
+        vp_hr_avg += vp_hr[:,t]
+
+        up_filterNA_avg += up_hrfilter[:,t]
+        vp_filterNA_avg += vp_hrfilter[:,t]
 
         up_filtered_avg += up_filtered[:,t]
         vp_filtered_avg += vp_filtered[:,t]
@@ -280,12 +310,6 @@ function spectrum_plots()
 
         up_30day_avg += up_30day[:, t]
         vp_30day_avg += vp_30day[:, t]
-
-        up_hr_avg += up_hr[:,t]
-        vp_hr_avg += vp_hr[:,t]
-
-        up_filter_avg += up_hrfilter[:,t]
-        vp_filter_avg += vp_hrfilter[:,t]
 
         up_cghr_avg += up_hrcg[:,t]
         vp_cghr_avg += vp_hrcg[:,t]
@@ -387,15 +411,20 @@ function spectrum_plots()
 
     true_wl = (1 ./ freq(periodogram(uhrall[:,:,1]; radialavg=true))) * 3.75;
     true_wl[1] = 1100
-    cg_wl = (1 ./ freq(periodogram(uhrcg[:,:,1]; radialavg=true, radialsum=false))) * 30;
+    cg_wl = (1 ./ freq(periodogram(uhrcgall[:,:,1]; radialavg=true, radialsum=false))) * 30;
     cg_wl[1] = 1100
 
     fig = Figure(title="Time-averaged KE spectrum");
     ax = Axis(fig[1,1],xscale=log10,yscale=log10,xlabel="Wavelength (km)", ylabel="KE(k)", xreversed=true, xticks=[700, 100, 30, 10, 2])
-    lines!(ax, true_wl[2:end], (up_hr_avg[2:end] + vp_hr_avg[2:end])./totalstates, label="3.75 km resolution")
-    lines!(ax, true_wl[2:end], (up_filtered_avg[2:end] + vp_filtered_avg[2:end])./totalstates, label="Filtered 3.75 km resolution")
-    lines!(ax, cg_wl[2:end], (up_hrcg_nowindow_avg[2:end] + vp_hrcg_nowindow_avg[2:end])./totalstates, label="Filtered, coarse-grained 3.75 km resolution")
+    lines!(ax, true_wl[2:end], (sum(up_hr, dims=2)[2:end,1] + sum(vp_hr, dims=2)[2:end,1])./totalstates, label="3.75 km resolution")
+    lines!(ax, true_wl[2:end], (sum(up_filtered, dims=2)[2:end,1] + sum(vp_filtered,dims=2)[2:end,1])./totalstates, label="Filtered 3.75 km resolution")
+    lines!(ax, true_wl[2:end], (sum(up_filtered_larger, dims=2)[2:end,1] + sum(vp_filtered_larger,dims=2)[2:end,1])./totalstates, label="Filtered 3.75 km resolution")
+    # lines!(ax, true_wl[2:end], (sum(up_winfiltered, dims=2)[2:end,1] + sum(vp_winfiltered,dims=2)[2:end,1])./totalstates, label="Windowed, filtered 3.75 km resolution")
+    # lines!(ax, true_wl[2:end], (sum(up_filtered_NA, dims=2)[2:end,1] + sum(vp_filtered_NA, dims=2)[2:end,1])./totalstates, label="Filtered 3.75 km resolution, NA")
+    # lines!(ax, true_wl[2:end], (sum(up_filtered_zero, dims=2)[2:end,1] + sum(vp_filtered_zero, dims=2)[2:end,1])./totalstates, label="Filtered 3.75 km resolution, zero")
+    lines!(ax, cg_wl[2:end], (sum(up_hrcg, dims=2)[2:end,1] + sum(vp_hrcg,dims=2)[2:end,1])./totalstates, label="Filtered, coarse-grained 3.75 km resolution")
     axislegend(position=:lb)
+
     # window discussion
 
     up_hrcg_nowindow = zeros(65,totalstates)

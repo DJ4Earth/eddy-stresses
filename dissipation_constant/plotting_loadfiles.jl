@@ -1,5 +1,14 @@
 function load_models()
 
+    ufiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[1];
+    vfiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[2];
+
+    ufiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[1];
+    vfiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[2];
+
+    ufiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[1];
+    vfiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[2];
+
     uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[1],
         load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2")[1][:,:,2:end]; dims=3
     );
@@ -313,8 +322,8 @@ function load_Sfiles()
         α=2,
         nx=128,
         Ndays=2,
-        initial_cond="ncfile",
-        initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
+        initial_cond="rest",
+        # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
     );
     S = ShallowWaters.model_setup(P);
 

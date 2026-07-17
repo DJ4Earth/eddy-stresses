@@ -192,19 +192,19 @@ end
 
 function filter()
 
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750, 30e3/3750), (65, 65))
 
     ufiltered = zeros(1023, 1024, 1096);
     vfiltered = zeros(1024, 1023, 1096);
-    etafiltered = zeros(1024, 1024, 1096);
+    # etafiltered = zeros(1024, 1024, 1096);
 
     for j = 1:1096
         ufiltered[:,:,j] .= imfilter(uhrall[:,:,j], reflect(ker))
         vfiltered[:,:,j] .= imfilter(vhrall[:,:,j], reflect(ker))
-        etafiltered[:,:,j] .= imfilter(etahrall[:,:,j], reflect(ker))
+        # etafiltered[:,:,j] .= imfilter(etahrall[:,:,j], reflect(ker),border=NA())
     end
 
-    jldsave("1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2", uveta = [ufiltered, vfiltered, etafiltered])
+    jldsave("1024_filtered_uv_imfilter_3years_postspinup_dailysaves_largerkernel.jld2", uv = [ufiltered, vfiltered])
 
 end
 
