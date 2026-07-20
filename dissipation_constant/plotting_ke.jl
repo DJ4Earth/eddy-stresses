@@ -321,12 +321,14 @@ function energy_plots()
 
     multi210p = zeros(Float64, 522)
     multi310p = zeros(Float64, 522)
+    multi1010p = zeros(Float64, 522)
 
     avg3single = zeros(Float64, 522)
     avg10single = zeros(Float64, 424)
     for j = 1:522
             multi210p[j] = sum(abs2, umulti210more[:,:,j]) + sum(abs2, vmulti210more[:,:,j])
             multi310p[j] = sum(abs2, umulti310more[:,:,j]) + sum(abs2, vmulti310more[:,:,j])
+            multi1010p[j] = sum(abs2, umulti1010more[:,:,j]) + sum(abs2, vmulti1010more[:,:,j])
             # avg3single[j] = sum(abs2, u3single[:,:,j]) + sum(abs2, v3single[:,:,j])
     end
 
@@ -403,33 +405,13 @@ function energy_plots()
 
     multi2all = cat(multi210, multi210p[2:end]; dims=1);
     multi3all = cat(multi3more10, multi310p[2:end]; dims=1);
+    multi10all = cat(multi1010, multi1010p[2:end]; dims=1);
 
     # 3 year, 10 year, 20 year
 
     colors = Makie.wong_colors()
 
     fig = Figure(size=(1000, 600), fontsize=15);
-    # ax = Axis(fig[1,1],
-    #         # xlabel="Day",
-    #         ylabel="Energy",
-    #         title="Spatially averaged energy over 3 years"
-    # )
-    # lines!(ax, LinRange(0, 3*365, 1096),  hrcg[1:1096] ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
-    # lines!(ax, LinRange(0, 3*365, 1096), noparam./ (128^2), label="No closure, 30 km",color=:gray)
-    # lines!(ax, LinRange(0, 3*365, 1096), zb./ (128^2), label="ZB20", color=:red)
-    # # lines!(fig[1,1], LinRange(0, 3*365, 1096), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), tenday./ (128^2), label="Online closure, 10 day")
-    # # lines!(ax,LinRange(0, 3*365, 1096), twentyday ./ (128^2), label="Online closure, 20 day")
-    # # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    # # lines!(ax, LinRange(0, 3*365, 1096), thirtyday ./ (128^2), label="30 day")
-    # # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Ensemble 2 day", color=colors[1])
-    # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Ensemble 3 day",color=colors[2])
-    # # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Ensemble 10 day",color=colors[3])#, color=:teal)
-    # # lines!(ax, LinRange(0, 3*365, 1096), multi20 ./ (128^2), label="Ensemble 20 day",color=:green)
-    # # Legend(fig[1, 2], ax)
 
     hrcg_10 = cat(hrcg[1:7:1096], hrcg[1097:end];dims=1)
 
@@ -438,23 +420,23 @@ function energy_plots()
         ylabel="Energy",
         title="Spatially averaged KE over 10 years"
     )
-    lines!(ax3, LinRange(0, 10, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
-    lines!(ax3, LinRange(0, 10, 522), noparam10 ./ (128^2), label="No closure, 30 km",color=:gray)
-    lines!(ax3, LinRange(0, 10, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128^2), label="Online closure, 5 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday10./ (128^2), label="Online closure, 10 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), twentyday./ (128^2), label="Online closure, 20 day")
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128^2), label="Online closure, 30 day")
-    lines!(ax3, LinRange(0, 10, 522), multi210 ./ (128^2), label="Ensemble 2 day",color=colors[1])
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128^2), label="Online closure, batched 3 day, fewer initial conditions")
-    lines!(ax3, LinRange(0, 10, 522), multi3more10 ./ (128^2), label="Ensemble 3 day",color=colors[2])
+    lines!(ax3, LinRange(0, 10, 522),  hrcg_10 ./ (128*127), label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax3, LinRange(0, 10, 522), noparam10 ./ (128*127), label="No closure, 30 km",color=:gray)
+    lines!(ax3, LinRange(0, 10, 522),  zb10 ./ (128*127), label="ZB20",color=:red)
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), fiveday./ (128*127), label="Online closure, 5 day")
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), tenday10./ (128*127), label="Online closure, 10 day")
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), twentyday./ (128*127), label="Online closure, 20 day")
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), thirtyday./ (128*127), label="Online closure, 30 day")
+    lines!(ax3, LinRange(0, 10, 522), multi210 ./ (128*127), label="Ensemble 2 day",color=colors[1])
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi3 ./ (128*127), label="Online closure, batched 3 day, fewer initial conditions")
+    lines!(ax3, LinRange(0, 10, 522), multi3more10 ./ (128*127), label="Ensemble 3 day",color=colors[2])
 
-    lines!(ax3, LinRange(0, 10, 522), multi1010 ./ (128^2), label="Ensemble 10 day",color=colors[3])
-    # lines!(ax3, LinRange(0, 10*365, 522), avg3_10 ./ (128^2), label="Averaged single initial conditions, 3 day optim.", color=colors[4])
-    # lines!(ax3, LinRange(0, 10*365, 522), avg10_10 ./ (128^2), label="Averaged single initial conditions, 10 day optim.", color=colors[5])
-    # lines!(ax3, LinRange(0, 10*365, 424), avg10single ./ (128^2), label="3 day optim.", color=colors[6])
+    lines!(ax3, LinRange(0, 10, 522), multi1010 ./ (128*127), label="Ensemble 10 day",color=colors[3])
+    # lines!(ax3, LinRange(0, 10*365, 522), avg3_10 ./ (128*127), label="Averaged single initial conditions, 3 day optim.", color=colors[4])
+    # lines!(ax3, LinRange(0, 10*365, 522), avg10_10 ./ (128*127), label="Averaged single initial conditions, 10 day optim.", color=colors[5])
+    # lines!(ax3, LinRange(0, 10*365, 424), avg10single ./ (128*127), label="3 day optim.", color=colors[6])
 
-    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128^2), label="Online closure, batched 20 day", color=:red3)
+    # lines!(fig[1,1], LinRange(0, 10*365, 522), multi20 ./ (128*127), label="Online closure, batched 20 day", color=:red3)
     # Legend(fig[2, 2], ax3)
 
     ax4 = Axis(fig[2,1],
@@ -462,9 +444,11 @@ function energy_plots()
         ylabel="Energy",
         title="Spatially averaged KE over 20 years"
     )
-    lines!(ax4, LinRange(0, 20, 1043), multi2all ./ (128^2), label="Online closure, ensemble 2 day",color=colors[1])
-    lines!(ax4, LinRange(0, 20, 1043), multi3all ./ (128^2), label="Online closure, ensemble 3 day",color=colors[2])
-    # lines!(ax3, LinRange(0, 10*365, 522),  cghr10_forplotting ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:red)
+    lines!(ax4, LinRange(0, 20, 1043), multi2all ./ (128*127), label="Online closure, ensemble 2 day",color=colors[1])
+    lines!(ax4, LinRange(0, 20, 1043), multi3all ./ (128*127), label="Online closure, ensemble 3 day",color=colors[2])
+    lines!(ax4, LinRange(0, 20, 1043), multi10all ./ (128*127), label="Online closure, ensemble 3 day",color=colors[3])
+
+    # lines!(ax3, LinRange(0, 10*365, 522),  cghr10_forplotting ./ (128*127), label="Filtered, coarse-grained 3.75 km",color=:red)
 
     # Legend(fig[3, 2], ax4)
 
@@ -490,23 +474,23 @@ function energy_plots()
             ylabel="Energy",
             title="Spatially averaged KE over 3 years"
     )
-    lines!(ax, LinRange(0, 3, 1096),  hrcg[1:1096] ./ (128^2), label="Filtered, coarse-grained 3.75 km", color=:black)
-    lines!(ax, LinRange(0, 3, 1096), noparam./ (128^2), label="No closure, 30 km",color=:gray)
-    lines!(ax, LinRange(0, 3, 1096), zb./ (128^2), label="ZB20", color=:red)
-    # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128^2), label="5 day")
-    lines!(ax, LinRange(0, 3, 1096), tenday./ (128^2), label="10 day", color=colors[4])
-    # lines!(ax, LinRange(0, 3, 1096), threedayavg[1:1096] ./ (128^2), label="Averaged 3 day")
-    # lines!(ax, LinRange(0, 3, 1096), tendayavg[1:1096] ./ (128^2), label="Averaged 3 day")
-    lines!(ax,LinRange(0, 3, 1096), twentyday ./ (128^2), label="20 day", color=colors[5])
-    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128^2), label="Online closure, 20 day with BD coeff")
-    lines!(ax, LinRange(0, 3, 1096), thirtyday ./ (128^2), label="30 day",color=:purple)
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128^2), label="Online closure, batched 1 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128^2), label="Online closure, ensemble 2 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128^2), label="Online closure, ensemble 3 day")
-    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128^2), label="Online closure, batched 5 day", color=:mediumorchid)
-    # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128^2), label="Online closure, ensemble 10 day")#, color=:teal)
-    lines!(ax, LinRange(0, 3, 1096), multi20 ./ (128^2), label="Ensemble 20 day", color=colors[7])
+    lines!(ax, LinRange(0, 3, 1096),  hrcg[1:1096] ./ (128*127), label="Filtered, coarse-grained 3.75 km", color=:black)
+    lines!(ax, LinRange(0, 3, 1096), noparam./ (128*127)), label="No closure, 30 km",color=:gray)
+    lines!(ax, LinRange(0, 3, 1096), zb./ (128*127)), label="ZB20", color=:red)
+    # lines!(ax, LinRange(0, 3*365, 1096), fiveday./ (128*127)), label="5 day")
+    lines!(ax, LinRange(0, 3, 1096), tenday./ (128*127)), label="10 day", color=colors[4])
+    # lines!(ax, LinRange(0, 3, 1096), threedayavg[1:1096] ./ (128*127)), label="Averaged 3 day")
+    # lines!(ax, LinRange(0, 3, 1096), tendayavg[1:1096] ./ (128*127)), label="Averaged 3 day")
+    lines!(ax,LinRange(0, 3, 1096), twentyday ./ (128*127), label="20 day", color=colors[5])
+    # lines!(ax,LinRange(0, 3*365, 1096), twentydaycD ./ (128*127)), label="Online closure, 20 day with BD coeff")
+    lines!(ax, LinRange(0, 3, 1096), thirtyday ./ (128*127), label="30 day",color=:purple)
+    # lines!(ax, LinRange(0, 3*365, 1096), multi1 ./ (128*127)), label="Online closure, batched 1 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi1_more ./ (128*127)), label="Online closure, batched 1 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi2 ./ (128*127)), label="Online closure, ensemble 2 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi3more ./ (128*127)), label="Online closure, ensemble 3 day")
+    # lines!(ax, LinRange(0, 3*365, 1096), multi5 ./ (128*127)), label="Online closure, batched 5 day", color=:mediumorchid)
+    # lines!(ax, LinRange(0, 3*365, 1096), multi10 ./ (128*127)), label="Online closure, ensemble 10 day")#, color=:teal)
+    lines!(ax, LinRange(0, 3, 1096), multi20 ./ (128*127), label="Ensemble 20 day", color=colors[7])
     # Legend(fig[1, 2], ax)
 
     ax3 = Axis(fig[2,1],
@@ -514,14 +498,14 @@ function energy_plots()
         ylabel="Energy",
         title="Spatially averaged KE over ten years"
     )
-    lines!(ax3, LinRange(0, 10, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
-    lines!(ax3, LinRange(0, 10, 522), noparam10 ./ (128^2), label="No closure, 30 km",color=:gray)
-    lines!(ax3, LinRange(0, 10, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
-    # lines!(ax3, LinRange(0, 10*365, 522), fiveday10./ (128^2), label="5 day")
-    lines!(ax3, LinRange(0, 10, 522), tenday10./ (128^2), label="10 day",color=colors[4])
-    lines!(ax3, LinRange(0, 10, 522), twentyday10./ (128^2), label="20 day",color=colors[5])
-    lines!(ax3, LinRange(0, 10, 522), thirtyday10./ (128^2), label="30 day",color=:purple)
-    lines!(ax3, LinRange(0, 10, 522), multi2010 ./ (128^2), label="Ensemble 20 day",color=colors[7])
+    lines!(ax3, LinRange(0, 10, 522),  hrcg_10 ./ (128*127), label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax3, LinRange(0, 10, 522), noparam10 ./ (128*127), label="No closure, 30 km",color=:gray)
+    lines!(ax3, LinRange(0, 10, 522),  zb10 ./ (128*127), label="ZB20",color=:red)
+    # lines!(ax3, LinRange(0, 10*365, 522), fiveday10./ (128*127), label="5 day")
+    lines!(ax3, LinRange(0, 10, 522), tenday10./ (128*127), label="10 day",color=colors[4])
+    lines!(ax3, LinRange(0, 10, 522), twentyday10./ (128*127), label="20 day",color=colors[5])
+    lines!(ax3, LinRange(0, 10, 522), thirtyday10./ (128*127), label="30 day",color=:purple)
+    lines!(ax3, LinRange(0, 10, 522), multi2010 ./ (128*127), label="Ensemble 20 day",color=colors[7])
 
     # Legend(fig[2, 2], ax3)
 
@@ -543,14 +527,14 @@ function energy_plots()
         ylabel="J",
         title="Spatially averaged KE over ten years"
     )
-    lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128^2), label="Filtered, coarse-grained 3.75 km",color=:black)
-    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128^2), label="No closure, 30 km",color=:gray)
-    lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128^2), label="ZB20",color=:red)
-    # lines!(ax3, LinRange(0, 10*365, 522), fiveday10./ (128^2), label="5 day")
-    lines!(ax3, LinRange(0, 10*365, 522), tenday10./ (128^2), label="10 day")
-    lines!(ax3, LinRange(0, 10*365, 522), twentyday10./ (128^2), label="20 day")
-    lines!(ax3, LinRange(0, 10*365, 522), thirtyday10./ (128^2), label="30 day")
-    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128^2), label="Ensemble 20 day")
+    lines!(ax3, LinRange(0, 10*365, 522),  hrcg_10 ./ (128*127), label="Filtered, coarse-grained 3.75 km",color=:black)
+    lines!(ax3, LinRange(0, 10*365, 522), noparam10 ./ (128*127), label="No closure, 30 km",color=:gray)
+    lines!(ax3, LinRange(0, 10*365, 522),  zb10 ./ (128*127), label="ZB20",color=:red)
+    # lines!(ax3, LinRange(0, 10*365, 522), fiveday10./ (128*127), label="5 day")
+    lines!(ax3, LinRange(0, 10*365, 522), tenday10./ (128*127), label="10 day")
+    lines!(ax3, LinRange(0, 10*365, 522), twentyday10./ (128*127), label="20 day")
+    lines!(ax3, LinRange(0, 10*365, 522), thirtyday10./ (128*127), label="30 day")
+    lines!(ax3, LinRange(0, 10*365, 522), multi2010 ./ (128*127), label="Ensemble 20 day")
 
     # Legend(fig[2, 2], ax3)
 

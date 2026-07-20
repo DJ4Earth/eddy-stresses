@@ -3,11 +3,11 @@ function load_models()
     ufiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[1];
     vfiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[2];
 
-    ufiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[1];
-    vfiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[2];
+    # ufiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[1];
+    # vfiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[2];
 
-    ufiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[1];
-    vfiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[2];
+    # ufiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[1];
+    # vfiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[2];
 
     uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[1],
         load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2")[1][:,:,2:end]; dims=3
@@ -40,10 +40,6 @@ function load_models()
     uofflinegelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_gelu_8hoursaves/u.nc", "u");
     vofflinegelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_gelu_8hoursaves/v.nc", "v");
     etaofflinegelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_gelu_8hoursaves/eta.nc", "eta");
-
-    uofflinerelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/u.nc", "u");
-    vofflinerelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/v.nc", "v");
-    etaofflinerelu = ncread("./dissipation_constant/results/128_offlineparam_postspinup_cginitcond_3days_relu_8hoursaves/eta.nc", "eta");
 
     # 3 year
 
@@ -169,11 +165,12 @@ function load_models()
 
     umulti210more = ncread("./dissipation_constant/results/result_online_multistate_2dayoptimization_further10years_weeklysaves/u.nc", "u");
     vmulti210more = ncread("./dissipation_constant/results/result_online_multistate_2dayoptimization_further10years_weeklysaves/v.nc", "v");
-    etamulti210more = ncread("./dissipation_constant/results/result_online_multistate_2dayoptimization_further10years_weeklysaves/eta.nc", "eta");
 
     umulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/u.nc", "u");
     vmulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/v.nc", "v");
-    etamulti310more = ncread("./dissipation_constant/results/result_online_multistate_3dayoptimization_further10years_weeklysaves/eta.nc", "eta");
+
+    umulti1010more = ncread("./dissipation_constant/results/result_online_multistate_10dayoptimization_further10years_weeklysaves/u.nc", "u");
+    vmulti1010more = ncread("./dissipation_constant/results/result_online_multistate_10dayoptimization_further10years_weeklysaves/v.nc", "v");
 
     # the following didn't work as loss functions
 
@@ -269,26 +266,31 @@ function load_Sfiles()
     # bd_hr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_hr_3years_dailysaves_BuBv.jld2");
     bd_cg = load_object("./dissipation_constant/alternate_S_files/bottomdrag_cghr_3years_dailysaves_BuBv.jld2");
 
-    # advec_hr = load_object("./nonlinear_advec_fromhrstates_advu_advv.jld2");
-    advec_cg = load_object("./dissipation_constant/alternate_S_files/nonlinear_advec_fromcghrstates_advu_advv.jld2");
+    # advec_hr = load_object("./nonlinearadvec_hrstates_advu_advv.jld2");
+    advec_cg = load_object("./nonlinearadvec_cgstates_advu_advv.jld2");
 
-    # tend_cg = load_object("./dissipation_constant/computing_trueS/coarsegrain_tendencies_doverline_rk1_dudvdeta.jld2");
-    # tend_hr = load_object("./dissipation_constant/computing_trueS/highresolution_tendencies_rk1_dudvdeta.jld2");
-    tend_cg = load_object("./cgtendencies_euler_rk2coeff_dudv.jld2");
+    tend_euler_cg = load_object("./cgtendencies_euler_rk2coeff_dudv.jld2");
+    # tend_euler_hr = load_object("./hrtendencies_euler_rk2coeff_dudv.jld2");
 
-    # coarse-grain the high-resolution viscosity terms
-    # ker = ImageFiltering.Kernel.gaussian((30e3/3750));
-    # tendufiltered = zeros(1023, 1024, 1096);
-    # tendvfiltered = zeros(1024, 1023, 1096);
+    # coarse-grain hr terms
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750));
+    tendufiltered = zeros(1023, 1024, 1096);
+    tendvfiltered = zeros(1024, 1023, 1096);
 
-    # for t = 1:1096
-    #     @views tendufiltered[:,:,t] .= imfilter(tend_hr[1][:,:,t], reflect(ker))
-    #     @views tendvfiltered[:,:,t] .= imfilter(tend_hr[2][:,:,t], reflect(ker))
-    # end
+    for t = 1:1096
+        @views tendufiltered[:,:,t] .= imfilter(tend_euler_hr[1][:,:,t], reflect(ker))
+        @views tendvfiltered[:,:,t] .= imfilter(tend_euler_hr[2][:,:,t], reflect(ker))
+    end
 
-    tendu_hrdownsized = load_object("./hrcgtendencies_euler_rk2coeff_dudv.jld2");
-    # tendu_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[1];
-    # tendv_hrdownsized = load_object("./dissipation_constant/computing_trueS/tendency_hrcg_overline(d)_rk1_dudv.jld2")[2];
+    eulerudownsized = zeros(127, 128, 1096);
+    eulervdownsized = zeros(128, 127, 1096);
+    for t = 1:1096
+        @views eulerudownsized[:,:,t] = (tendufiltered[8:8:end, 4:8:end, t] .+ tendufiltered[8:8:end, 5:8:end,t]) .* 0.5
+        @views eulervdownsized[:,:,t] = (tendvfiltered[4:8:end, 8:8:end,t] .+ tendvfiltered[5:8:end, 8:8:end,t]) .* 0.5
+    end
+
+    tendu_hrdownsized = load_object("./hrcgtendencies_euler_rk2coeff_dudv.jld2")[1];
+    tendv_hrdownsized = load_object("./hrcgtendencies_euler_rk2coeff_dudv.jld2")[2];
 
     Mu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[1];
     Mv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[2];
@@ -296,8 +298,8 @@ function load_Sfiles()
     Bu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/bottomdrag_coarsegrained_hr_3years_dailysaves_overlineBuoverlineBv.jld2")[1];
     Bv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/bottomdrag_coarsegrained_hr_3years_dailysaves_overlineBuoverlineBv.jld2")[2];
 
-    Advecu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_coarsegrainedhr_3years_dailysaves_overlineAdvecuoverlineAdvecv.jld2")[1];
-    Advecv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_coarsegrainedhr_3years_dailysaves_overlineAdvecuoverlineAdvecv.jld2")[2];
+    Advecu_hrdownsized = load_object("./nonlinearadvec_hrstates_downsized_advu_advv.jld2")[1];
+    Advecv_hrdownsized = load_object("./nonlinearadvec_hrstates_downsized_advu_advv.jld2")[2];
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,
