@@ -260,46 +260,24 @@ function load_Sfiles()
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
 
-    # visc_hr = load_object("./dissipation_constant/alternate_S_files/viscosity_hr_3years_dailysaves_MuMv.jld2");
-    visc_cg = load_object("./dissipation_constant/alternate_S_files/viscosity_cghr_3years_dailysaves_MuMv.jld2");
+    visc_hrcg = load_object("./hrcg_viscosity_MuMv_oldfunction.jld2");
+    visc_cg = load_object("./cg_viscosity_MuMv_oldfunction.jld2");
 
-    # bd_hr = load_object("./dissipation_constant/alternate_S_files/bottomdrag_hr_3years_dailysaves_BuBv.jld2");
-    bd_cg = load_object("./dissipation_constant/alternate_S_files/bottomdrag_cghr_3years_dailysaves_BuBv.jld2");
+    bd_hrcg = load_object("./hrcg_bottomdrag_BuBv.jld2");
+    bd_cg = load_object("./cg_bottomdrag_BuBv.jld2");
 
     # advec_hr = load_object("./nonlinearadvec_hrstates_advu_advv.jld2");
     advec_cg = load_object("./nonlinearadvec_cgstates_advu_advv.jld2");
 
-    tend_euler_cg = load_object("./cgtendencies_euler_rk2coeff_dudv.jld2");
+    tend_euler_cg = load_object("./cgtendencies_euler_rk2coeff_dudv_updated.jld2");
+    tend_euler_hrcg = load_object("./hrcgtendencies_euler_rk2coeff_dudv_updated.jld2");
+
     # tend_euler_hr = load_object("./hrtendencies_euler_rk2coeff_dudv.jld2");
+    # tendu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/hrcgtendencies_euler_rk2coeff_dudv.jld2")[1];
+    # tendv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/hrcgtendencies_euler_rk2coeff_dudv.jld2")[2];
 
-    # coarse-grain hr terms
-    ker = ImageFiltering.Kernel.gaussian((30e3/3750));
-    tendufiltered = zeros(1023, 1024, 1096);
-    tendvfiltered = zeros(1024, 1023, 1096);
-
-    for t = 1:1096
-        @views tendufiltered[:,:,t] .= imfilter(tend_euler_hr[1][:,:,t], reflect(ker))
-        @views tendvfiltered[:,:,t] .= imfilter(tend_euler_hr[2][:,:,t], reflect(ker))
-    end
-
-    eulerudownsized = zeros(127, 128, 1096);
-    eulervdownsized = zeros(128, 127, 1096);
-    for t = 1:1096
-        @views eulerudownsized[:,:,t] = (tendufiltered[8:8:end, 4:8:end, t] .+ tendufiltered[8:8:end, 5:8:end,t]) .* 0.5
-        @views eulervdownsized[:,:,t] = (tendvfiltered[4:8:end, 8:8:end,t] .+ tendvfiltered[5:8:end, 8:8:end,t]) .* 0.5
-    end
-
-    tendu_hrdownsized = load_object("./hrcgtendencies_euler_rk2coeff_dudv.jld2")[1];
-    tendv_hrdownsized = load_object("./hrcgtendencies_euler_rk2coeff_dudv.jld2")[2];
-
-    Mu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[1];
-    Mv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/viscosity_coarsegrainedhr_3years_dailysaves_overlineMuoverlineMv.jld2")[2];
-
-    Bu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/bottomdrag_coarsegrained_hr_3years_dailysaves_overlineBuoverlineBv.jld2")[1];
-    Bv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/bottomdrag_coarsegrained_hr_3years_dailysaves_overlineBuoverlineBv.jld2")[2];
-
-    Advecu_hrdownsized = load_object("./nonlinearadvec_hrstates_downsized_advu_advv.jld2")[1];
-    Advecv_hrdownsized = load_object("./nonlinearadvec_hrstates_downsized_advu_advv.jld2")[2];
+    Advecu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_hrstates_downsized_advu_advv.jld2")[1];
+    Advecv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_hrstates_downsized_advu_advv.jld2")[2];
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,

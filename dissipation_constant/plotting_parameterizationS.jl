@@ -543,35 +543,57 @@ function extras()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    euler,
+    (2 .* tend_euler_hrcg[1][:,:,t]) ./ 48,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Total tendencies, Euler"),
+    axis=(xlabel="km", ylabel="km", title="Euler tendency"),
     # colorrange=(-maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cghr[1][:,:,j]) ./ S.grid.Δ)),maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cghr[1][:,:,j]) ./ S.grid.Δ)))
-    colorrange=(-1.5e-5, 1.5e-5)
+    # colorrange=(-1.5e-5, 1.5e-5)
     );
     hidedecorations!(ax2)
     Colorbar(fig[1,4], hm2)
 
     ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    advec,
+    Advecu_hrdownsized[:,:,t] ./ 3.75e3,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Nonlinear advection, not approx."),
+    axis=(xlabel="km", ylabel="km", title="Advection term"),
     # colorrange=(-maximum(abs.(- Advecu_hrdownsized[:,:,t]./(64)  + advec_cg[1][:,:,t]./(30e3 * 64))), maximum(abs.(- Advecu_hrdownsized[:,:,t]./(3.75e3 * 64)  + advec_cg[1][:,:,t]./(64))))
-    colorrange=(-1.5e-5, 1.5e-5)
+    colorrange=(-2e-5, 2e-5)
     );
     hidedecorations!(ax3)
     Colorbar(fig[1,6], hm3)
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    S.grid.Δ .* Suapprox[:,:,t],
+    advec,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
     colorrange=(-1.5e-5, 1.5e-5)
     );
     Colorbar(fig[2,2], hm4)
+
+    visc = visc_hrcg[1][:,:,t] ./ (64 * 3.75e3) - visc_cg[1][:,:,t] ./ (64 * 30e3)
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    visc,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Viscosity"),
+    # colorrange=(-maximum(abs.(visc)),maximum(abs.(visc)))
+    colorrange=(-1e-6, 1e-6)
+    );
+    Colorbar(fig[2,4], hm5)
+
+    bd = bd_hrcg[1][:,:,t] ./ (64 * 3.75e3) -  bd_cg[1][:,:,t]./ (64 * 30e3)
+    ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    bd,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Bottom drag"),
+    colorrange=(-maximum(abs.(bd)),maximum(abs.(bd)))
+    # colorrange=(-1.5e-7, 1.5e-7)
+    );
+    Colorbar(fig[2,6], hm6)
 
     # Su difference fields
     fig = Figure(size=(950, 500), fontsize=15);
@@ -584,15 +606,15 @@ function extras()
     )
 
     t = 1096
-    euler = 2 .* (tendu_hrdownsized[:,:,t]./48 - tend_euler_cg[1][:,:,t]./384)
-    advec = (Advecu_hrdownsized[:,:,t]./ (3.75e3) - advec_cg[1][:,:,t]./(30e3))
+    euler = 2 .* (tend_euler_hrcg[1][:,:,t]./48 - tend_euler_cg[1][:,:,t]./384)
+    advec = adv_uhrcg .- adv_ulr
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(-Suhr[:,:,j] .- euler),
-    colormap=:amp,
+    -Suhr[:,:,j] .- euler,
+    colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Total tendencies, |RK4 - Euler|"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
-    colorrange=(0, 4e-5)
+    colorrange=(-1.5e-5, 1.5e-5)
     );
     Colorbar(fig[1,2], hm1)
     hidexdecorations!(ax1)
@@ -610,22 +632,22 @@ function extras()
 
     ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(-Suhr[:,:,t] .- S.grid.Δ .* Suapprox[:,:,j]),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="|RK4 - nonlinear advec approx|"),
+    euler .- advec,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="|Euler - advec|"),
     # colorrange=(-maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cg[1][:,:,j]) ./ S.grid.Δ)),maximum(abs.((Advecu_hrdownsized[:,:,j] .- advec_cg[1][:,:,j]) ./ S.grid.Δ)))
-    colorrange=(0, 4e-5)
+    colorrange=(-1.5e-5, 1.5e-5)
     );
     hidedecorations!(ax3)
     Colorbar(fig[1,6], hm3)
 
     ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    abs.(euler - advec),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="|Euler - nonlinear advection|"),
+    euler .- 2 .* advec,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="|Euler - 2 * nonlinear advection|"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
-    colorrange=(0, 4e-5)
+    colorrange=(-1.5e-5, 1.5e-5)
     );
     Colorbar(fig[2,2], hm4)
 
