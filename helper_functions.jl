@@ -219,7 +219,7 @@ function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, u_fft::Matrix
 end
 
 """
-The rest of the functions here are related to computing sgs forcing terms
+The rest of the functions here are related to computing momentum budget terms or tendencies
 """
 
 """
@@ -243,6 +243,41 @@ which is *not* equal to the first order method, and thus not equal to the first 
 second way of getting at S_{tot}, which takes into account these higher order terms in the RK4 step. This second way is what I 
 used to compute S_{tot}, and what gave the figure currently in the manuscript. It's a question of which is better, I'd argue it's the 
 second, because again we used RK4 for our high-resolution variables, and it makes sense that the NN learned something about this
+"""
+
+"""
+I wrote compute_momentum!() to compute the nonlinear advection portion of the momentum equation. 
+To use it you need to set S.parameters.g = 1e-12 and S.parameters.ω=1e-16. This will get rid of 
+f_q (the Coriolis force) and g \eta in the Bernoulli potential calculaiton.
+
+Old update:
+There was a bug in the original function I'd written, I don't know what it was, but my Bernoulli potential that I was
+computing was wrong. However, this has been corrected such that the difference of the 
+full momentum (compute_momentum!()) and the euler update *without dissipation* (compute_tendencies_witheuler!() modified) is precisely 
+the wind-stress forcing, which is what it should be. The new plan is to just force the coriolis and gravity to be zero and then compute the advection term
+with the above compute_momentum!() function
+
+Me describing how I went about extracting the nonlinear advection
+Milan's code hides the nonlinear advection away inside of p = 1/2 (u^2 + v^2) + gh and 
+q = (f + zeta) / h. What gets added to the tendencies is ultimately
+    dudt portion: qhv - partial_x p
+    dvdt portion: -qhu - partial_y p
+Then we have
+    qhv = ((f + zeta) / h) * h * v = (f + zeta) * v = fv + zeta v = fv + v_x v - u_y v
+    qhu = ((f + zeta / h)) * h * u = (f + zeta) * u = fu + zeta u = fu + (u v_x - u u_y)
+    partial_x p = .5 * (2 u_x + 2 v_x) + partial_x (g h) = u u_x + v v_x + partial_x (g h)
+    partial_y p = u_y + v_y + partial_y (g h)
+If I want to isolate u u_x + v u_y then I need to 
+    (1) find qhv = fv + v_x v - u_y v
+    (2) find partial_x p = u u_x + v v_x + partial_x (g h)
+    (3) Their difference is fv - v u_y - u u_x - partial_x (g h)
+    (4) Then I just need to get rid of the Coriolis force and that partial term
+For a given u, v the order of functions in ShallowWaters computation for qhv and qhu is
+    UVFluxes
+    advection_coriolis
+    PV_advection
+    Bernoulli
+and lastly the actual rhs computation. The below function is pulling each of these pieces separately in given order
 """
 function compute_tendencies_withrk!(du, dv, deta, S, t)
 
@@ -629,7 +664,7 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
 
 end
 
-function compute_momentum_new!(mom_u, mom_v, S, t)
+function compute_momentum!(mom_u, mom_v, S, t)
 
     ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
     ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
@@ -881,28 +916,449 @@ function compute_momentum_new!(mom_u, mom_v, S, t)
 
 end
 
-# function compute_momentum!(mom_u, mom_v, S, t)
+# """
+# Now we want to compute the rest of the momentum terms (including linear terms so that I can
+# compute the momentum budget)
+# """
 
-#     # calculate layer thicknesses for initial conditions
-#     ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
-#     ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
-#     ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
-#     ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
+# """
+# Computes the viscosity term given a u, v in S
+# """
+# function compute_viscosity_new!(Mu, Mv, S)
+
+#     urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
+#     vrhs = S.Diag.PrognosticVarsRHS.v .= S.Prog.v
+#     ηrhs = S.Diag.PrognosticVarsRHS.η .= S.Prog.η
+
+#     ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, S.Diag, S)
+#     ShallowWaters.PVadvection!(S.Diag, S)
 
 #     # propagate initial conditions
 #     copyto!(S.Diag.RungeKutta.u0, S.Prog.u)
 #     copyto!(S.Diag.RungeKutta.v0, S.Prog.v)
 #     copyto!(S.Diag.RungeKutta.η0, S.Prog.η)
 
+#     # store initial conditions of sst for relaxation
+#     copyto!(S.Diag.SemiLagrange.sst_ref, S.Prog.sst)
+
+#     # run a single step of integration loop
+
+#     # ghost point copy for boundary conditions
 #     ShallowWaters.ghost_points!(S.Prog.u, S.Prog.v, S.Prog.η, S)
 #     copyto!(S.Diag.RungeKutta.u1, S.Prog.u)
 #     copyto!(S.Diag.RungeKutta.v1, S.Prog.v)
 #     copyto!(S.Diag.RungeKutta.η1, S.Prog.η)
 
-#     # type conversion for mixed precision
-#     u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
-#     v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
-#     η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
+#     if S.parameters.compensated
+#         fill!(S.Diag.Tendencies.du_sum, zero(S.parameters.Tprog))
+#         fill!(S.Diag.Tendencies.dv_sum, zero(S.parameters.Tprog))
+#         fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
+#     end
+
+#     for rki = 1:S.parameters.RKo
+#         if rki > 1
+#             ShallowWaters.ghost_points!(
+#                 S.Diag.RungeKutta.u1,
+#                 S.Diag.RungeKutta.v1,
+#                 S.Diag.RungeKutta.η1,
+#                 S
+#             )
+#         end
+
+#         # type conversion for mixed precision
+#         u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
+#         v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
+#         η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
+
+#         ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
+#         ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
+
+#         if rki < S.parameters.RKo
+#             ShallowWaters.caxb!(
+#                 S.Diag.RungeKutta.u1,
+#                 S.Prog.u,
+#                 S.constants.RKbΔt[rki],
+#                 S.Diag.Tendencies.du
+#             )
+#             ShallowWaters.caxb!(
+#                 S.Diag.RungeKutta.v1,
+#                 S.Prog.v,
+#                 S.constants.RKbΔt[rki],
+#                 S.Diag.Tendencies.dv
+#             )
+#             ShallowWaters.caxb!(
+#                 S.Diag.RungeKutta.η1,
+#                 S.Prog.η,
+#                 S.constants.RKbΔt[rki],
+#                 S.Diag.Tendencies.dη
+#             )
+#         end
+
+#         if S.parameters.compensated
+#             ShallowWaters.axb!(S.Diag.Tendencies.du_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.du)
+#             ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dv)
+#             ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dη)
+#         else
+#             ShallowWaters.axb!(
+#                 S.Diag.RungeKutta.u0,
+#                 S.constants.RKaΔt[rki],
+#                 S.Diag.Tendencies.du
+#             )
+#             ShallowWaters.axb!(
+#                 S.Diag.RungeKutta.v0,
+#                 S.constants.RKaΔt[rki],
+#                 S.Diag.Tendencies.dv
+#             )
+#             ShallowWaters.axb!(
+#                 S.Diag.RungeKutta.η0,
+#                 S.constants.RKaΔt[rki],
+#                 S.Diag.Tendencies.dη
+#             )
+#         end
+#     end
+
+#     if S.parameters.compensated
+#         ShallowWaters.axb!(S.Diag.Tendencies.du_sum, -1, S.Diag.Tendencies.du_comp)
+#         ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, -1, S.Diag.Tendencies.dv_comp)
+#         ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, -1, S.Diag.Tendencies.dη_comp)
+
+#         ShallowWaters.axb!(S.Diag.RungeKutta.u0, 1, S.Diag.Tendencies.du_sum)
+#         ShallowWaters.axb!(S.Diag.RungeKutta.v0, 1, S.Diag.Tendencies.dv_sum)
+#         ShallowWaters.axb!(S.Diag.RungeKutta.η0, 1, S.Diag.Tendencies.dη_sum)
+
+#         ShallowWaters.dambmc!(
+#             S.Diag.Tendencies.du_comp,
+#             S.Diag.RungeKutta.u0,
+#             S.Prog.u,
+#             S.Diag.Tendencies.du_sum
+#         )
+#         ShallowWaters.dambmc!(
+#             S.Diag.Tendencies.dv_comp,
+#             S.Diag.RungeKutta.v0,
+#             S.Prog.v,
+#             S.Diag.Tendencies.dv_sum
+#         )
+#         ShallowWaters.dambmc!(
+#             S.Diag.Tendencies.dη_comp,
+#             S.Diag.RungeKutta.η0,
+#             S.Prog.η,
+#             S.Diag.Tendencies.dη_sum
+#         )
+#     end
+
+#     ShallowWaters.ghost_points!(
+#         S.Diag.RungeKutta.u0,
+#         S.Diag.RungeKutta.v0,
+#         S.Diag.RungeKutta.η0,
+#         S
+#     )
+
+#     u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
+#     v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+#     η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
+
+#     # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
+#         ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+#         ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+#     # end
+
+#     @unpack dudx,dvdy,dvdx,dudy = S.Diag.Vorticity
+
+#     u = S.Prog.u
+#     v = S.Prog.v
+#     Diag = S.Diag
+
+#     ShallowWaters.∂x!(dudx,u)
+#     ShallowWaters.∂y!(dvdy,v)
+#     ShallowWaters.∂x!(dvdx,v)
+#     ShallowWaters.∂y!(dudy,u)
+
+#     # biharmonic diffusion
+#     ShallowWaters.stress_tensor!(u,v,Diag)
+#     ShallowWaters.smagorinsky_coeff!(Diag,S)
+#     ShallowWaters.viscous_tensor_smagorinsky!(Diag)
+
+#     @unpack LLu1,LLu2,LLv1,LLv2 = Diag.Smagorinsky
+#     @unpack S11,S12,S21,S22 = Diag.Smagorinsky
+
+#     ShallowWaters.∂x!(LLu1,S11)
+#     ShallowWaters.∂y!(LLu2,S12)
+#     ShallowWaters.∂x!(LLv1,S21)
+#     ShallowWaters.∂y!(LLv2,S22)
+
+#     Mu .= S.Diag.Smagorinsky.LLu1[:,2:end-1] + S.Diag.Smagorinsky.LLu2[2:end-1,:]
+#     Mv .= S.Diag.Smagorinsky.LLv1[:,2:end-1] + S.Diag.Smagorinsky.LLv2[2:end-1,:]
+
+#     return nothing
+
+# end
+
+# function compute_viscosity_old!(Mu, Mv, S, t)
+
+#     # uold = copy(S.Prog.u)
+#     # vold = copy(S.Prog.v)
+#     # etaold = copy(S.Prog.η)
+
+#     # calculate PV terms for initial conditions
+#     urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
+#     vrhs = S.Diag.PrognosticVarsRHS.v .= S.Prog.v
+#     ηrhs = S.Diag.PrognosticVarsRHS.η .= S.Prog.η
+
+#     ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, S.Diag, S)
+#     ShallowWaters.PVadvection!(S.Diag, S)
+
+#     # propagate initial conditions
+#     copyto!(S.Diag.RungeKutta.u0, S.Prog.u)
+#     copyto!(S.Diag.RungeKutta.v0, S.Prog.v)
+#     copyto!(S.Diag.RungeKutta.η0, S.Prog.η)
+
+#     # store initial conditions of sst for relaxation
+#     copyto!(S.Diag.SemiLagrange.sst_ref, S.Prog.sst)
+
+#     # run a single step of integration loop
+
+#     # ghost point copy for boundary conditions
+#     ShallowWaters.ghost_points!(S.Prog.u, S.Prog.v, S.Prog.η, S)
+#     copyto!(S.Diag.RungeKutta.u1, S.Prog.u)
+#     copyto!(S.Diag.RungeKutta.v1, S.Prog.v)
+#     copyto!(S.Diag.RungeKutta.η1, S.Prog.η)
+
+#     if S.parameters.compensated
+#         fill!(S.Diag.Tendencies.du_sum, zero(S.parameters.Tprog))
+#         fill!(S.Diag.Tendencies.dv_sum, zero(S.parameters.Tprog))
+#         fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
+#     end
+
+#     for rki = 1:S.parameters.RKo
+#         if rki > 1
+#             ShallowWaters.ghost_points!(
+#                 S.Diag.RungeKutta.u1,
+#                 S.Diag.RungeKutta.v1,
+#                 S.Diag.RungeKutta.η1,
+#                 S
+#             )
+#         end
+
+#         # type conversion for mixed precision
+#         u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
+#         v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
+#         η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
+
+#         ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
+#         ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
+
+#         if rki < S.parameters.RKo
+#             ShallowWaters.caxb!(
+#                 S.Diag.RungeKutta.u1,
+#                 S.Prog.u,
+#                 S.constants.RKbΔt[rki],
+#                 S.Diag.Tendencies.du
+#             )
+#             ShallowWaters.caxb!(
+#                 S.Diag.RungeKutta.v1,
+#                 S.Prog.v,
+#                 S.constants.RKbΔt[rki],
+#                 S.Diag.Tendencies.dv
+#             )
+#             ShallowWaters.caxb!(
+#                 S.Diag.RungeKutta.η1,
+#                 S.Prog.η,
+#                 S.constants.RKbΔt[rki],
+#                 S.Diag.Tendencies.dη
+#             )
+#         end
+
+#         if S.parameters.compensated
+#             ShallowWaters.axb!(S.Diag.Tendencies.du_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.du)
+#             ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dv)
+#             ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dη)
+#         else
+#             ShallowWaters.axb!(
+#                 S.Diag.RungeKutta.u0,
+#                 S.constants.RKaΔt[rki],
+#                 S.Diag.Tendencies.du
+#             )
+#             ShallowWaters.axb!(
+#                 S.Diag.RungeKutta.v0,
+#                 S.constants.RKaΔt[rki],
+#                 S.Diag.Tendencies.dv
+#             )
+#             ShallowWaters.axb!(
+#                 S.Diag.RungeKutta.η0,
+#                 S.constants.RKaΔt[rki],
+#                 S.Diag.Tendencies.dη
+#             )
+#         end
+#     end
+
+#     if S.parameters.compensated
+#         ShallowWaters.axb!(S.Diag.Tendencies.du_sum, -1, S.Diag.Tendencies.du_comp)
+#         ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, -1, S.Diag.Tendencies.dv_comp)
+#         ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, -1, S.Diag.Tendencies.dη_comp)
+
+#         ShallowWaters.axb!(S.Diag.RungeKutta.u0, 1, S.Diag.Tendencies.du_sum)
+#         ShallowWaters.axb!(S.Diag.RungeKutta.v0, 1, S.Diag.Tendencies.dv_sum)
+#         ShallowWaters.axb!(S.Diag.RungeKutta.η0, 1, S.Diag.Tendencies.dη_sum)
+
+#         ShallowWaters.dambmc!(
+#             S.Diag.Tendencies.du_comp,
+#             S.Diag.RungeKutta.u0,
+#             S.Prog.u,
+#             S.Diag.Tendencies.du_sum
+#         )
+#         ShallowWaters.dambmc!(
+#             S.Diag.Tendencies.dv_comp,
+#             S.Diag.RungeKutta.v0,
+#             S.Prog.v,
+#             S.Diag.Tendencies.dv_sum
+#         )
+#         ShallowWaters.dambmc!(
+#             S.Diag.Tendencies.dη_comp,
+#             S.Diag.RungeKutta.η0,
+#             S.Prog.η,
+#             S.Diag.Tendencies.dη_sum
+#         )
+#     end
+
+#     ShallowWaters.ghost_points!(
+#         S.Diag.RungeKutta.u0,
+#         S.Diag.RungeKutta.v0,
+#         S.Diag.RungeKutta.η0,
+#         S
+#     )
+
+#     u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
+#     v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+#     η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
+
+#     # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
+#         ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+#         ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+#     # end
+
+#     # if (chkp.i % S.grid.nstep_diff) == 0
+#         ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+#         ShallowWaters.diffusion!(u0rhs, v0rhs, S.Diag, S)
+#         ShallowWaters.add_drag_diff_tendencies!(
+#             S.Diag.RungeKutta.u0,
+#             S.Diag.RungeKutta.v0,
+#             S.Diag,
+#             S
+#         )
+#         ShallowWaters.ghost_points_uv!(
+#             S.Diag.RungeKutta.u0,
+#             S.Diag.RungeKutta.v0,
+#             S
+#         )
+#     # end
+
+#     t += S.grid.dtint
+
+#     u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
+#     v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
+#     # ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
+
+#     # copyto!(S.Prog.u, S.Diag.RungeKutta.u0)
+#     # copyto!(S.Prog.v, S.Diag.RungeKutta.v0)
+#     # copyto!(S.Prog.η, S.Diag.RungeKutta.η0)
+
+#     Mu .= S.Diag.Smagorinsky.LLu1[:,2:end-1] + S.Diag.Smagorinsky.LLu2[2:end-1,:]
+#     Mv .= S.Diag.Smagorinsky.LLv1[:,2:end-1] + S.Diag.Smagorinsky.LLv2[2:end-1,:]
+
+#     return nothing
+
+# end
+
+# """
+# Computes the bottom drag, again need to provide a u, v in S
+# """
+# function compute_bottomdrag!(B_u, B_v, S)
+
+#     Diag = S.Diag
+
+#     @unpack h,h_u,h_v = Diag.VolumeFluxes
+#     @unpack u²,v²,KEu,KEv = Diag.Bernoulli
+#     @unpack Bu,Bv,sqrtKE,sqrtKE_u,sqrtKE_v = Diag.Bottomdrag
+#     @unpack ep, halo = S.grid
+#     @unpack cD = S.constants
+#     @unpack H = S.forcing
+
+#     u = S.Prog.u
+#     v = S.Prog.v
+#     η = S.Prog.η
+
+#     ShallowWaters.thickness!(h,η,H)
+#     ShallowWaters.Ix!(h_u,h)
+#     ShallowWaters.Iy!(h_v,h)
+
+#     ShallowWaters.speed!(u²,v²,u,v)
+#     ShallowWaters.Ix!(KEu,u²)
+#     ShallowWaters.Iy!(KEv,v²)
+
+#     # sqrt of KE, which is actually the kinetic energy without the 0.5 factor
+#     m,n = size(sqrtKE)
+#     @boundscheck (m+ep,n+2) == size(KEu) || throw(BoundsError())
+#     @boundscheck (m+2,n) == size(KEv) || throw(BoundsError())
+
+#     @inbounds for j ∈ 1:n
+#         for i ∈ 1:m
+#             sqrtKE[i,j] = sqrt(KEu[i+ep,j+1] + KEv[i+1,j])
+#         end
+#     end
+
+#     ShallowWaters.Ix!(sqrtKE_u,sqrtKE)
+#     ShallowWaters.Iy!(sqrtKE_v,sqrtKE)
+
+#     m,n = size(Bu)
+#     @boundscheck (m,n) == size(sqrtKE_u) || throw(BoundsError())
+#     @boundscheck (m,n) == size(h_u) || throw(BoundsError())
+#     @boundscheck (m+2+ep,n+2) == size(u) || throw(BoundsError())
+
+#     @inbounds for j ∈ 1:n
+#         for i ∈ 1:m
+#             Bu[i,j] = cD*sqrtKE_u[i,j] * u[i+1+ep,j+1] / h_u[i,j]
+#         end
+#     end
+
+#     m,n = size(Bv)
+#     @boundscheck (m,n) == size(sqrtKE_v) || throw(BoundsError())
+#     @boundscheck (m,n) == size(h_v) || throw(BoundsError())
+#     @boundscheck (m+2,n+2) == size(v) || throw(BoundsError())
+
+#     @inbounds for j ∈ 1:n
+#         for i ∈ 1:m
+#             Bv[i,j] = cD*sqrtKE_v[i,j] * v[i+1,j+1] / h_v[i,j]
+#         end
+#     end
+
+#     m,n = size(u) .- (2*halo,2*halo)
+#     @inbounds for j ∈ 1:n
+#         for i ∈ 1:m
+#             B_u[i,j] = Bu[i+1-ep,j+1]
+#         end
+#     end
+
+#     m,n = size(v) .- (2*halo,2*halo)
+#     @inbounds for j ∈ 1:n
+#         for i ∈ 1:m 
+#             B_v[i,j] = Bv[i+1,j+1]
+#         end
+#     end
+
+#     return nothing
+
+# end
+
+# """
+# Coriolis force computation and others -- needs to be modified but this should contain all other terms in the 
+# momentum equation
+# """
+# function remaining_terms()
+#   # calculate layer thicknesses for initial conditions
+#     ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
+#     ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
+#     ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
+#     ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
 
 #     u = S.Prog.u
 #     v = S.Prog.v
@@ -939,7 +1395,7 @@ end
 #     ShallowWaters.Ix!(KEu,u²)
 #     ShallowWaters.Iy!(KEv,v²)
 
-#     # the potential vorticity computation with the Coriolis force
+#     # the potential vorticity computation *without* the Coriolis force
 #     m,n = size(q)
 #     @inbounds for j ∈ 1:n
 #         for i ∈ 1:m
@@ -973,7 +1429,6 @@ end
 #     # lastly the piece from Bernoulli needed for the advection term
 #     p = S.Diag.Bernoulli.p
 #     scale_inv = S.constants.scale_inv
-#     g = S.constants.g
 
 #     m,n = size(p)
 #     @boundscheck (m+ep,n+2) == size(KEu) || throw(BoundsError())
@@ -982,605 +1437,18 @@ end
 
 #     one_half_scale_inv = convert(Float64,0.5)*scale_inv
 
-#     # computing the Bernoulli potential
 #     @inbounds for j ∈ 1:n
 #         for i ∈ 1:m
-#             p[i,j] = one_half_scale_inv*(KEu[i+ep,j+1] + KEv[i+1,j]) + g*S.Prog.η[i,j]
+#             p[i,j] = one_half_scale_inv*(KEu[i+ep,j+1] + KEv[i+1,j]) + S.constants.g*S.Prog.η[i,j]
 #         end
 #     end
 
-#     ShallowWaters.∂x!(S.Diag.Bernoulli.dpdx, p)
-#     ShallowWaters.∂y!(S.Diag.Bernoulli.dpdy, p)
-
-#     m,n = size(S.Diag.Tendencies.du) .- (2*halo,2*halo)
-#     for j = 1:n
-#         for i = 1:m
-#         mom_u[i,j] = S.Diag.Vorticity.qhv[i,j] - S.Diag.Bernoulli.dpdx[i+1-ep,j+1]
-#         end
-#     end
-
-#     m,n = size(S.Diag.Tendencies.dv) .- (2*halo,2*halo)
-#     for j = 1:n
-#         for i = 1:m
-#         mom_v[i,j] = -S.Diag.Vorticity.qhu[i,j] - S.Diag.Bernoulli.dpdy[i+1,j+1]
-#         end
-#     end
-
-#     mom_u .= (S.constants.scale_inv .* mom_u) ./ S.grid.Δ
-#     mom_v .= (S.constants.scale_inv .* mom_v) ./ S.grid.Δ
-
-#     return nothing
+#     # removing the g*\eta and then computing the derivatives
+#     ShallowWaters.∂x!(S.Diag.Bernoulli.dpdx, p - (S.constants.g .* S.Prog.η))
+#     ShallowWaters.∂y!(S.Diag.Bernoulli.dpdy, p - (S.constants.g .* S.Prog.η))
 
 # end
 
-"""
-Now we want to compute the rest of the momentum terms (including linear terms so that I can
-compute the momentum budget)
-"""
-
-"""
-Computes the viscosity term given a u, v in S
-"""
-function compute_viscosity_new!(Mu, Mv, S)
-
-    urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
-    vrhs = S.Diag.PrognosticVarsRHS.v .= S.Prog.v
-    ηrhs = S.Diag.PrognosticVarsRHS.η .= S.Prog.η
-
-    ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, S.Diag, S)
-    ShallowWaters.PVadvection!(S.Diag, S)
-
-    # propagate initial conditions
-    copyto!(S.Diag.RungeKutta.u0, S.Prog.u)
-    copyto!(S.Diag.RungeKutta.v0, S.Prog.v)
-    copyto!(S.Diag.RungeKutta.η0, S.Prog.η)
-
-    # store initial conditions of sst for relaxation
-    copyto!(S.Diag.SemiLagrange.sst_ref, S.Prog.sst)
-
-    # run a single step of integration loop
-
-    # ghost point copy for boundary conditions
-    ShallowWaters.ghost_points!(S.Prog.u, S.Prog.v, S.Prog.η, S)
-    copyto!(S.Diag.RungeKutta.u1, S.Prog.u)
-    copyto!(S.Diag.RungeKutta.v1, S.Prog.v)
-    copyto!(S.Diag.RungeKutta.η1, S.Prog.η)
-
-    if S.parameters.compensated
-        fill!(S.Diag.Tendencies.du_sum, zero(S.parameters.Tprog))
-        fill!(S.Diag.Tendencies.dv_sum, zero(S.parameters.Tprog))
-        fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
-    end
-
-    for rki = 1:S.parameters.RKo
-        if rki > 1
-            ShallowWaters.ghost_points!(
-                S.Diag.RungeKutta.u1,
-                S.Diag.RungeKutta.v1,
-                S.Diag.RungeKutta.η1,
-                S
-            )
-        end
-
-        # type conversion for mixed precision
-        u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
-        v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
-        η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
-
-        ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
-        ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
-
-        if rki < S.parameters.RKo
-            ShallowWaters.caxb!(
-                S.Diag.RungeKutta.u1,
-                S.Prog.u,
-                S.constants.RKbΔt[rki],
-                S.Diag.Tendencies.du
-            )
-            ShallowWaters.caxb!(
-                S.Diag.RungeKutta.v1,
-                S.Prog.v,
-                S.constants.RKbΔt[rki],
-                S.Diag.Tendencies.dv
-            )
-            ShallowWaters.caxb!(
-                S.Diag.RungeKutta.η1,
-                S.Prog.η,
-                S.constants.RKbΔt[rki],
-                S.Diag.Tendencies.dη
-            )
-        end
-
-        if S.parameters.compensated
-            ShallowWaters.axb!(S.Diag.Tendencies.du_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.du)
-            ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dv)
-            ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dη)
-        else
-            ShallowWaters.axb!(
-                S.Diag.RungeKutta.u0,
-                S.constants.RKaΔt[rki],
-                S.Diag.Tendencies.du
-            )
-            ShallowWaters.axb!(
-                S.Diag.RungeKutta.v0,
-                S.constants.RKaΔt[rki],
-                S.Diag.Tendencies.dv
-            )
-            ShallowWaters.axb!(
-                S.Diag.RungeKutta.η0,
-                S.constants.RKaΔt[rki],
-                S.Diag.Tendencies.dη
-            )
-        end
-    end
-
-    if S.parameters.compensated
-        ShallowWaters.axb!(S.Diag.Tendencies.du_sum, -1, S.Diag.Tendencies.du_comp)
-        ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, -1, S.Diag.Tendencies.dv_comp)
-        ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, -1, S.Diag.Tendencies.dη_comp)
-
-        ShallowWaters.axb!(S.Diag.RungeKutta.u0, 1, S.Diag.Tendencies.du_sum)
-        ShallowWaters.axb!(S.Diag.RungeKutta.v0, 1, S.Diag.Tendencies.dv_sum)
-        ShallowWaters.axb!(S.Diag.RungeKutta.η0, 1, S.Diag.Tendencies.dη_sum)
-
-        ShallowWaters.dambmc!(
-            S.Diag.Tendencies.du_comp,
-            S.Diag.RungeKutta.u0,
-            S.Prog.u,
-            S.Diag.Tendencies.du_sum
-        )
-        ShallowWaters.dambmc!(
-            S.Diag.Tendencies.dv_comp,
-            S.Diag.RungeKutta.v0,
-            S.Prog.v,
-            S.Diag.Tendencies.dv_sum
-        )
-        ShallowWaters.dambmc!(
-            S.Diag.Tendencies.dη_comp,
-            S.Diag.RungeKutta.η0,
-            S.Prog.η,
-            S.Diag.Tendencies.dη_sum
-        )
-    end
-
-    ShallowWaters.ghost_points!(
-        S.Diag.RungeKutta.u0,
-        S.Diag.RungeKutta.v0,
-        S.Diag.RungeKutta.η0,
-        S
-    )
-
-    u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
-    v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
-    η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
-
-    # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
-        ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-    # end
-
-    @unpack dudx,dvdy,dvdx,dudy = S.Diag.Vorticity
-
-    u = S.Prog.u
-    v = S.Prog.v
-    Diag = S.Diag
-
-    ShallowWaters.∂x!(dudx,u)
-    ShallowWaters.∂y!(dvdy,v)
-    ShallowWaters.∂x!(dvdx,v)
-    ShallowWaters.∂y!(dudy,u)
-
-    # biharmonic diffusion
-    ShallowWaters.stress_tensor!(u,v,Diag)
-    ShallowWaters.smagorinsky_coeff!(Diag,S)
-    ShallowWaters.viscous_tensor_smagorinsky!(Diag)
-
-    @unpack LLu1,LLu2,LLv1,LLv2 = Diag.Smagorinsky
-    @unpack S11,S12,S21,S22 = Diag.Smagorinsky
-
-    ShallowWaters.∂x!(LLu1,S11)
-    ShallowWaters.∂y!(LLu2,S12)
-    ShallowWaters.∂x!(LLv1,S21)
-    ShallowWaters.∂y!(LLv2,S22)
-
-    Mu .= S.Diag.Smagorinsky.LLu1[:,2:end-1] + S.Diag.Smagorinsky.LLu2[2:end-1,:]
-    Mv .= S.Diag.Smagorinsky.LLv1[:,2:end-1] + S.Diag.Smagorinsky.LLv2[2:end-1,:]
-
-    return nothing
-
-end
-
-function compute_viscosity_old!(Mu, Mv, S, t)
-
-    # uold = copy(S.Prog.u)
-    # vold = copy(S.Prog.v)
-    # etaold = copy(S.Prog.η)
-
-    # calculate PV terms for initial conditions
-    urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
-    vrhs = S.Diag.PrognosticVarsRHS.v .= S.Prog.v
-    ηrhs = S.Diag.PrognosticVarsRHS.η .= S.Prog.η
-
-    ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, S.Diag, S)
-    ShallowWaters.PVadvection!(S.Diag, S)
-
-    # propagate initial conditions
-    copyto!(S.Diag.RungeKutta.u0, S.Prog.u)
-    copyto!(S.Diag.RungeKutta.v0, S.Prog.v)
-    copyto!(S.Diag.RungeKutta.η0, S.Prog.η)
-
-    # store initial conditions of sst for relaxation
-    copyto!(S.Diag.SemiLagrange.sst_ref, S.Prog.sst)
-
-    # run a single step of integration loop
-
-    # ghost point copy for boundary conditions
-    ShallowWaters.ghost_points!(S.Prog.u, S.Prog.v, S.Prog.η, S)
-    copyto!(S.Diag.RungeKutta.u1, S.Prog.u)
-    copyto!(S.Diag.RungeKutta.v1, S.Prog.v)
-    copyto!(S.Diag.RungeKutta.η1, S.Prog.η)
-
-    if S.parameters.compensated
-        fill!(S.Diag.Tendencies.du_sum, zero(S.parameters.Tprog))
-        fill!(S.Diag.Tendencies.dv_sum, zero(S.parameters.Tprog))
-        fill!(S.Diag.Tendencies.dη_sum, zero(S.parameters.Tprog))
-    end
-
-    for rki = 1:S.parameters.RKo
-        if rki > 1
-            ShallowWaters.ghost_points!(
-                S.Diag.RungeKutta.u1,
-                S.Diag.RungeKutta.v1,
-                S.Diag.RungeKutta.η1,
-                S
-            )
-        end
-
-        # type conversion for mixed precision
-        u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
-        v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
-        η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
-
-        ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
-        ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
-
-        if rki < S.parameters.RKo
-            ShallowWaters.caxb!(
-                S.Diag.RungeKutta.u1,
-                S.Prog.u,
-                S.constants.RKbΔt[rki],
-                S.Diag.Tendencies.du
-            )
-            ShallowWaters.caxb!(
-                S.Diag.RungeKutta.v1,
-                S.Prog.v,
-                S.constants.RKbΔt[rki],
-                S.Diag.Tendencies.dv
-            )
-            ShallowWaters.caxb!(
-                S.Diag.RungeKutta.η1,
-                S.Prog.η,
-                S.constants.RKbΔt[rki],
-                S.Diag.Tendencies.dη
-            )
-        end
-
-        if S.parameters.compensated
-            ShallowWaters.axb!(S.Diag.Tendencies.du_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.du)
-            ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dv)
-            ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, S.constants.RKaΔt[rki], S.Diag.Tendencies.dη)
-        else
-            ShallowWaters.axb!(
-                S.Diag.RungeKutta.u0,
-                S.constants.RKaΔt[rki],
-                S.Diag.Tendencies.du
-            )
-            ShallowWaters.axb!(
-                S.Diag.RungeKutta.v0,
-                S.constants.RKaΔt[rki],
-                S.Diag.Tendencies.dv
-            )
-            ShallowWaters.axb!(
-                S.Diag.RungeKutta.η0,
-                S.constants.RKaΔt[rki],
-                S.Diag.Tendencies.dη
-            )
-        end
-    end
-
-    if S.parameters.compensated
-        ShallowWaters.axb!(S.Diag.Tendencies.du_sum, -1, S.Diag.Tendencies.du_comp)
-        ShallowWaters.axb!(S.Diag.Tendencies.dv_sum, -1, S.Diag.Tendencies.dv_comp)
-        ShallowWaters.axb!(S.Diag.Tendencies.dη_sum, -1, S.Diag.Tendencies.dη_comp)
-
-        ShallowWaters.axb!(S.Diag.RungeKutta.u0, 1, S.Diag.Tendencies.du_sum)
-        ShallowWaters.axb!(S.Diag.RungeKutta.v0, 1, S.Diag.Tendencies.dv_sum)
-        ShallowWaters.axb!(S.Diag.RungeKutta.η0, 1, S.Diag.Tendencies.dη_sum)
-
-        ShallowWaters.dambmc!(
-            S.Diag.Tendencies.du_comp,
-            S.Diag.RungeKutta.u0,
-            S.Prog.u,
-            S.Diag.Tendencies.du_sum
-        )
-        ShallowWaters.dambmc!(
-            S.Diag.Tendencies.dv_comp,
-            S.Diag.RungeKutta.v0,
-            S.Prog.v,
-            S.Diag.Tendencies.dv_sum
-        )
-        ShallowWaters.dambmc!(
-            S.Diag.Tendencies.dη_comp,
-            S.Diag.RungeKutta.η0,
-            S.Prog.η,
-            S.Diag.Tendencies.dη_sum
-        )
-    end
-
-    ShallowWaters.ghost_points!(
-        S.Diag.RungeKutta.u0,
-        S.Diag.RungeKutta.v0,
-        S.Diag.RungeKutta.η0,
-        S
-    )
-
-    u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
-    v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
-    η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
-
-    # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
-        ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-    # end
-
-    # if (chkp.i % S.grid.nstep_diff) == 0
-        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        ShallowWaters.diffusion!(u0rhs, v0rhs, S.Diag, S)
-        ShallowWaters.add_drag_diff_tendencies!(
-            S.Diag.RungeKutta.u0,
-            S.Diag.RungeKutta.v0,
-            S.Diag,
-            S
-        )
-        ShallowWaters.ghost_points_uv!(
-            S.Diag.RungeKutta.u0,
-            S.Diag.RungeKutta.v0,
-            S
-        )
-    # end
-
-    t += S.grid.dtint
-
-    u0rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u0
-    v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
-    # ShallowWaters.tracer!(i, u0rhs, v0rhs, chkp.S.Prog, chkp.S.Diag, chkp.S)
-
-    # copyto!(S.Prog.u, S.Diag.RungeKutta.u0)
-    # copyto!(S.Prog.v, S.Diag.RungeKutta.v0)
-    # copyto!(S.Prog.η, S.Diag.RungeKutta.η0)
-
-    Mu .= S.Diag.Smagorinsky.LLu1[:,2:end-1] + S.Diag.Smagorinsky.LLu2[2:end-1,:]
-    Mv .= S.Diag.Smagorinsky.LLv1[:,2:end-1] + S.Diag.Smagorinsky.LLv2[2:end-1,:]
-
-    return nothing
-
-end
-
-"""
-Computes the bottom drag, again need to provide a u, v in S
-"""
-function compute_bottomdrag!(B_u, B_v, S)
-
-    Diag = S.Diag
-
-    @unpack h,h_u,h_v = Diag.VolumeFluxes
-    @unpack u²,v²,KEu,KEv = Diag.Bernoulli
-    @unpack Bu,Bv,sqrtKE,sqrtKE_u,sqrtKE_v = Diag.Bottomdrag
-    @unpack ep, halo = S.grid
-    @unpack cD = S.constants
-    @unpack H = S.forcing
-
-    u = S.Prog.u
-    v = S.Prog.v
-    η = S.Prog.η
-
-    ShallowWaters.thickness!(h,η,H)
-    ShallowWaters.Ix!(h_u,h)
-    ShallowWaters.Iy!(h_v,h)
-
-    ShallowWaters.speed!(u²,v²,u,v)
-    ShallowWaters.Ix!(KEu,u²)
-    ShallowWaters.Iy!(KEv,v²)
-
-    # sqrt of KE, which is actually the kinetic energy without the 0.5 factor
-    m,n = size(sqrtKE)
-    @boundscheck (m+ep,n+2) == size(KEu) || throw(BoundsError())
-    @boundscheck (m+2,n) == size(KEv) || throw(BoundsError())
-
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            sqrtKE[i,j] = sqrt(KEu[i+ep,j+1] + KEv[i+1,j])
-        end
-    end
-
-    ShallowWaters.Ix!(sqrtKE_u,sqrtKE)
-    ShallowWaters.Iy!(sqrtKE_v,sqrtKE)
-
-    m,n = size(Bu)
-    @boundscheck (m,n) == size(sqrtKE_u) || throw(BoundsError())
-    @boundscheck (m,n) == size(h_u) || throw(BoundsError())
-    @boundscheck (m+2+ep,n+2) == size(u) || throw(BoundsError())
-
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            Bu[i,j] = cD*sqrtKE_u[i,j] * u[i+1+ep,j+1] / h_u[i,j]
-        end
-    end
-
-    m,n = size(Bv)
-    @boundscheck (m,n) == size(sqrtKE_v) || throw(BoundsError())
-    @boundscheck (m,n) == size(h_v) || throw(BoundsError())
-    @boundscheck (m+2,n+2) == size(v) || throw(BoundsError())
-
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            Bv[i,j] = cD*sqrtKE_v[i,j] * v[i+1,j+1] / h_v[i,j]
-        end
-    end
-
-    m,n = size(u) .- (2*halo,2*halo)
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            B_u[i,j] = Bu[i+1-ep,j+1]
-        end
-    end
-
-    m,n = size(v) .- (2*halo,2*halo)
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m 
-            B_v[i,j] = Bv[i+1,j+1]
-        end
-    end
-
-    return nothing
-
-end
-
-"""
-Coriolis force computation and others -- needs to be modified but this should contain all other terms in the 
-momentum equation
-"""
-function remaining_terms()
-  # calculate layer thicknesses for initial conditions
-    ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
-    ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
-    ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
-    ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
-
-    u = S.Prog.u
-    v = S.Prog.v
-    halo = S.grid.halo
-
-    # this chunk will compute ShallowWaters.UVFluxes(u,v,\eta, Diag,S) #########
-    @unpack h,h_u,h_v,U,V = S.Diag.VolumeFluxes
-    @unpack H = S.forcing
-    @unpack ep = S.grid
-    @unpack scale_inv = S.constants
-
-    ShallowWaters.thickness!(h,S.Prog.η,H)
-    ShallowWaters.Ix!(h_u,h)
-    ShallowWaters.Iy!(h_v,h)
-
-    # mass or volume flux U,V = uh,vh
-    ShallowWaters.Uflux!(U,u,h_u,ep,scale_inv)
-    ShallowWaters.Vflux!(V,v,h_v,scale_inv)
-
-    # Next we want to compute ShallowWaters.advection_coriolis!(S.Prog.u, S.Prog.v, S.Prog.\eta, S.Diag, S) #########
-    @unpack h = S.Diag.VolumeFluxes
-    @unpack q,h_q,dvdx,dudy = S.Diag.Vorticity
-    @unpack u²,v²,KEu,KEv = S.Diag.Bernoulli
-    @unpack ep,f_q = S.grid
-
-    ShallowWaters.Ixy!(h_q,h)
-
-    # off-diagonals of stress tensor ∇(u,v)
-    ShallowWaters.∂x!(dvdx,v)
-    ShallowWaters.∂y!(dudy,u)
-
-    # non-linear part of the Bernoulli potential
-    ShallowWaters.speed!(u²,v²,u,v)
-    ShallowWaters.Ix!(KEu,u²)
-    ShallowWaters.Iy!(KEv,v²)
-
-    # the potential vorticity computation *without* the Coriolis force
-    m,n = size(q)
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            q[i,j] = (f_q[i,j] + dvdx[i+1,j+1] - dudy[i+1+ep,j+1]) / h_q[i,j]
-        end
-    end
-
-    # Now we want to compute ShallowWaters.PVadvection!(S.Diag, S) ######
-    @unpack qα,qβ,qγ,qδ = S.Diag.ArakawaHsu
-    ShallowWaters.AHα!(qα,q)
-    ShallowWaters.AHβ!(qβ,q)
-    ShallowWaters.AHγ!(qγ,q)
-    ShallowWaters.AHδ!(qδ,q)
-
-    m,n = size(S.Diag.Vorticity.qhv)
-    qhv = S.Diag.Vorticity.qhv
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            qhv[i,j] = qα[1-ep+i,j]*V[2-ep+i,j+1] + qβ[1-ep+i,j]*V[1-ep+i,j+1] + qγ[1-ep+i,j]*V[1-ep+i,j] + qδ[1-ep+i,j]*V[2-ep+i,j]
-        end
-    end
-
-    m,n = size(S.Diag.Vorticity.qhu)
-    qhu = S.Diag.Vorticity.qhu
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            qhu[i,j] = qα[i,j]*U[i,j+1] + qβ[i+1,j]*U[i+1,j+1] + qγ[i+1,j+1]*U[i+1,j+2] + qδ[i,j+1]*U[i,j+2]
-        end
-    end
-
-    # lastly the piece from Bernoulli needed for the advection term
-    p = S.Diag.Bernoulli.p
-    scale_inv = S.constants.scale_inv
-
-    m,n = size(p)
-    @boundscheck (m+ep,n+2) == size(KEu) || throw(BoundsError())
-    @boundscheck (m+2,n) == size(KEv) || throw(BoundsError())
-    @boundscheck (m,n) == size(S.Prog.η) || throw(BoundsError())
-
-    one_half_scale_inv = convert(Float64,0.5)*scale_inv
-
-    @inbounds for j ∈ 1:n
-        for i ∈ 1:m
-            p[i,j] = one_half_scale_inv*(KEu[i+ep,j+1] + KEv[i+1,j]) + S.constants.g*S.Prog.η[i,j]
-        end
-    end
-
-    # removing the g*\eta and then computing the derivatives
-    ShallowWaters.∂x!(S.Diag.Bernoulli.dpdx, p - (S.constants.g .* S.Prog.η))
-    ShallowWaters.∂y!(S.Diag.Bernoulli.dpdy, p - (S.constants.g .* S.Prog.η))
-
-end
-
-"""
-Wind-stress is found by just pulling from the model structure, it doesn't change with time
-"""
-
-"""
-The following function is to compute the nonlinear advection
-Milan's code hides the nonlinear advection away inside of p = 1/2 (u^2 + v^2) + gh and 
-q = (f + zeta) / h. What gets added to the tendencies is ultimately
-    dudt portion: qhv - partial_x p
-    dvdt portion: -qhu - partial_y p
-Then we have
-    qhv = ((f + zeta) / h) * h * v = (f + zeta) * v = fv + zeta v = fv + v_x v - u_y v
-    qhu = ((f + zeta / h)) * h * u = (f + zeta) * u = fu + zeta u = fu + (u v_x - u u_y)
-    partial_x p = .5 * (2 u_x + 2 v_x) + partial_x (g h) = u u_x + v v_x + partial_x (g h)
-    partial_y p = u_y + v_y + partial_y (g h)
-If I want to isolate u u_x + v u_y then I need to 
-    (1) find qhv = fv + v_x v - u_y v
-    (2) find partial_x p = u u_x + v v_x + partial_x (g h)
-    (3) Their difference is fv - v u_y - u u_x - partial_x (g h)
-    (4) Then I just need to get rid of the Coriolis force and that partial term
-For a given u, v the order of functions in ShallowWaters computation for qhv and qhu is
-    UVFluxes
-    advection_coriolis
-    PV_advection
-    Bernoulli
-and lastly the actual rhs computation. The below function is pulling each of these pieces separately in given order
-
-Update on 07/21/26
-
-There was a bug in the old function, I don't know what it was, but my Bernoulli potential that I used to be 
-computing was wrong. However, this has been corrected such that the difference of the 
-full momentum (compute_momentum_new!()) and the euler update *without dissipation* (compute_tendencies_witheuler!()) is precisely 
-the wind-stress forcing, which is what it should be. The new plan is to just force the coriolis and gravity to be zero and then compute the advection term
-with the above compute_momentum!() function
-"""
 # function compute_advection!(adv_u, adv_v, S, t)
 
 #     ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
