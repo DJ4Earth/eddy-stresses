@@ -27,33 +27,33 @@ Plr = ShallowWaters.Parameter(T=Float64,
 );
 Slr = ShallowWaters.model_setup(Plr);
 
-Phr = ShallowWaters.Parameter(T=Float64,
-    output=false,
-    L_ratio=1,
-    g=9.81,
-    H=500,
-    RKo=2,
-    wind_forcing_x="double_gyre",
-    Lx=3840e3,
-    seasonal_wind_x=false,
-    topography="flat",
-    bc="nonperiodic",
-    bottom_drag="quadratic",
-    tracer_advection=false,
-    tracer_relaxation=false,
-    zb_forcing_momentum=false,
-    zb_forcing_dissipation=false,
-    zb_filtered=true,
-    # nn_forcing_momentum=false,
-    # nn_forcing_dissipation=true,
-    N=1,
-    α=2,
-    nx=1024,
-    Ndays=2,
-    initial_cond="rest",
-    # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
-);
-Shr = ShallowWaters.model_setup(Phr);
+# Phr = ShallowWaters.Parameter(T=Float64,
+#     output=false,
+#     L_ratio=1,
+#     g=9.81,
+#     H=500,
+#     RKo=2,
+#     wind_forcing_x="double_gyre",
+#     Lx=3840e3,
+#     seasonal_wind_x=false,
+#     topography="flat",
+#     bc="nonperiodic",
+#     bottom_drag="quadratic",
+#     tracer_advection=false,
+#     tracer_relaxation=false,
+#     zb_forcing_momentum=false,
+#     zb_forcing_dissipation=false,
+#     zb_filtered=true,
+#     # nn_forcing_momentum=false,
+#     # nn_forcing_dissipation=true,
+#     N=1,
+#     α=2,
+#     nx=1024,
+#     Ndays=2,
+#     initial_cond="rest",
+#     # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
+# );
+# Shr = ShallowWaters.model_setup(Phr);
 
 Seulerlr = deepcopy(Slr);
 Seulerhr = deepcopy(Shr);
@@ -165,11 +165,12 @@ Sadvhr.Prog.u = uhr_
 Sadvhr.Prog.v = vhr_
 Sadvhr.Prog.η = etahr_
 
+
 compute_tendencies_witheuler!(du, dv, deta, Seulerlr, n*t)
 compute_tendencies_witheuler!(duhr, dvhr, detahr, Seulerhr, 8*n*t)
-compute_momentum_new!(mom_u, mom_v, Smom, n*t)
-compute_momentum_new!(adv_ulr, adv_vlr, Sadvlr, n*t)
-compute_momentum_new!(adv_uhr, adv_vhr, Sadvhr, n*t*8)
+compute_advection!(mom_u, mom_v, Smom, n*t)
+compute_advection!(adv_ulr, adv_vlr, Sadvlr, n*t)
+compute_advection!(adv_uhr, adv_vhr, Sadvhr, n*t*8)
 
 ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
@@ -254,6 +255,9 @@ colorrange=(-1.5e-5, 1.5e-5)
 );
 hidedecorations!(ax3)
 Colorbar(fig[2,6], hm6)
+
+
+
 
 fig = Figure(size=(950, 500), fontsize=15);
 
