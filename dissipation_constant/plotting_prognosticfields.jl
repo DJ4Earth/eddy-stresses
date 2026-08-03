@@ -3,23 +3,23 @@ function prognostic_plots()
     # Prognostic variables #############################################################
 
     # high versus low resolution eta
-    t = 1
+    t = 1096
     fig = Figure(size=(775, 300), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uhr[:,:,t],
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 1024),
+    LinRange(0, 3840, 1024),
+    etahrall[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\mathbf{\eta}(3650 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(etahr[:,:,t])),maximum(abs.(etahr[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title=L"\text{3.75 km } \mathbf{\eta}(t, x, y)"),
+    colorrange=(-3,3)
     );
     Colorbar(fig[1,2], hm1, label="m")
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    uhrcg[:,:,t],
+    etanoparam[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"\overline{\mathbf{\eta}}(3650 \; \text{days}, x, y)"),
-    colorrange=(-maximum(abs.(etahrcg[:,:,t])),maximum(abs.(etahrcg[:,:,t])))
+    axis=(xlabel="km", ylabel="km", title=L"\text{30 km } \mathbf{\eta}(t, x, y)"),
+    colorrange=(-3,3)
     );
     Colorbar(fig[1,4], hm2,label="m")
 

@@ -24,8 +24,8 @@ fig = Figure(fontsize=15);
 
 fframerate = 15
 
-xs = LinRange(0, 3840, 129)
-ys = LinRange(0, 3840, 129)
+xs = LinRange(0, 3840, 128)
+ys = LinRange(0, 3840, 128)
 
 inv_scale = 1 / Shr.constants.scale
 # clim = maximum(abs.(ζhr[:,:,1000] .* inv_scale))  # compute ONCE
@@ -36,16 +36,16 @@ ax = Axis(fig[1, 1])
 hm = heatmap!(
     ax,
     xs, ys,
-    ζhrcg[:, :, 1096],
+    etamulti2[:, :, 1],
     colormap = :balance,
-    colorrange = (-.0001, .0001)
+    colorrange = (-3, 3)
 )
 hidedecorations!(ax) 
 
 Colorbar(fig[1, 2], hm, label = "1/s")
 
-record(fig, "highres_vorticity.mp4", 1:1096; framerate = framerate) do t
-    hm[3][] = ζhr[:, :, t]
+record(fig, "ssh_threeyears_multi2.mp4", 1:1096; framerate = framerate) do t
+    hm[3][] = etamulti2[:, :, t]
 end
 
 
@@ -96,4 +96,79 @@ Colorbar(fig[1, 4], hm2, label = "1/s")
 record(fig, "multi2_multi3_vorticity.mp4", 1:1096; framerate = framerate) do t
     hm1[3][] = ζmulti2[:, :, t]
     hm2[3][] = ζmulti3more[:, :, t]
+end
+
+
+# triple video
+
+fig = Figure(size=(1300,350));
+framerate = 15
+
+xs = LinRange(0, 3840, 129)
+ys = LinRange(0, 3840, 129)
+
+xsl = LinRange(0, 3840, 129)
+ysl = LinRange(0, 3840, 129)
+
+clim = .0001
+
+Label(
+    fig[0, 3],
+    "30 km vorticity",
+    fontsize = 25,
+    tellwidth = false
+)
+
+ax0 = Axis(fig[1, 1],
+    xlabel = "km",
+    ylabel = "km",
+    title  = "Data"
+)
+
+hm0 = heatmap!(
+    ax0,
+    xs, ys,
+    ζhrcg[:, :, 1],
+    colormap = :balance,
+    colorrange = (-clim, clim)
+)
+
+ax1 = Axis(fig[1, 3],
+    xlabel = "km",
+    ylabel = "km",
+    title  = "Ensemble 2 day parameterization"
+)
+
+hm1 = heatmap!(
+    ax1,
+    xs, ys,
+    ζmulti2all[:, :, 1],
+    colormap = :balance,
+    colorrange = (-clim, clim)
+)
+
+ax2 = Axis(fig[1, 5],
+    xlabel = "km",
+    ylabel = "km",
+    title  = "Ensemble 3 day parameterization"
+)
+
+hm2 = heatmap!(
+    ax2,
+    xs, ys,
+    ζmulti3all[:, :, 1],
+    colormap = :balance,
+    colorrange = (-clim, clim)
+)
+
+Colorbar(fig[1, 2], hm1, label = "1/s")
+Colorbar(fig[1, 4], hm2, label = "1/s")
+Colorbar(fig[1, 6], hm1, label = "1/s")
+
+# Colorbar(fig[1, 4], hm2, label = "1/s")
+
+record(fig, "data_multi2_multi3_vorticity.mp4", 1:1096; framerate = framerate) do t
+    hm0[3][] = ζhrcg[:, :, t]
+    hm1[3][] = ζmulti2all[:, :, t]
+    hm2[3][] = ζmulti3all[:, :, t]
 end

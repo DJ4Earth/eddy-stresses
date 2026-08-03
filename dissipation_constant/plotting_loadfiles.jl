@@ -83,10 +83,6 @@ function load_models()
     vmulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/v.nc", "v");
     etamulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/eta.nc", "eta");
 
-    umulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/u.nc", "u");
-    vmulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
-    etamulti3 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
-
     umulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
     vmulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
     etamulti3more = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/eta.nc", "eta");
@@ -140,10 +136,6 @@ function load_models()
     umulti210 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/u.nc", "u");
     vmulti210 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/v.nc", "v");
     etamulti210 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/eta.nc", "eta");
-
-    umulti310 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/u.nc", "u");
-    vmulti310 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/v.nc", "v");
-    etamulti310 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_3-15-30-40-50-60-80-85initdays_startfrom20daystate_10years_weeklysaves/eta.nc", "eta");
 
     umulti3more10 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/u.nc", "u");
     vmulti3more10 = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_10years_weeklysaves/v.nc", "v");
@@ -260,24 +252,10 @@ function load_Sfiles()
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
 
-    visc_hrcg = load_object("./hrcg_viscosity_MuMv_oldfunction.jld2");
-    visc_cg = load_object("./cg_viscosity_MuMv_oldfunction.jld2");
-
-    bd_hrcg = load_object("./hrcg_bottomdrag_BuBv.jld2");
-    bd_cg = load_object("./cg_bottomdrag_BuBv.jld2");
-
-    # advec_hr = load_object("./nonlinearadvec_hrstates_advu_advv.jld2");
-    advec_cg = load_object("./nonlinearadvec_cgstates_advu_advv.jld2");
-
-    tend_euler_cg = load_object("./cgtendencies_euler_rk2coeff_dudv_updated.jld2");
-    tend_euler_hrcg = load_object("./hrcgtendencies_euler_rk2coeff_dudv_updated.jld2");
-
-    # tend_euler_hr = load_object("./hrtendencies_euler_rk2coeff_dudv.jld2");
-    # tendu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/hrcgtendencies_euler_rk2coeff_dudv.jld2")[1];
-    # tendv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/hrcgtendencies_euler_rk2coeff_dudv.jld2")[2];
-
-    Advecu_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_hrstates_downsized_advu_advv.jld2")[1];
-    Advecv_hrdownsized = load_object("./dissipation_constant/alternate_S_files/nonlinearadvec_hrstates_downsized_advu_advv.jld2")[2];
+    advec_cg = load_object("./dissipation_constant/alternate_S_files/cg_advection_euler_rk2_advecuadvecv.jld2");
+    advec_hrcg = load_object("./dissipation_constant/alternate_S_files/hrcg_advection_euler_rk2_advecuadvecv.jld2");
+    tend_euler_cg = load_object("./dissipation_constant/alternate_S_files/cg_tendencies_euler_rk2_dudv.jld2");
+    tend_euler_hrcg = load_object("./dissipation_constant/alternate_S_files/hrcg_tendencies_euler_rk2_dudv.jld2");
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,

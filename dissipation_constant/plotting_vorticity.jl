@@ -92,11 +92,6 @@ function computing_vorticity()
         ShallowWaters.∂y!(dudy, umulti2_ .* inv_scale)
         @views @inbounds ζmulti2[:,:,t] .= (dvdx[2:end-1,2:end-1] .- dudy[2:end-1,2:end-1]) ./ 30000
 
-        umulti3_, vmulti3_, _ = ShallowWaters.add_halo(umulti3[:,:,t], vmulti3[:,:,t], etamulti3[:,:,t], S);
-        ShallowWaters.∂x!(dvdx, vmulti3_ .* inv_scale)
-        ShallowWaters.∂y!(dudy, umulti3_ .* inv_scale)
-        @views @inbounds ζmulti3[:,:,t] .= (dvdx[2:end-1,2:end-1] .- dudy[2:end-1,2:end-1]) ./ 30000
-
         umulti3more_, vmulti3more_, _ = ShallowWaters.add_halo(umulti3more[:,:,t], vmulti3more[:,:,t], etamulti3more[:,:,t], S);
         ShallowWaters.∂x!(dvdx, vmulti3more_ .* inv_scale)
         ShallowWaters.∂y!(dudy, umulti3more_ .* inv_scale)
@@ -160,11 +155,6 @@ function computing_vorticity()
         ShallowWaters.∂x!(dvdx, vmulti210_ .* inv_scale)
         ShallowWaters.∂y!(dudy, umulti210_ .* inv_scale)
         @views @inbounds ζmulti210[:,:,t] .= (dvdx[2:end-1,2:end-1] .- dudy[2:end-1,2:end-1]) ./ 30000
-
-        umulti310_, vmulti310_, _ = ShallowWaters.add_halo(umulti310[:,:,t], vmulti310[:,:,t], etamulti310[:,:,t], S);
-        ShallowWaters.∂x!(dvdx, vmulti310_ .* inv_scale)
-        ShallowWaters.∂y!(dudy, umulti310_ .* inv_scale)
-        @views @inbounds ζmulti310[:,:,t] .= (dvdx[2:end-1,2:end-1] .- dudy[2:end-1,2:end-1]) ./ 30000
 
         umulti3more10_, vmulti3more10_, _ = ShallowWaters.add_halo(umulti3more10[:,:,t], vmulti3more10[:,:,t], etamulti3more10[:,:,t], S);
         ShallowWaters.∂x!(dvdx, vmulti3more10_ .* inv_scale)
