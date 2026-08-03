@@ -47,10 +47,6 @@ function load_models()
     vnoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/v.nc", "v");
     etanoparam = ncread("./dissipation_constant/results/128_noparam_postspinup_cginitcond_3years_dailysaves/eta.nc", "eta");
 
-    u1s = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/u.nc", "u");
-    v1s = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/v.nc", "v");
-    eta1s = ncread("./dissipation_constant/results/result_online_gelu_stateweights_1dayoptimization_startfromoffline_3years_dailysaves/eta.nc", "eta");
-
     u5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/u.nc", "u");
     v5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/v.nc", "v");
     eta5s = ncread("./dissipation_constant/results/result_online_stateweights_5dayoptimization_startfrom1daystate_3years_dailysaves/eta.nc", "eta");
@@ -63,21 +59,9 @@ function load_models()
     v20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/v.nc", "v");
     eta20s = ncread("./dissipation_constant/results/result_online_stateweights_20dayoptimization_startfrom10day_fixedcfl_3years_dailysaves/eta.nc", "eta");
 
-    u20scD = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/u.nc", "u");
-    v20scD = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/v.nc", "v");
-    eta20scD = ncread("./dissipation_constant/results/result_online_state_pluscD_weights_20dayoptimization_startfrom20day_3years_dailysaves/eta.nc", "eta");
-
     u30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/u.nc", "u");
     v30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/v.nc", "v");
     eta30s = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_3years_dailysaves/eta.nc", "eta");
-
-    umulti1 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
-    vmulti1 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
-    etamulti1 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_3years_dailysaves/eta.nc", "eta");
-
-    umulti1more = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_3years_dailysaves/u.nc", "u");
-    vmulti1more = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_3years_dailysaves/v.nc", "v");
-    etamulti1more = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_3years_dailysaves/eta.nc", "eta");
 
     umulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/u.nc", "u");
     vmulti2 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_3years_dailysaves/v.nc", "v");
@@ -124,14 +108,6 @@ function load_models()
     u30s10 = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/u.nc", "u");
     v30s10 = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/v.nc", "v");
     eta30s10 = ncread("./dissipation_constant/results/result_online_stateweights_30dayoptimization_startfrom20day_fixedcfl_10years_weeklysaves/eta.nc", "eta");
-
-    umulti110 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_10years_weeklysaves/u.nc", "u");
-    vmulti110 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_10years_weeklysaves/v.nc", "v");
-    etamulti110 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_35initdays_startfrommulti3_10years_weeklysaves/eta.nc", "eta");
-
-    umulti1more10 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_10years_weeklysaves/u.nc", "u");
-    vmulti1more10 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_10years_weeklysaves/v.nc", "v");
-    etamulti1more10 = ncread("./dissipation_constant/results/result_online_multistateweights_1dayoptimization_1:2:89initdays_startfrommulti3_fewerinitconds_10years_weeklysaves/eta.nc", "eta");
 
     umulti210 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/u.nc", "u");
     vmulti210 = ncread("./dissipation_constant/results/result_online_multistateweights_2dayoptimization_startfrommulti3_10years_weeklysaves/v.nc", "v");
@@ -182,27 +158,13 @@ function load_models()
     vhybrid = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
     etahybrid = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
 
-    # relu activation function
-
-    u1daystaterelu = ncread("./dissipation_constant/results/result_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/u.nc", "u");
-    v1daystaterelu = ncread("./dissipation_constant/results/result_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/v.nc", "v");
-    eta1daystaterelu = ncread("./dissipation_constant/results/result_online_reluactivation_stateweights_1dayoptimization_startfromoffline_madnlp_30days_8hoursaves/eta.nc", "eta");
-
-    u5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    v5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    eta5daystaterelu = ncread("./dissipation_constant/results/128_online_reluactivation_stateweights_5dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
-
-    # ukespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/u.nc", "u");
-    # vkespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/v.nc", "v");
-    # etakespecpd1dayrelu = ncread("./dissipation_constant/results/128_online_reluactivation_kespecpdweights_1dayoptimization_startfrom1daystate_madnlp_30days_8hoursaves/eta.nc", "eta");
-
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
     # imfilter(hru[:,:,j], reflect(ker))
 
     # adding the above loads into a single file, making it easier to plot
     # entries 1 - 1096 correspond to daily saves over the first three years, 1097-1451 correspond to the next 7 years at weekly saves
     # these do not contain the first three years of weekly saves in the 10 year runs, since those are already accounted for
-    # multi2 and multi3 have an additional 10 years of weekly saves 
+    # multi2, multi3, and multi10 each have an additional 10 years of weekly saves
 
     unoparamall = cat(unoparam, unoparam10[:,:,157:end]; dims=3);
     vnoparamall = cat(vnoparam, vnoparam10[:,:,157:end]; dims=3);

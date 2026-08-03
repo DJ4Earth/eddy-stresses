@@ -80,12 +80,6 @@ function momentum_budget_offline()
 
     du, dv, adv_u, adv_v, fu, fv, detagdx, detagdy, bottomdragu, bottomdragv, viscu, viscv, Fx = compute_mom_budget(Seuler, Sadv, t, n);
 
-    detagdx2 = zeros(127,128)
-    detagdy2 = zeros(128,127)
-
-    ShallowWaters.∂x!(detagdx2, (Seuler.constants.g .* etahrcgall[:,:,n])./ Seuler.grid.Δ)
-    ShallowWaters.∂y!(detagdy2, (Seuler.constants.g .* etahrcgall[:,:,n])./ Seuler.grid.Δ)
-
     fig = Figure(fontsize=15);
 
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
@@ -102,7 +96,7 @@ function momentum_budget_offline()
 
     Label(
         fig[0, 3],
-        "Offline u budget",
+        "Offline budget, u-components",
         fontsize = 20,
         tellwidth = false
     )
@@ -119,7 +113,7 @@ function momentum_budget_offline()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (adv_u + fv - detagdx + Fx + viscu + bottomdragu),
+    (adv_u + fv - detagdx2 + Fx + viscu + bottomdragu),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Sum of budget terms"),
     colorrange=(-1.5e-5, 1.5e-5)
@@ -127,7 +121,17 @@ function momentum_budget_offline()
     hidedecorations!(ax2)
     Colorbar(fig[1,4], hm2)
 
-    ax3, hm3 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ((2 .* du) ./ 384) .- (adv_u + fv - detagdx2 + Fx + viscu + bottomdragu),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Tendency - sum of terms"),
+    colorrange=(-1.5e-13, 1.5e-13)
+    );
+    hidedecorations!(ax13)
+    Colorbar(fig[1,6], hm13)
+
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (adv_u),
     colormap=:balance,
@@ -135,44 +139,44 @@ function momentum_budget_offline()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     hidedecorations!(ax3)
-    Colorbar(fig[1,6], hm3)
+    Colorbar(fig[2,2], hm3)
 
-    ax4, hm4 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     fv,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Coriolis"),
     colorrange=(-1.5e-4, 1.5e-4)
     );
-    Colorbar(fig[2,2], hm4)
+    Colorbar(fig[2,4], hm4)
     hidexdecorations!(ax4)
 
-    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     -detagdx,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Gravity"),
+    axis=(xlabel="km", ylabel="km", title="Pressure gradient"),
     colorrange=(-1.5e-4, 1.5e-4)
     );
     hidedecorations!(ax5)
-    Colorbar(fig[2,4], hm5)
+    Colorbar(fig[2,6], hm5)
 
-    ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    Fx,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Wind stress"),
-    # colorrange=(-1.5e-5, 1.5e-5)
-    );
-    hideydecorations!(ax6)
-    Colorbar(fig[2,6], hm6)
+    # ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # Fx,
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Wind stress"),
+    # # colorrange=(-1.5e-5, 1.5e-5)
+    # );
+    # hideydecorations!(ax6)
+    # Colorbar(fig[2,6], hm6)
 
     ax7, hm7 = heatmap(fig[3,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     viscu,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Viscosity"),
-    colorrange=(-1.5e-7, 1.5e-7)
+    colorrange=(-1.5e-6, 1.5e-6)
     );
     Colorbar(fig[3,2], hm7)
 
@@ -181,10 +185,168 @@ function momentum_budget_offline()
     bottomdragu,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Bottom drag"),
-    colorrange=(-1.5e-8, 1.5e-8)
+    colorrange=(-1.5e-7, 1.5e-7)
     );
     hideydecorations!(ax8)
     Colorbar(fig[3,4], hm8)
+
+end
+
+function budget_term_checks()
+
+    Plr = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        RKo=2,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        # nn_forcing_momentum=false,
+        # nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=2,
+        initial_cond="rest",
+        # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
+    );
+    Slr = ShallowWaters.model_setup(Plr);
+
+
+    Plr2 = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        L_ratio=1,
+        g=1e-20,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        RKo=2,
+        ω=1e-22,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        # nn_forcing_momentum=false,
+        # nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=2,
+        initial_cond="rest",
+        # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
+    );
+    Slr2 = ShallowWaters.model_setup(Plr2);
+
+    Seuler = deepcopy(Slr);
+    Sadv = deepcopy(Slr2);
+
+    t = 225 * Slr.grid.dtint
+    n = 1096
+
+    u_, v_, eta_ = ShallowWaters.add_halo(uhrcgall[:,:,n], vhrcgall[:,:,n], etahrcgall[:,:,n], Slr)
+
+    Seuler.Prog.u = u_
+    Seuler.Prog.v = v_
+    Seuler.Prog.η = eta_
+
+    Sadv.Prog.u = u_
+    Sadv.Prog.v = v_
+    Sadv.Prog.η = eta_
+
+    du, dv, adv_u, adv_v, fu, fv, detagdx, detagdy, bottomdragu, bottomdragv, viscu, viscv, Fx = compute_mom_budget(Seuler, Sadv, t, n);
+
+    println("Check that initial condition doesn't propagate (should be zero): ", norm(Seuler.Prog.η .- eta_))
+
+    # check volume flux components
+    # these are used in the advection scheme to determine fu and fv
+    # my thought process says that if coriolisoverh is correct, and the mass fluxes are correct,
+    # then fu and fv should also be correct
+
+    ShallowWaters.thickness!(Seuler.Diag.VolumeFluxes.h, eta_, Seuler.forcing.H)
+    ShallowWaters.Ix!(Seuler.Diag.VolumeFluxes.h_u, Seuler.Diag.VolumeFluxes.h)
+    ShallowWaters.Iy!(Seuler.Diag.VolumeFluxes.h_v, Seuler.Diag.VolumeFluxes.h)
+    ShallowWaters.Ixy!(Seuler.Diag.Vorticity.h_q, Seuler.Diag.VolumeFluxes.h)
+
+    println("Check that the sea-surface height h is correct (should be zero): ", norm(Seuler.Diag.VolumeFluxes.h .- (eta_ .+ Seuler.forcing.H)))
+
+    U2 = (u_[2:end-1,2:end-1].*Seuler.Diag.VolumeFluxes.h_u).*Seuler.constants.scale_inv
+
+    println("Check that the volume flux U is correct (should be zero): ", norm(Seuler.Diag.VolumeFluxes.U .- U2))
+
+    # check the computed pressure gradient, should be identical to this
+    detagdx2 = zeros(127,128)
+    detagdy2 = zeros(128,127)
+
+    ShallowWaters.∂x!(detagdx2, (Seuler.constants.g .* etahrcgall[:,:,n])./ Seuler.grid.Δ)
+    ShallowWaters.∂y!(detagdy2, (Seuler.constants.g .* etahrcgall[:,:,n])./ Seuler.grid.Δ)
+
+    println("Check that the pressure gradient is correct (should be zero): ", norm(detagdx .- detagdx2))
+
+    fig = Figure(fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    detagdx .- detagdx2,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Pressure gradient check"),
+    colorrange=(-1.5e-7, 1.5e-7)
+    );
+    Colorbar(fig[1,2], hm1)
+    hidexdecorations!(ax1)
+
+    fig
+
+    # check the coriolis force computation -- from this we compute the terms fu and fv in the budget
+    # theoretically, if this computation is correct then all computations to get fu, fv should also be correct
+    m,n = size(Seuler.Diag.Vorticity.q)
+    coriolisoverh = zeros(m,n)
+    @inbounds for j ∈ 1:n
+        for i ∈ 1:m
+            coriolisoverh[i,j] = Seuler.Diag.Vorticity.q[i,j] - (Seuler.Diag.Vorticity.dvdx[i+1,j+1] - Seuler.Diag.Vorticity.dudy[i+1,j+1]) / Seuler.Diag.Vorticity.h_q[i,j]
+        end
+    end
+    coriolisoverh2 = Seuler.grid.f_q ./ S.Diag.Vorticity.h_q
+
+    fig = Figure(fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    coriolisoverh .- coriolisoverh2,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="f / h check"),
+    colorrange=(-1.5e-7, 1.5e-7)
+    );
+    Colorbar(fig[1,2], hm1)
+    hidexdecorations!(ax1)
+
+    fig = Figure(fontsize=15);
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    ((2 .* du) ./ 384) .- (adv_u + fv - detagdx2 + Fx + viscu + bottomdragu),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Euler tendency"),
+    colorrange=(-1.5e-7, 1.5e-7)
+    );
+    Colorbar(fig[1,2], hm1)
+    hidexdecorations!(ax1)
 
 end
 
@@ -288,12 +450,6 @@ function momentum_budget_multi2()
     Sadv.Prog.η = eta_
 
     du, dv, adv_u, adv_v, fu, fv, detagdx, detagdy, bottomdragu, bottomdragv, viscu, viscv, Fx = compute_mom_budget(Seuler, Sadv, t, n);
-
-    # detagdx2 = zeros(127,128)
-    # detagdy2 = zeros(128,127)
-
-    # ShallowWaters.∂x!(detagdx2, (Seuler.constants.g .* etahrcgall[:,:,n])./ Seuler.grid.Δ)
-    # ShallowWaters.∂y!(detagdy2, (Seuler.constants.g .* etahrcgall[:,:,n])./ Seuler.grid.Δ)
 
     # all of the rhs terms are computed with a *scaled* prognostic variable, so to actually 
     # see the momentum budget terms we need to remove that scaling. The division by Delta is because

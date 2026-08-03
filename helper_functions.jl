@@ -456,23 +456,27 @@ end
 
 function compute_tendencies_witheuler!(du, dv, deta, S, t)
 
-    ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
+    u = copy(S.Prog.u)
+    v = copy(S.Prog.v)
+    η = copy(S.Prog.η)
+
+    ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, η, S.forcing.H)
     ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
     ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
     ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
 
     # calculate PV terms for initial conditions
-    urhs = S.Diag.PrognosticVarsRHS.u .= S.Prog.u
-    vrhs = S.Diag.PrognosticVarsRHS.v .= S.Prog.v
-    ηrhs = S.Diag.PrognosticVarsRHS.η .= S.Prog.η
+    urhs = S.Diag.PrognosticVarsRHS.u .= u
+    vrhs = S.Diag.PrognosticVarsRHS.v .= v
+    ηrhs = S.Diag.PrognosticVarsRHS.η .= η
 
     ShallowWaters.advection_coriolis!(urhs, vrhs, ηrhs, S.Diag, S)
     ShallowWaters.PVadvection!(S.Diag, S)
 
     # propagate initial conditions
-    copyto!(S.Diag.RungeKutta.u0, S.Prog.u)
-    copyto!(S.Diag.RungeKutta.v0, S.Prog.v)
-    copyto!(S.Diag.RungeKutta.η0, S.Prog.η)
+    copyto!(S.Diag.RungeKutta.u0, u)
+    copyto!(S.Diag.RungeKutta.v0, v)
+    copyto!(S.Diag.RungeKutta.η0, η)
 
     # store initial conditions of sst for relaxation
     copyto!(S.Diag.SemiLagrange.sst_ref, S.Prog.sst)
@@ -480,10 +484,10 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
     # run a single step of integration loop
 
     # ghost point copy for boundary conditions
-    ShallowWaters.ghost_points!(S.Prog.u, S.Prog.v, S.Prog.η, S)
-    copyto!(S.Diag.RungeKutta.u1, S.Prog.u)
-    copyto!(S.Diag.RungeKutta.v1, S.Prog.v)
-    copyto!(S.Diag.RungeKutta.η1, S.Prog.η)
+    ShallowWaters.ghost_points!(u, v, η, S)
+    copyto!(S.Diag.RungeKutta.u1, u)
+    copyto!(S.Diag.RungeKutta.v1, v)
+    copyto!(S.Diag.RungeKutta.η1, η)
 
     if S.parameters.compensated
         fill!(S.Diag.Tendencies.du_sum, zero(S.parameters.Tprog))
@@ -494,7 +498,7 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
     if S.parameters.RKo > 2
         error("you need to set it to use rk2")
     end
-
+    j = 1
     for rki = 1:1
         if rki > 1
             ShallowWaters.ghost_points!(
@@ -504,11 +508,15 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
                 S
             )
         end
-
+        println("Number of times this print statement is hit: ", j)
         # type conversion for mixed precision
         u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
         v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
         η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
+
+        println("Is the u being propagated still the initial u (before rhs is hit): ", norm(u1rhs .- S.Prog.u))
+        println("Is the v being propagated still the initial v (before rhs is hit): ", norm(v1rhs .- S.Prog.v))
+        println("Is the eta being propagated still the initial state (before rhs is hit): ", norm(η1rhs .- S.Prog.η))
 
         ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
         ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
@@ -516,19 +524,19 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
         if rki < S.parameters.RKo
             ShallowWaters.caxb!(
                 S.Diag.RungeKutta.u1,
-                S.Prog.u,
+                u,
                 S.constants.RKbΔt[rki],
                 S.Diag.Tendencies.du
             )
             ShallowWaters.caxb!(
                 S.Diag.RungeKutta.v1,
-                S.Prog.v,
+                v,
                 S.constants.RKbΔt[rki],
                 S.Diag.Tendencies.dv
             )
             ShallowWaters.caxb!(
                 S.Diag.RungeKutta.η1,
-                S.Prog.η,
+                η,
                 S.constants.RKbΔt[rki],
                 S.Diag.Tendencies.dη
             )
@@ -555,6 +563,7 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
                 S.Diag.Tendencies.dη
             )
         end
+    j += 1
     end
 
     if S.parameters.compensated
@@ -569,19 +578,19 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
         ShallowWaters.dambmc!(
             S.Diag.Tendencies.du_comp,
             S.Diag.RungeKutta.u0,
-            S.Prog.u,
+            u,
             S.Diag.Tendencies.du_sum
         )
         ShallowWaters.dambmc!(
             S.Diag.Tendencies.dv_comp,
             S.Diag.RungeKutta.v0,
-            S.Prog.v,
+            v,
             S.Diag.Tendencies.dv_sum
         )
         ShallowWaters.dambmc!(
             S.Diag.Tendencies.dη_comp,
             S.Diag.RungeKutta.η0,
-            S.Prog.η,
+            η,
             S.Diag.Tendencies.dη_sum
         )
     end
@@ -598,17 +607,13 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
     η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
 
     # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
-        ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        # ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        # ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
     # end
 
     # if (chkp.i % S.grid.nstep_diff) == 0
         ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
         ShallowWaters.diffusion!(u0rhs, v0rhs, S.Diag, S)
-
-    # now because the RK step only took one step with rk2 I technically did half a timestep, and need to be sure that the 
-    # dissipative terms are also added with half a timestep
-    # that's why here I add a multiplication by 2
 
     # original function call
         # ShallowWaters.add_drag_diff_tendencies!(
@@ -618,6 +623,7 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
         #     S
         # )
 
+    # modified to account for the half a timestep
         @unpack Bu,Bv = S.Diag.Bottomdrag
         @unpack LLu1,LLu2,LLv1,LLv2 = S.Diag.Smagorinsky
         @unpack halo,ep,Δt_diff = S.grid
@@ -636,6 +642,9 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
             ShallowWaters.CNN_momentum(S.Diag.RungeKutta.u0,S.Diag.RungeKutta.v0,S)
         end 
 
+        # because the RK step only took one step with rk2 I technically did half a timestep, and need to be sure that the 
+        # dissipative terms are also added with half a timestep
+        # that's why here I add a multiplication by 2
         if S.parameters.zb_forcing_dissipation
         @inbounds for j ∈ 1:n
             for i ∈ 1:m
@@ -701,13 +710,13 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
     haloη = S.grid.haloη
 
     du .= S.constants.scale_inv .* S.Diag.RungeKutta.u0[halo+1:end-halo, halo+1:end-halo] -
-                S.constants.scale_inv .* S.Prog.u[halo+1:end-halo, halo+1:end-halo]
+                S.constants.scale_inv .* u[halo+1:end-halo, halo+1:end-halo]
 
     dv .= S.constants.scale_inv .* S.Diag.RungeKutta.v0[halo+1:end-halo, halo+1:end-halo] -
-                S.constants.scale_inv .* S.Prog.v[halo+1:end-halo, halo+1:end-halo]
+                S.constants.scale_inv .* v[halo+1:end-halo, halo+1:end-halo]
 
     deta .= S.Diag.RungeKutta.η0[haloη+1:end-haloη, haloη+1:end-haloη] -
-                S.Prog.η[haloη+1:end-haloη, haloη+1:end-haloη]
+                η[haloη+1:end-haloη, haloη+1:end-haloη]
 
     return nothing
 
@@ -891,8 +900,8 @@ function compute_advection!(mom_u, mom_v, S, t)
     η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
 
     # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
-        ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        # ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        # ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
     # end
 
     # if (chkp.i % S.grid.nstep_diff) == 0
@@ -977,18 +986,11 @@ function compute_mom_budget(Seuler, Sadv, t, n)
     compute_advection!(adv_u, adv_v, Sadv, n*t)
 
     m,n = size(Seuler.Diag.Bernoulli.p)
-    geta = zeros(m,n)
-    one_half_scale_inv = convert(Seuler.parameters.T,0.5)*Seuler.constants.scale_inv
-    for j ∈ 1:n
-        for i ∈ 1:m
-            geta[i,j] = Seuler.Diag.Bernoulli.p[i,j] - 
-                one_half_scale_inv*(Seuler.Diag.Bernoulli.KEu[i,j+1] + Seuler.Diag.Bernoulli.KEv[i+1,j])
-        end
-    end
     detagdx = zeros(m-1, n)
     detagdy = zeros(m, n-1)
-    ShallowWaters.∂x!(detagdx,geta)
-    ShallowWaters.∂y!(detagdy,geta)
+
+    ShallowWaters.∂x!(detagdx, (Seuler.constants.g .* Seuler.Prog.η)./ Seuler.grid.Δ)
+    ShallowWaters.∂y!(detagdy, (Seuler.constants.g .* Seuler.Prog.η)./ Seuler.grid.Δ)
 
     # getting the Coriolis force out of the potential vorticity computation
     m,n = size(Seuler.Diag.Vorticity.q)
@@ -1033,14 +1035,15 @@ function compute_mom_budget(Seuler, Sadv, t, n)
     # I should have corrected for the scalings in the values returned by compute_mom_budget already,
     # but for the stuff I'm pulling after (see below) I need to do it manually
 
-    bottomdragu = (Seuler.Diag.Bottomdrag.Bu[2:end-1,2:end-1]) ./ (2 * Seuler.grid.scale * Seuler.grid.Δ)
-    bottomdragv = (Seuler.Diag.Bottomdrag.Bv[2:end-1,2:end-1]) ./ (2 * Seuler.grid.scale * Seuler.grid.Δ)
-    viscu = (Seuler.Diag.Smagorinsky.LLu1[:,2:end-1] + Seuler.Diag.Smagorinsky.LLu2[2:end-1,:]) ./ (2 * Seuler.grid.scale * Seuler.grid.Δ);
-    viscv = (Seuler.Diag.Smagorinsky.LLv1[:, 2:end-1] + Seuler.Diag.Smagorinsky.LLv2[2:end-1,:]) ./ (2 * Seuler.grid.scale * Seuler.grid.Δ)
+    scaling = (Seuler.grid.scale * Seuler.grid.Δ)
+    bottomdragu = (Seuler.Diag.Bottomdrag.Bu[2:end-1,2:end-1]) ./ scaling
+    bottomdragv = (Seuler.Diag.Bottomdrag.Bv[2:end-1,2:end-1]) ./ scaling
+    viscu = (Seuler.Diag.Smagorinsky.LLu1[:,2:end-1] + Seuler.Diag.Smagorinsky.LLu2[2:end-1,:]) ./ scaling;
+    viscv = (Seuler.Diag.Smagorinsky.LLv1[:, 2:end-1] + Seuler.Diag.Smagorinsky.LLv2[2:end-1,:]) ./ scaling
 
     Fx = Seuler.forcing.Fx ./ (Seuler.grid.scale * Seuler.grid.Δ)
 
-    return du, dv, adv_u, adv_v, fu./ (Seuler.grid.scale .* Seuler.grid.Δ), fv./ (Seuler.grid.scale .* Seuler.grid.Δ), detagdx[2:end-1, 2:end-1] ./ (Seuler.grid.scale .* Seuler.grid.Δ), detagdy[2:end-1, 2:end-1] ./ (Seuler.grid.scale .* Seuler.grid.Δ), bottomdragu, bottomdragv, viscu, viscv, Fx
+    return du, dv, adv_u, adv_v, fu./ (Seuler.grid.scale .* Seuler.grid.Δ), fv./ (Seuler.grid.scale .* Seuler.grid.Δ), detagdx[2:end-1, 2:end-1], detagdy[2:end-1, 2:end-1], bottomdragu, bottomdragv, viscu, viscv, Fx
 
 end
 
