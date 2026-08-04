@@ -343,11 +343,11 @@ function computing_ketransfer_fromS()
 
         # batched 3 day ###########################
 
-        umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3[:,:,t]), Float64.(vmulti3[:,:,t]), Float64.(etamulti3[:,:,t]), zeros(128,128), Smulti3);
+        umulti3_, vmulti3_, _ = ShallowWaters.add_halo(Float64.(umulti3more[:,:,t]), Float64.(vmulti3more[:,:,t]), Float64.(etamulti3more[:,:,t]), zeros(128,128), Smulti3);
         ShallowWaters.CNN_momentum(umulti3_, vmulti3_, Smulti3)
-        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3[xvals, yvals, t], Smulti3.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
+        outu_multi3, inputu_multi3, inputSu_multi3 = paddingu(umulti3more[xvals, yvals, t], Smulti3.Diag.CNNVars.S_u[xvals,yvals], nfft[1])
         fft2pow2radial!(outu_multi3, rfft(inputu_multi3), rfft(inputSu_multi3), nfft...)
-        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3[xvals, yvals, t], Smulti3.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
+        outv_multi3, inputv_multi3, inputSv_multi3 = paddingv(vmulti3more[xvals, yvals, t], Smulti3.Diag.CNNVars.S_v[xvals,yvals], nfft[1])
         fft2pow2radial!(outv_multi3, rfft(inputv_multi3), rfft(inputSv_multi3), nfft...)
 
         totalu_multi3 += outu_multi3
@@ -480,7 +480,8 @@ function ketransfer_plots()
         xticks=[700, 100, 30, 10, 2]
     )
     lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(totalu_hrcg + totalv_hrcg)./(1096))[2:end], label="Total SGS forcing, RK4", color=:black)
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_rk1 + totalv_rk1)./(1096))[2:end], label="Total SGS forcing, Euler", color=:magenta)
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_rk1 + totalv_rk1)./(1096))[2:end], label="Total SGS forcing, Euler", color=:aqua)
+    lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(advection_transfer)./1096)[2:end], label="Nonlinear advection",color=:orange)
     # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
     # this one has a multiplication by \Delta
     lines!(ax, 1 ./ lr_freq[2:end], ((lr_freq*30000).*(totalu_approx + totalv_approx) ./ (1096))[2:end], label="Approximate SGS forcing", color=:blue)

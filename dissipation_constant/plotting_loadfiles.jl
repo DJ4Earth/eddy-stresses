@@ -206,18 +206,22 @@ end
 
 function load_Sfiles()
 
-    true_S = load_object("./dissipation_constant/computing_trueS/trueS_fromtendencies_withrk4_SuSv_first3years_dailysaves_032526.jld2");
-    Suhr = true_S[1];
-    Svhr = true_S[2];
+    # cg refers to a quantity computed from a coarse-grained high-resolution state, and hrcg refers to a quantity computed
+    # from a high-resolution state and then coarse-grained
+    # the tendencies are used to compute S from various sources, and the advec is specifically the nonlinear advection component
+
+    tend_rk4_cg = load_object("./dissipation_constant/computing_trueS/cg_tendencies_rk4_dudv.jld2");
+    tend_rk4_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_tendencies_rk4_dudv.jld2");
 
     approx_S = load_object("./dissipation_constant/computing_trueS/approxS_nonlinearadvec_nottendencies_hasextraDelta_SuSv_first3years_040726.jld2");
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
 
-    advec_cg = load_object("./dissipation_constant/alternate_S_files/cg_advection_euler_rk2_advecuadvecv.jld2");
-    advec_hrcg = load_object("./dissipation_constant/alternate_S_files/hrcg_advection_euler_rk2_advecuadvecv.jld2");
-    tend_euler_cg = load_object("./dissipation_constant/alternate_S_files/cg_tendencies_euler_rk2_dudv.jld2");
-    tend_euler_hrcg = load_object("./dissipation_constant/alternate_S_files/hrcg_tendencies_euler_rk2_dudv.jld2");
+    advec_cg = load_object("./dissipation_constant/computing_trueS/cg_advection_euler_rk2_advecuadvecv.jld2");
+    advec_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_advection_euler_rk2_advecuadvecv.jld2");
+
+    tend_euler_cg = load_object("./dissipation_constant/computing_trueS/cg_tendencies_euler_rk2_dudv.jld2");
+    tend_euler_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_tendencies_euler_rk2_dudv.jld2");
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,

@@ -26,15 +26,14 @@ function compute_Ts(j)
     );
     SNN = ShallowWaters.model_setup(PNN);
 
-    cgstates = load_object("./dissipation_constant/offline_files/1024_filtered_downsized_uveta_imfilter_90days_postspinup_smagdissipation_8hoursaves.jld2")
-    ucg = cgstates[1]
-    vcg = cgstates[2]
-    etacg = cgstates[3]
+    @views ucg = uhrcgall;
+    @views vcg = vhrcgall;
+    @views etacg = etahrcgall;
 
     u, v, eta = ShallowWaters.add_halo(ucg[:,:,j], vcg[:,:,j], etacg[:,:,j], zeros(128,128), SNN)
     snapshot = [u, v]
 
-    param_guess = load_object("./dissipation_constant/tuned_weights/result_offline_150iterations_geluactivation_smag.jld2").solution;
+    param_guess = load_object("./dissipation_constant/tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
     current = 1
     for model in (SNN.Diag.CNNVars.model_Su, SNN.Diag.CNNVars.model_Sv)
         for layers in model[1]

@@ -61,7 +61,7 @@ function compute_approxhrS()
     uhrT = zeros(1024,1024)
     vhrT = zeros(1024,1024)
 
-    s = Slr.grid.Δ^2
+    s = Slr.grid.Δ
     alpha = 0.1
     winu = tukey((Shr.grid.nux, Shr.grid.nuy), alpha)
     winv = tukey((Shr.grid.nvx,Shr.grid.nvy), alpha)
@@ -407,10 +407,10 @@ function compute_tendencies_withrk!(du, dv, deta, S, t)
     v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
     η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
 
-    # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
+    if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
         ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
         ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-    # end
+    end
 
     # if (chkp.i % S.grid.nstep_diff) == 0
         ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
@@ -496,8 +496,9 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
     end
 
     if S.parameters.RKo > 2
-        error("you need to set it to use rk2")
+        error("you need to set the model to use rk2")
     end
+
     j = 1
     for rki = 1:1
         if rki > 1
@@ -508,15 +509,11 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
                 S
             )
         end
-        println("Number of times this print statement is hit: ", j)
+
         # type conversion for mixed precision
         u1rhs = S.Diag.PrognosticVarsRHS.u .= S.Diag.RungeKutta.u1
         v1rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v1
         η1rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η1
-
-        println("Is the u being propagated still the initial u (before rhs is hit): ", norm(u1rhs .- S.Prog.u))
-        println("Is the v being propagated still the initial v (before rhs is hit): ", norm(v1rhs .- S.Prog.v))
-        println("Is the eta being propagated still the initial state (before rhs is hit): ", norm(η1rhs .- S.Prog.η))
 
         ShallowWaters.rhs!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)          # momentum only
         ShallowWaters.continuity!(u1rhs, v1rhs, η1rhs, S.Diag, S, t)   # continuity equation
@@ -623,7 +620,9 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
         #     S
         # )
 
-    # modified to account for the half a timestep
+        # because the RK step only took one step with rk2 I technically did half a timestep, and need to be sure that the 
+        # dissipative terms are also added with half a timestep
+        # that's why here I copy and paste everything in add_drag_diff_tendencies and ultimately add a multiplication by 1/2
         @unpack Bu,Bv = S.Diag.Bottomdrag
         @unpack LLu1,LLu2,LLv1,LLv2 = S.Diag.Smagorinsky
         @unpack halo,ep,Δt_diff = S.grid
@@ -635,16 +634,13 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
         @boundscheck (m+2-ep,n) == size(LLu2) || throw(BoundsError())
 
         if S.parameters.zb_forcing_dissipation
-            ShallowWaters.ZB_momentum(S.Diag.RungeKutta.u0,S.Diag.RungeKutta.v0,S,Diag)
+            ShallowWaters.ZB_momentum(S.Diag.RungeKutta.u0,S.Diag.RungeKutta.v0,S,S.Diag)
         end
 
         if S.parameters.nn_forcing_dissipation
             ShallowWaters.CNN_momentum(S.Diag.RungeKutta.u0,S.Diag.RungeKutta.v0,S)
         end 
 
-        # because the RK step only took one step with rk2 I technically did half a timestep, and need to be sure that the 
-        # dissipative terms are also added with half a timestep
-        # that's why here I add a multiplication by 2
         if S.parameters.zb_forcing_dissipation
         @inbounds for j ∈ 1:n
             for i ∈ 1:m
@@ -899,10 +895,10 @@ function compute_advection!(mom_u, mom_v, S, t)
     v0rhs = S.Diag.PrognosticVarsRHS.v .= S.Diag.RungeKutta.v0
     η0rhs = S.Diag.PrognosticVarsRHS.η .= S.Diag.RungeKutta.η0
 
-    # if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
-        # ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        # ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-    # end
+    if S.parameters.dynamics == "nonlinear" && S.grid.nstep_advcor > 0 && (i % S.grid.nstep_advcor) == 0
+        ShallowWaters.UVfluxes!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+        ShallowWaters.advection_coriolis!(u0rhs, v0rhs, η0rhs, S.Diag, S)
+    end
 
     # if (chkp.i % S.grid.nstep_diff) == 0
         # ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
@@ -1048,18 +1044,14 @@ function compute_mom_budget(Seuler, Sadv, t, n)
 end
 
 """
-Just for running the above functions, largely not used anymore
+Just for running the above functions
 """
 
-function save_rktendencies()
+function save_rk4lr()
 
     @views u = uhrcgall;
     @views v = vhrcgall;
     @views eta = etahrcgall;
-
-    @views u = uhrall;
-    @views v = vhrall;
-    @views eta = etahrall;
 
     # u = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/u.nc", "u");
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_3dayoptimization_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86initdays_startfrommulti3_3years_dailysaves/v.nc", "v");
@@ -1077,33 +1069,6 @@ function save_rktendencies()
     # v = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/v.nc", "v");
     # eta = ncread("./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_3years_dailysaves/eta.nc", "eta");
 
-    Phr = ShallowWaters.Parameter(T=Float64,
-        output=false,
-        L_ratio=1,
-        g=9.81,
-        H=500,
-        # cfl=.898,
-        wind_forcing_x="double_gyre",
-        Lx=3840e3,
-        RKo=2,
-        seasonal_wind_x=false,
-        topography="flat",
-        bc="nonperiodic",
-        bottom_drag="quadratic",
-        tracer_advection=false,
-        tracer_relaxation=false,
-        zb_forcing_momentum=false,
-        zb_forcing_dissipation=false,
-        zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
-        N=1,
-        α=2,
-        nx=1024,
-        Ndays=3*365
-    );
-    Shr = ShallowWaters.model_setup(Phr);
-
     Plr = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
@@ -1112,7 +1077,7 @@ function save_rktendencies()
         cfl=.898,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
-        RKo=2,
+        RKo=4,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
@@ -1131,31 +1096,7 @@ function save_rktendencies()
     );
     Slr = ShallowWaters.model_setup(Plr);
 
-    S = Shr
-    # for S in [Slr]
-        # calculate layer thicknesses for initial conditions
-        ShallowWaters.thickness!(S.Diag.VolumeFluxes.h, S.Prog.η, S.forcing.H)
-        ShallowWaters.Ix!(S.Diag.VolumeFluxes.h_u, S.Diag.VolumeFluxes.h)
-        ShallowWaters.Iy!(S.Diag.VolumeFluxes.h_v, S.Diag.VolumeFluxes.h)
-        ShallowWaters.Ixy!(S.Diag.Vorticity.h_q, S.Diag.VolumeFluxes.h)
-    # end
-
-    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
-    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
-    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution;
-    # current = 1
-    # for m in (S.Diag.CNNVars.model_Su, S.Diag.CNNVars.model_Sv)
-    #     for layers in m[1]
-    #         for array in layers
-    #                 sz = prod(size(array))
-    #                 array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
-    #                 current += sz
-    #         end
-    #     end
-    # end
-
-    # high-resolution model
-    t = 1800 * S.grid.dtint
+    S = Slr
 
     # low-resolution model
     t = 225 * S.grid.dtint
@@ -1166,11 +1107,6 @@ function save_rktendencies()
     du_all = zeros(S.grid.nux, S.grid.nuy, 1096);
     dv_all = zeros(S.grid.nvx, S.grid.nvy, 1096);
     deta_all = zeros(S.grid.nx, S.grid.ny, 1096);
-
-    alpha = 0.1
-    winu = tukey((Shr.grid.nux, Shr.grid.nuy), alpha)
-    winv = tukey((Shr.grid.nvx, Shr.grid.nvy), alpha)
-    # wineta = tukey((Shr.grid.nx, Shr.grid.ny), alpha)
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750))
 
@@ -1192,16 +1128,102 @@ function save_rktendencies()
         S.Prog.v = v_
         S.Prog.η = eta_
 
-        # single_step_diff!(Bu, Bv, Mu, Mv, S, n*t)
-        # compute_advection!(adv_u, adv_v, S, n*t)
-        # compute_tendencies_withrk!(1, du, dv, deta, S, n*t)
-        compute_tendencies_witheuler!(du, dv, deta, S, n*t)
+        compute_tendencies_withrk!(du, dv, deta, S, n*t)
+
         # saving tendencies
         @views du_all[:,:,n] .= du
         @views dv_all[:,:,n] .= dv
         @views deta_all[:,:,n] .= deta
 
     end
+
+    return du_all, dv_all
+
+end
+
+function save_rk4hr()
+
+    @views u = uhrall;
+    @views v = vhrall;
+    @views eta = etahrall;
+
+    Phr = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        # cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        RKo=4,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=false,
+        N=1,
+        α=2,
+        nx=1024,
+        Ndays=3*365
+    );
+    Shr = ShallowWaters.model_setup(Phr);
+
+    S = Shr
+
+    # high-resolution model
+    t = 1800 * S.grid.dtint
+
+    du = zeros(S.grid.nux, S.grid.nuy);
+    dv = zeros(S.grid.nvx, S.grid.nvy);
+    deta = zeros(S.grid.nx, S.grid.ny);
+    du_all = zeros(S.grid.nux, S.grid.nuy, 1096);
+    dv_all = zeros(S.grid.nvx, S.grid.nvy, 1096);
+    deta_all = zeros(S.grid.nx, S.grid.ny, 1096);
+
+    filtereddu = zeros(127, 128)
+    filtereddv = zeros(128, 127)
+
+    du_all = zeros(127, 128, 1096);
+    dv_all = zeros(128, 127, 1096);
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    for n = 1:1096
+
+        # ufiltered = imfilter(winu.*u[:,:,n], reflect(ker))
+        # vfiltered = imfilter(winv.*v[:,:,n], reflect(ker))
+        # etafiltered = imfilter(eta[:,:,n], reflect(ker))
+
+        # @views windowuhrdownsized = (ufiltered[8:8:end, 4:8:end] .+ ufiltered[8:8:end, 5:8:end]) .* 0.5
+        # @views windowvhrdownsized = (vfiltered[4:8:end, 8:8:end] .+ vfiltered[5:8:end, 8:8:end]) .* 0.5
+        # @views windowetahrdownsized = (etafiltered[4:8:end,4:8:end] .+ etafiltered[5:8:end,5:8:end] .+ etafiltered[4:8:end,5:8:end] .+ etafiltered[5:8:end,4:8:end]) ./ 4
+
+        # u_, v_, eta_ = ShallowWaters.add_halo(windowuhrdownsized, windowvhrdownsized, windowetahrdownsized, S)
+
+        u_, v_, eta_ = ShallowWaters.add_halo(u[:,:,n], v[:,:,n], eta[:,:,n], S)
+
+        S.Prog.u = u_
+        S.Prog.v = v_
+        S.Prog.η = eta_
+
+        compute_tendencies_withrk!(du, dv, deta, S, n*t)
+
+        # saving coarse-grained, filtered hr tendencies
+        filtereddu = imfilter(du, reflect(ker))
+        filtereddv = imfilter(dv, reflect(ker))
+
+        @views du_all[:,:,n] .= (filtereddu[8:8:end, 4:8:end] .+ filtereddu[8:8:end, 5:8:end]) .* 0.5
+        @views dv_all[:,:,n] .= (filtereddv[4:8:end, 8:8:end] .+ filtereddv[5:8:end, 8:8:end]) .* 0.5
+
+    end
+
+    return du_all, dv_all
 
 end
 
@@ -1340,7 +1362,7 @@ function save_eulerhr()
 
     end
 
-    return du_all, dv_all, deta_all
+    return du_all, dv_all
 
 end
 
