@@ -229,15 +229,14 @@ function filter_hr(u, v)
 
 end
 
-
 function compute_transfer(u, v, Su, Sv)
 
-        nfft = nextfastfft(size(u))
+    nfft = nextfastfft(size(u))
 
-        outu, inputu, inputSu = paddingu(u, Su, nfft[1])
-        fft2pow2radial!(outu, rfft(inputu), rfft(inputSu), nfft...)
-        outv, inputv, inputSv = paddingv(v, Sv, nfft[1])
-        fft2pow2radial!(outv, rfft(inputv), rfft(inputSv), nfft...)
+    outu, inputu, inputSu = paddingu(u, Su, nfft[1])
+    fft2pow2radial!(outu, rfft(inputu), rfft(inputSu), nfft...)
+    outv, inputv, inputSv = paddingv(v, Sv, nfft[1])
+    fft2pow2radial!(outv, rfft(inputv), rfft(inputSv), nfft...)
 
     return outu, outv
 
@@ -1375,12 +1374,13 @@ function save_adveclr()
     Plr = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
-        g=9.81,
+        ω=1e-22,        # this and gravity are so small to "remove" terms and access the nonlinear advection
+        g=1e-20,
         H=500,
         cfl=.898,
-        RKo=2,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
+        RKo=2,
         seasonal_wind_x=false,
         topography="flat",
         bc="nonperiodic",
@@ -1390,25 +1390,26 @@ function save_adveclr()
         zb_forcing_momentum=false,
         zb_forcing_dissipation=false,
         zb_filtered=true,
-        nn_forcing_momentum=false,
-        nn_forcing_dissipation=false,
+        # nn_forcing_momentum=false,
+        # nn_forcing_dissipation=true,
         N=1,
         α=2,
         nx=128,
-        Ndays=3*365
+        Ndays=2,
+        initial_cond="rest",
     );
     Slr = ShallowWaters.model_setup(Plr);
 
     S = Slr
     t = 225 * S.grid.dtint
 
-    adv_u = zeros(S.grid.nux, S.grid.nuy);
-    adv_v = zeros(S.grid.nvx, S.grid.nvy);
-
     adv_u_all = zeros(S.grid.nux, S.grid.nuy, 1096);
     adv_v_all = zeros(S.grid.nvx, S.grid.nvy, 1096);
 
     for n = 1:1096
+
+        adv_u = zeros(S.grid.nux, S.grid.nuy);
+        adv_v = zeros(S.grid.nvx, S.grid.nvy);
 
         u_, v_, eta_ = ShallowWaters.add_halo(u[:,:,n], v[:,:,n], eta[:,:,n], S)
 
@@ -1438,7 +1439,8 @@ function save_advechr()
     Phr = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
-        g=9.81,
+        ω=1e-22,        # this and gravity are so small to "remove" terms and access the nonlinear advection
+        g=1e-20,
         H=500,
         wind_forcing_x="double_gyre",
         Lx=3840e3,

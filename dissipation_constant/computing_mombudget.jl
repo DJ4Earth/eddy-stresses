@@ -91,10 +91,10 @@ function momentum_budget_offline()
     colorrange=(-1.5e-15, 1.5e-15)
     );
     Colorbar(fig[1,2], hm1)
-    hidexdecorations!(ax1)
 
-    fig = Figure(size=(1050, 700), fontsize=15);
+    # fig = Figure(size=(1050, 700), fontsize=15);
 
+    fig = Figure(size=(1200, 650),fontsize=15);
     Label(
         fig[0, 3],
         "Momentum budget, u-components",
@@ -112,27 +112,27 @@ function momentum_budget_offline()
     Colorbar(fig[1,2], hm1)
     hidexdecorations!(ax1)
 
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (adv_u + fv - detagdx2 + Fx + viscu + bottomdragu),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Sum of budget terms"),
-    colorrange=(-1.5e-5, 1.5e-5)
-    );
-    hidedecorations!(ax2)
-    Colorbar(fig[1,4], hm2)
+    # ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # (adv_u + fv - detagdx + Fx + viscu + bottomdragu),
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Sum of budget terms"),
+    # colorrange=(-1.5e-5, 1.5e-5)
+    # );
+    # hidedecorations!(ax2)
+    # Colorbar(fig[1,4], hm2)
 
-    ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    ((2 .* du) ./ 384) .- (adv_u + fv - detagdx2 + Fx + viscu + bottomdragu),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Tendency - sum"),
-    colorrange=(-1.5e-13, 1.5e-13)
-    );
-    hidedecorations!(ax13)
-    Colorbar(fig[1,6], hm13)
+    # ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # ((2 .* du) ./ 384) .- (adv_u + fv - detagdx + Fx + viscu + bottomdragu),
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Tendency - sum"),
+    # colorrange=(-1.5e-13, 1.5e-13)
+    # );
+    # hidedecorations!(ax13)
+    # Colorbar(fig[1,6], hm13)
 
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (adv_u),
     colormap=:balance,
@@ -140,27 +140,27 @@ function momentum_budget_offline()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     hidedecorations!(ax3)
-    Colorbar(fig[2,2], hm3)
+    Colorbar(fig[1,4], hm3)
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     fv,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Coriolis"),
     colorrange=(-1.5e-4, 1.5e-4)
     );
-    Colorbar(fig[2,4], hm4)
-    hidexdecorations!(ax4)
+    Colorbar(fig[1,6], hm4)
+    hidedecorations!(ax4)
 
-    ax5, hm5 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     -detagdx,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Pressure gradient"),
     colorrange=(-1.5e-4, 1.5e-4)
     );
-    hidedecorations!(ax5)
-    Colorbar(fig[2,6], hm5)
+    # hidedecorations!(ax5)
+    Colorbar(fig[2,2], hm5)
 
     # ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     # LinRange(0, 3840, 128),
@@ -172,24 +172,24 @@ function momentum_budget_offline()
     # hideydecorations!(ax6)
     # Colorbar(fig[2,6], hm6)
 
-    ax7, hm7 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    ax7, hm7 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     viscu,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Viscosity"),
     colorrange=(-1.5e-6, 1.5e-6)
     );
-    Colorbar(fig[3,2], hm7)
+    Colorbar(fig[2,4], hm7)
 
-    ax8, hm8 = heatmap(fig[3,3], LinRange(0, 3840, 128),
+    ax8, hm8 = heatmap(fig[2,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     bottomdragu,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Bottom drag"),
     colorrange=(-1.5e-7, 1.5e-7)
     );
-    hideydecorations!(ax8)
-    Colorbar(fig[3,4], hm8)
+    # hideydecorations!(ax8)
+    Colorbar(fig[2,6], hm8)
 
     ga = fig[1, 1] = GridLayout()
     gb = fig[1, 3] = GridLayout()
@@ -197,10 +197,10 @@ function momentum_budget_offline()
     gd = fig[2, 1] = GridLayout()
     ge = fig[2, 3] = GridLayout()
     gf = fig[2, 5] = GridLayout()
-    gg = fig[3, 1] = GridLayout()
-    gh = fig[3, 3] = GridLayout()
+    # gg = fig[3, 1] = GridLayout()
+    # gh = fig[3, 3] = GridLayout()
 
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"], [ga, gb, gc, gd, ge, gf, gg, gh])
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
         font = :bold,
@@ -229,7 +229,7 @@ function momentum_budget_offline()
 
     ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (adv_v - fu - detagdy2 + viscv + bottomdragv),
+    (adv_v - fu - detagdy + viscv + bottomdragv),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Sum of budget terms"),
     colorrange=(-1.5e-5, 1.5e-5)
@@ -239,7 +239,7 @@ function momentum_budget_offline()
 
     ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    ((2 .* dv) ./ 384) .- (adv_v - fu - detagdy2 + viscv + bottomdragv),
+    ((2 .* dv) ./ 384) .- (adv_v - fu - detagdy + viscv + bottomdragv),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Tendency - sum"),
     colorrange=(-1.5e-13, 1.5e-13)

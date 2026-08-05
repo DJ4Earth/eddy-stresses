@@ -217,11 +217,11 @@ function load_Sfiles()
     Suapprox = approx_S[1];
     Svapprox = approx_S[2];
 
-    advec_cg = load_object("./dissipation_constant/computing_trueS/cg_advection_euler_rk2_advecuadvecv.jld2");
-    advec_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_advection_euler_rk2_advecuadvecv.jld2");
+    advec_cg = load_object("./dissipation_constant/computing_trueS/cg_advection_euler_rk2coeff_advecuadvecv.jld2");
+    advec_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_advection_euler_rk2coeff_advecuadvecv.jld2");
 
-    tend_euler_cg = load_object("./dissipation_constant/computing_trueS/cg_tendencies_euler_rk2_dudv.jld2");
-    tend_euler_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_tendencies_euler_rk2_dudv.jld2");
+    tend_euler_cg = load_object("./dissipation_constant/computing_trueS/cg_tendencies_euler_rk2coeff_dudv.jld2");
+    tend_euler_hrcg = load_object("./dissipation_constant/computing_trueS/hrcg_tendencies_euler_rk2coeff_dudv.jld2");
 
     P = ShallowWaters.Parameter(T=Float64,
         output=false,

@@ -120,7 +120,7 @@ function spectrum_plots()
         up_filtered_NA[:,t] = power(periodogram(ufiltered_NA[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
         vp_filtered_NA[:,t] = power(periodogram(vfiltered_NA[:,:,t]; radialavg=true, radialsum=false)) ./ (1024 * 1023)
 
-        up_hrcg[:,t] = power(periodogram(uhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127)
+        up_hrcg[:,t] = power(periodogram(uhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127) 
         vp_hrcg[:,t] = power(periodogram(vhrcgall[:,:,t]; radialavg=true, radialsum=false)) ./ (128*127)
 
         up_zb[:,t] = power(periodogram(uzball[:, :, t].*winu; radialavg=true, radialsum=false)) ./ (128*127)
@@ -209,152 +209,6 @@ function spectrum_plots()
 
     #### comparing time-averaged ke spectra
 
-    up_noparam_avg = zeros(65)
-    vp_noparam_avg = zeros(65)
-
-    up_zb_avg = zeros(65)
-    vp_zb_avg = zeros(65)
-
-    up_10day_avg = zeros(65)
-    vp_10day_avg = zeros(65)
-
-    up_20day_avg = zeros(65)
-    vp_20day_avg = zeros(65)
-
-    up_30day_avg = zeros(65)
-    vp_30day_avg = zeros(65)
-
-    up_hr_avg = zeros(513)
-    vp_hr_avg = zeros(513)
-
-    up_cghr_avg = zeros(65)
-    vp_cghr_avg = zeros(65)
-
-    up_filter_avg = zeros(513)
-    vp_filter_avg = zeros(513)
-
-    up_gelu1day_avg = zeros(65)
-    vp_gelu1day_avg = zeros(65)
-
-    up_5day_avg = zeros(65)
-    vp_5day_avg = zeros(65)
-
-    up_multi10_avg = zeros(65)
-    vp_multi10_avg = zeros(65)
-
-    up_multi1_avg = zeros(65)
-    vp_multi1_avg = zeros(65)
-
-    up_multi20_avg = zeros(65)
-    vp_multi20_avg = zeros(65)
-
-    up_multi2_avg = zeros(65)
-    vp_multi2_avg = zeros(65)
-
-    up_multi3_avg = zeros(65)
-    vp_multi3_avg = zeros(65)
-
-    up_multi3more_avg = zeros(65)
-    vp_multi3more_avg = zeros(65)
-
-    # up_geluKEspec_avg = zeros(65)
-    # vp_geluKEspec_avg = zeros(65)
-
-    # up_geluKEspecpd_avg = zeros(65)
-    # vp_geluKEspecpd_avg = zeros(65)
-
-    # up_geluhybrid_avg = zeros(65)
-    # vp_geluhybrid_avg = zeros(65)
-
-    # up_gelufourier_avg = zeros(65)
-    # vp_gelufourier_avg = zeros(65)
-
-    # up_relu1day_avg = zeros(65)
-    # vp_relu1day_avg = zeros(65)
-
-    # up_relu5day_avg = zeros(65)
-    # vp_relu5day_avg = zeros(65)
-
-    # up_reluKEspec_avg = zeros(65)
-    # vp_reluKEspec_avg = zeros(65)
-
-    up_filtered_avg = zeros(513)
-    vp_filtered_avg = zeros(513)
-
-    up_filteredNA_avg = zeros(513)
-    vp_filteredNA_avg = zeros(513)
-
-    totalstates = 1096
-    for t = 1:totalstates
-
-        up_filter_avg += up_hrfilter[:,t]
-        vp_filter_avg += vp_hrfilter[:,t]
-
-        up_hr_avg += up_hr[:,t]
-        vp_hr_avg += vp_hr[:,t]
-
-        up_filterNA_avg += up_hrfilter[:,t]
-        vp_filterNA_avg += vp_hrfilter[:,t]
-
-        up_filtered_avg += up_filtered[:,t]
-        vp_filtered_avg += vp_filtered[:,t]
-
-        up_noparam_avg += up_noparam[:,t]
-        vp_noparam_avg += vp_noparam[:,t]
-
-        up_zb_avg += up_zb[:,t]
-        vp_zb_avg += vp_zb[:,t]
-
-        up_20day_avg += up_20day[:, t]
-        vp_20day_avg += vp_20day[:, t]
-
-        up_30day_avg += up_30day[:, t]
-        vp_30day_avg += vp_30day[:, t]
-
-        up_cghr_avg += up_hrcg[:,t]
-        vp_cghr_avg += vp_hrcg[:,t]
-
-        up_gelu1day_avg += up_gelu1day[:,t]
-        vp_gelu1day_avg += vp_gelu1day[:,t]
-
-        up_5day_avg += up_gelu5day[:,t]
-        vp_5day_avg += vp_gelu5day[:,t]
-
-        up_10day_avg += up_10day[:, t]
-        vp_10day_avg += vp_10day[:, t]
-
-        up_multi1_avg += up_multi1[:, t]
-        vp_multi1_avg += vp_multi1[:, t]
-
-        up_multi2_avg += up_multi2[:, t]
-        vp_multi2_avg += vp_multi2[:, t]
-
-        up_multi10_avg += up_multi10[:, t]
-        vp_multi10_avg += vp_multi10[:, t]
-
-        up_multi20_avg += up_multi20[:, t]
-        vp_multi20_avg += vp_multi20[:, t]
-
-        up_multi3_avg += up_multi3[:, t]
-        vp_multi3_avg += vp_multi3[:, t]
-
-        up_multi3more_avg += up_multi3[:, t]
-        vp_multi3more_avg += vp_multi3[:, t]
-
-        # up_geluKEspec_avg += up_geluKEspec[:,t]
-        # vp_geluKEspec_avg += vp_geluKEspec[:,t]
-
-        # up_geluKEspecpd_avg += up_geluKEspecpd[:,t]
-        # vp_geluKEspecpd_avg += vp_geluKEspecpd[:,t]
-
-        # up_geluhybrid_avg += up_geluhybrid[:,t]
-        # vp_geluhybrid_avg += vp_geluhybrid[:,t]
-
-        # up_gelufourier_avg += up_gelufourier[:,t]
-        # vp_gelufourier_avg += vp_gelufourier[:,t]
-
-    end
-
     fig = Figure(size=(900, 400), fontsize=15);
     ax = Axis(fig[1,1],
         xscale=log10,
@@ -364,14 +218,12 @@ function spectrum_plots()
         xticks=[700, 400, 100, 30, 10, 2],
         title="3-year averaged KE spectrum"
     )
-    lines!(ax, lr_wl[2:end], (up_cghr_avg[2:end] + vp_cghr_avg[2:end])/totalstates, label="Filtered, coarse-grained 3.75 km", color=:black)
-    lines!(ax, lr_wl[2:end], (up_zb_avg[2:end] + vp_zb_avg[2:end])/totalstates, label="ZB20", color=:red)
-    lines!(ax, lr_wl[2:end], (up_noparam_avg[2:end] + vp_noparam_avg[2:end])/totalstates, label="No closure, 30 km", color=:gray)
-
-    # lines!(ax, lr_wl[2:end], (up_multi1_avg[2:end] + vp_multi1_avg[2:end])/1096, label="Online NN closure, batched 1 day")#, linestyle=:dash)
-    lines!(ax, lr_wl[2:end], (up_multi2_avg[2:end] + vp_multi2_avg[2:end])/totalstates, label="Ensemble 2 day")#, linestyle=:dash)
-    lines!(ax, lr_wl[2:end], (up_multi3more_avg[2:end] + vp_multi3more_avg[2:end])/totalstates, label="Ensemble 3 day")#, linestyle=:dashdot)
-    lines!(ax, lr_wl[2:end], (up_multi10_avg[2:end] + vp_multi10_avg[2:end])/totalstates, label="Ensemble 10 day")#,linestyle=:dot)
+    lines!(ax, lr_wl[2:end], mean(up_hrcg + vp_hrcg, dims=2)[2:end], label="Filtered, coarse-grained 3.75 km", color=:black)
+    lines!(ax, lr_wl[2:end], mean(up_zb + vp_zb, dims=2)[2:end], label="ZB20", color=:red)
+    lines!(ax, lr_wl[2:end], mean(up_noparam + vp_noparam, dims=2)[2:end], label="No closure, 30 km", color=:gray)
+    lines!(ax, lr_wl[2:end], mean(up_multi2 + vp_multi2, dims=2)[2:end], label="Ensemble 2 day")#, linestyle=:dash)
+    lines!(ax, lr_wl[2:end], mean(up_multi3more + vp_multi3more, dims=2)[2:end], label="Ensemble 3 day")#, linestyle=:dashdot)
+    lines!(ax, lr_wl[2:end], mean(up_multi10 + vp_multi10, dims=2)[2:end], label="Ensemble 10 day")#,linestyle=:dot)
     axislegend(position = :lb)
 
 

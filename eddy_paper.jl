@@ -21,5 +21,4 @@ if !Base.isdefined(@__MODULE__, :ShallowWaters)
     using .ShallowWaters
 end
 
-include("making_tensorT_figures.jl")
 include("helper_functions.jl")

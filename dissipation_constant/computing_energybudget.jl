@@ -68,7 +68,7 @@ function compute_averagedtransfer()
     );
     Shr = ShallowWaters.model_setup(Phr);
 
-    Padveclr = ShallowWaters.Parameter(T=Float64,
+    Plr2 = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
         g=1e-12,
@@ -98,7 +98,7 @@ function compute_averagedtransfer()
     );
     Slr2 = ShallowWaters.model_setup(Padveclr);
 
-    Padvechr = ShallowWaters.Parameter(T=Float64,
+    Phr2 = ShallowWaters.Parameter(T=Float64,
         output=false,
         L_ratio=1,
         g=1e-12,
@@ -425,7 +425,7 @@ function energy_budget_offline()
 
     Label(
         fig[0, 3],
-        "SGS contributions in coarse-grained high-resolution model, u-components",
+        "SGS contributions in coarse-grained high-resolution model, u equation",
         fontsize = 25,
         tellwidth = false
     )
@@ -454,7 +454,7 @@ function energy_budget_offline()
     LinRange(0, 3840, 128),
     (hrcgtendency .- lrtendency) .- sgs_sum,
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Tendency - sum"),
+    axis=(xlabel="km", ylabel="km", title="Tendency - Sum"),
     colorrange=(-2e-7, 2e-7)
     );
     Colorbar(fig[1,6], hm13)
@@ -495,125 +495,8 @@ function energy_budget_offline()
     sgs_viscosity,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Viscosity"),
-    colorrange=(-1e-6, 1e-6)
-    );
-    hidedecorations!(ax5)
-    Colorbar(fig[3,2], hm5)
-
-    ax6, hm6 = heatmap(fig[3,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sgs_bottomdrag,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Bottom drag"),
-    colorrange=(-1e-8, 1e-8)
-    );
-    hidedecorations!(ax6)
-    Colorbar(fig[3,4], hm6)
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    gg = fig[3, 1] = GridLayout()
-    gh = fig[3, 3] = GridLayout()
-
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"], [ga, gb, gc, gd, ge, gf, gg, gh])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    hrcgtendency = 2 * dvhrcg ./ Shr.grid.dtint
-    lrtendency = 2 * dvlr ./ Slr.grid.dtint
-
-    sgs_advection = -(adv_vlr .- advv_hrcg)
-    sgs_coriolis = fulr .- fuhrcg
-    sgs_pressure = detagdylr .- detagdyhrcg
-    sgs_viscosity = viscvhrcg .- viscvlr
-    sgs_bottomdrag = bottomdragvhrcg .- bottomdragvlr
-
-    sgs_sum = sgs_advection + sgs_coriolis + sgs_pressure + sgs_viscosity + sgs_bottomdrag
-
-    fig = Figure(size=(1050, 700), fontsize=15);
-
-    Label(
-        fig[0, 3],
-        "SGS contributions in coarse-grained high-resolution model, v-components",
-        fontsize = 25,
-        tellwidth = false
-    )
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    hrcgtendency .- lrtendency,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Euler tendency"),
-    colorrange=(-2e-5, 2e-5)
-    );
-    Colorbar(fig[1,2], hm1)
-    hidexdecorations!(ax1)
-
-    ax12, hm12 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sgs_sum,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Sum of SGS terms"),
-    colorrange=(-2e-5, 2e-5)
-    );
-    Colorbar(fig[1,4], hm12)
-    hidexdecorations!(ax12)
-
-    ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (hrcgtendency .- lrtendency) .- sgs_sum,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Tendency - sum"),
     colorrange=(-2e-7, 2e-7)
     );
-    Colorbar(fig[1,6], hm13)
-    hidexdecorations!(ax13)
-
-    ax2, hm2 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sgs_advection,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Nonlinear advection"),
-    colorrange=(-2e-5, 2e-5)
-    );
-    hidedecorations!(ax2)
-    Colorbar(fig[2,2], hm2)
-
-    ax3, hm3 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sgs_coriolis,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Coriolis"),
-    colorrange=(-2e-5, 2e-5)
-    );
-    hidedecorations!(ax3)
-    Colorbar(fig[2,4], hm3)
-
-    ax4, hm4 = heatmap(fig[2,5], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sgs_pressure,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Pressure gradient"),
-    colorrange=(-1e-5, 1e-5)
-    );
-    Colorbar(fig[2,6], hm4)
-    hidexdecorations!(ax4)
-
-    ax5, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sgs_viscosity,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Viscosity"),
-    colorrange=(-1e-6, 1e-6)
-    );
     hidedecorations!(ax5)
     Colorbar(fig[3,2], hm5)
 
@@ -627,22 +510,7 @@ function energy_budget_offline()
     hidedecorations!(ax6)
     Colorbar(fig[3,4], hm6)
 
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
-    gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
-    gg = fig[3, 1] = GridLayout()
-    gh = fig[3, 3] = GridLayout()
-
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"], [ga, gb, gc, gd, ge, gf, gg, gh])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
+    lr_freq = 1/30 .* freq(periodogram(uhrcgall[:,:,10]; radialavg=true, radialsum=false));
 
     transfersum = lr_freq.* ( -(advu_transfer + advv_transfer) +
         (coriolisu_transfer + coriolisv_transfer) +
@@ -650,7 +518,6 @@ function energy_budget_offline()
         (viscu_transfer + viscv_transfer) +
         (bottomdragu_transfer + bottomdragv_transfer)
     )
-    lr_freq = 1/30 .* freq(periodogram(uhrcgall[:,:,10]; radialavg=true, radialsum=false));
 
     fig = Figure(size=(1050, 700), fontsize=15);
 
@@ -672,13 +539,13 @@ function energy_budget_offline()
 
     axislegend(ax, position=:rt)
 
-    # only run if something needs to be recomputed, this function takes a really long time and returns the sum of 
-    # three years of daily transfer snapshots for each component in the sgs forcing. One still needs to divide by the number of 
-    # items in the sum (1096) when plotting.
+    # only re run if necessary, this computes the sum of 3 years of transfers to then look at the average. Still need to divide by 1096 when plotting
     # tendency_transfer, advection_transfer, pressure_transfer, viscosity_transfer, coriolis_transfer, bottomdrag_transfer = compute_averagedtransfer()
-    transfers = load_object("./dissipation_constant/alternate_S_files/energybudget_transfers_threeyearsums_computedwhrcgstates_tend_advec_pressure_coriolis_visc_bottomdrag.jld2");
+
+    transfers = load_object("./dissipation_constant/computing_trueS/energybudget_transfers_threeyearsums_computedwhrcgstates_tend_advec_pressure_coriolis_visc_bottomdrag.jld2");
+
     tendency_transfer = transfers[1];
-    advective_transfer = transfers[2];
+    advection_transfer = transfers[2];
     pressure_transfer = transfers[3];
     coriolis_transfer = transfers[4];
     viscosity_transfer = transfers[5];
@@ -686,30 +553,8 @@ function energy_budget_offline()
 
     transfersum = -advection_transfer + pressure_transfer + viscosity_transfer + coriolis_transfer + bottomdrag_transfer
 
-
-    fig = Figure(size=(800, 350), fontsize=15);
-    color = Makie.resample_cmap(:darktest, 8)
-    ax = Axis(fig[1,1],
-        xscale=log10,
-        xlabel="Wavelength (km)",
-        ylabel=L"k T(k)",
-        title="Transfer components in coarse-grained high-resolution data",
-        xreversed=true,
-        xticks=[700, 100, 30, 10, 2]
-    )
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(tendency_transfer)./1096)[2:end], label="Tendency, Euler", color=:aqua)
-    lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(advection_transfer)./1096)[2:end], label="Advection", color=:orange)
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(coriolis_transfer)./1096)[2:end], label="Coriolis", color=color[2])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(pressure_transfer)./1096)[2:end], label="Pressure gradient", color=color[3])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(viscosity_transfer)./1096)[2:end], label="Viscosity", color=color[4])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(bottomdrag_transfer)./1096)[2:end], label="Bottom drag", color=color[7])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq .* transfersum ./ 1096)[2:end], label="Sum of terms", linestyle=:dash, color=:green)
-    axislegend(ax, position=:rt)
-
-    # overlaying some of the parameterization results
-    s = 1096 * 30000 * 64
-    fig = Figure(size=(800, 350), fontsize=15);
-    colors = Makie.wong_colors()
+    fig = Figure(size=(1050, 700), fontsize=15);
+    colors=Makie.resample_cmap(:lighttest, 8)
     ax = Axis(fig[1,1],
         xscale=log10,
         xlabel="Wavelength (km)",
@@ -718,19 +563,13 @@ function energy_budget_offline()
         xreversed=true,
         xticks=[700, 100, 30, 10, 2]
     )
-    lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(totalu_hrcg + totalv_hrcg)./(1096))[2:end], label="Tendency, RK4", color=:black)
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(tendency_transfer)./1096)[2:end], label="Tendency, Euler",color=:aqua)
-    lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(advection_transfer)./1096)[2:end], label="Advection",color=:orange)
-    # lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(coriolis_transfer)./1096)[2:end], label="Coriolis")
-    # lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(pressure_transfer)./1096)[2:end], label="Pressure gradient")
-    # lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(viscosity_transfer)./1096)[2:end], label="Viscosity")
-    # lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(bottomdrag_transfer)./1096)[2:end], label="Bottom drag")
-    # lines!(ax, 1 ./ lr_freq[2:end], (lr_freq .* transfersum ./ 1096)[2:end], label="Sum of terms", linestyle=:dash)
-
-    lines!(ax, 1 ./ lr_freq[2:end], ((lr_freq*30000).*(totalu_approx + totalv_approx) ./ (1096))[2:end], label="Approximate SGS forcing", color=:blue)
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_ZB + totalv_ZB) ./ s)[2:end], label="ZB20", color=:red)
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_multi2 + totalv_multi2) ./ s)[2:end], label="Ensemble 2 day",color=colors[1])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_multi3 + totalv_multi3) ./ s)[2:end], label="Ensemble 3 day",color=colors[2])
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(tendency_transfer)./1096)[2:end], label="Tendency, Euler", color=:aqua)
+    lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(advection_transfer)./1096)[2:end], label="Advection",color=colors[1])
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(coriolis_transfer)./1096)[2:end], label="Coriolis",color=colors[2])
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(pressure_transfer)./1096)[2:end], label="Pressure gradient",color=colors[4])
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(viscosity_transfer)./1096)[2:end], label="Viscosity",color=colors[5])
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(bottomdrag_transfer)./1096)[2:end], label="Bottom drag",color=colors[8])
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq .* transfersum ./ 1096)[2:end], label="Sum of terms", linestyle=:dash)
 
     axislegend(ax, position=:rt)
 

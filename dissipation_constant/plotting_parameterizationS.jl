@@ -219,6 +219,37 @@ function offline_S_firstthreeyears()
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Smulti20);
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
 
+    # quick comparison
+
+    fig = Figure(fontsize=15, size = (900, 300));
+
+    ax00, hm00 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (advec_hrcg[1][:,:,t] .- advec_cg[1][:,:,t]),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"(S_{\text{adv}})_u"),
+    colorrange=(-1e-5, 1e-5)
+    );
+
+    ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    Szb.Diag.ZBVars.S_u ./ s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"(S_{\text{ZB}})_u"),
+    colorrange=(-1e-5, 1e-5)
+    );
+    hideydecorations!(ax0)
+
+    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (advec_hrcg[1][:,:,t] .- advec_cg[1][:,:,t]) .- Szb.Diag.ZBVars.S_u ./ s,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title=L"(S_{\text{adv}})_u - (S_{\text{ZB}})_u"),
+    colorrange=(-1e-5, 1e-5)
+    );
+    Colorbar(fig[1,4], hm1)
+    hideydecorations!(ax1)
+
     # S_u
     fig = Figure(size=(900, 780), fontsize=15);
 
@@ -232,7 +263,7 @@ function offline_S_firstthreeyears()
     t = 1096
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    -Suhr[:,:,t],
+    (tend_rk4_hrcg[1][:,:,t]./48 .- tend_rk4_cg[1][:,:,t]./384),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Total tendencies, RK4"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
@@ -242,17 +273,26 @@ function offline_S_firstthreeyears()
 
     ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    2 .* (tendu_hrdownsized[1][:,:,t]./48 .- tend_cg[1][:,:,t]./384),
+    2 .* (tend_euler_hrcg[1][:,:,t]./48 .- tend_euler_cg[1][:,:,t]./384),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Total tendencies, Euler"),
     # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
-    hidedecorations!(ax0)    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
+    hidedecorations!(ax0)
 
+    ax00, hm00 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (advec_hrcg[1][:,:,t] .- advec_cg[1][:,:,t]),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection, Euler"),
+    # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax00)
     # Colorbar(fig[1,2], hm0)
 
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     S.grid.Δ .* Suapprox[:,:,t],
     colormap=:balance,
@@ -260,10 +300,11 @@ function offline_S_firstthreeyears()
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
     colorrange=(-1.5e-5, 1.5e-5)
     );
-    hidedecorations!(ax2)
+    hidexdecorations!(ax2)
+
 
     s = Szb.grid.Δ * Szb.grid.scale
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Szb.Diag.ZBVars.S_u ./ s,
     colormap=:balance,
@@ -272,18 +313,18 @@ function offline_S_firstthreeyears()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[1,2], hm2, label=L"m/s^2")
-    hidexdecorations!(ax3)
+    hidedecorations!(ax3)
 
-    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    Soffline.Diag.CNNVars.S_u ./ s,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
-    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
-    colorrange=(-1.5e-5, 1.5e-5)
-    );
-    # Colorbar(fig[1,4], hm2, label=L"m/s^2")
-    hidedecorations!(ax4)
+    # ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # Soffline.Diag.CNNVars.S_u ./ s,
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
+    # # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-1.5e-5, 1.5e-5)
+    # );
+    # # Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    # hidedecorations!(ax4)
 
     ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
@@ -361,27 +402,36 @@ function offline_S_firstthreeyears()
     t = 1096
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    -Svhr[:,:,t],
+    (tend_rk4_hrcg[2][:,:,t]./48 .- tend_rk4_cg[2][:,:,t]./384),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Total tendencies, RK4"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
-    # Colorbar(fig[1,2], hm2, label=L"m/s^2")
     hidexdecorations!(ax1)
 
     ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    2 .* (tendv_hrdownsized[:,:,t]./48 .- tend_cg[2][:,:,t]./384),
+    2 .* (tend_euler_hrcg[2][:,:,t]./48 .- tend_euler_cg[2][:,:,t]./384),
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Total tendencies, Euler"),
     # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
     colorrange=(-1.5e-5, 1.5e-5)
     );
     hidedecorations!(ax0)
+
+    ax00, hm00 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    (advec_hrcg[2][:,:,t] .- advec_cg[2][:,:,t]),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Nonlinear advection, Euler"),
+    # colorrange=(-maximum(abs.(Suadvec[:,:,t])),maximum(abs.(Suadvec[:,:,t]))),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax00)
     # Colorbar(fig[1,2], hm0)
 
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[2,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     S.grid.Δ .* Svapprox[:,:,t],
     colormap=:balance,
@@ -389,10 +439,11 @@ function offline_S_firstthreeyears()
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
     colorrange=(-1.5e-5, 1.5e-5)
     );
-    hidedecorations!(ax2)
+    hidexdecorations!(ax2)
+
 
     s = Szb.grid.Δ * Szb.grid.scale
-    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    ax3, hm3 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     Szb.Diag.ZBVars.S_v ./ s,
     colormap=:balance,
@@ -401,18 +452,18 @@ function offline_S_firstthreeyears()
     colorrange=(-1.5e-5, 1.5e-5)
     );
     # Colorbar(fig[1,2], hm2, label=L"m/s^2")
-    hidexdecorations!(ax3)
+    hidedecorations!(ax3)
 
-    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    Soffline.Diag.CNNVars.S_v ./ s,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
-    # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
-    colorrange=(-1.5e-5, 1.5e-5)
-    );
-    # Colorbar(fig[1,4], hm2, label=L"m/s^2")
-    hidedecorations!(ax4)
+    # ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # Soffline.Diag.CNNVars.S_u ./ s,
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Offline-learned NN"),
+    # # colorrange=(-maximum(abs.(Szb.Diag.ZBVars.S_u./ s)),maximum(abs.(Szb.Diag.ZBVars.S_u./ s)))
+    # colorrange=(-1.5e-5, 1.5e-5)
+    # );
+    # # Colorbar(fig[1,4], hm2, label=L"m/s^2")
+    # hidedecorations!(ax4)
 
     ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
