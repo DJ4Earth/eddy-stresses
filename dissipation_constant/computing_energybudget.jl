@@ -556,7 +556,7 @@ function energy_budget_offline()
 
     transfersum = -advection_transfer + pressure_transfer + viscosity_transfer + coriolis_transfer + bottomdrag_transfer
 
-    fig = Figure(size=(1050, 700), fontsize=15);
+    fig = Figure(size=(800, 400), fontsize=15);
     colors=Makie.resample_cmap(:lighttest, 9)
     ax = Axis(fig[1,1],
         xscale=log10,
@@ -566,13 +566,13 @@ function energy_budget_offline()
         xreversed=true,
         xticks=[700, 100, 30, 10, 2]
     )
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(tendency_transfer)./1096)[2:end], label="Tendency, Euler", color=:aqua)
-    lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(advection_transfer)./1096)[2:end], label="Advection",color=colors[1])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(coriolis_transfer)./1096)[2:end], label="Coriolis",color=colors[2])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(pressure_transfer)./1096)[2:end], label="Pressure gradient",color=colors[4])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(viscosity_transfer)./1096)[2:end], label="Viscosity",color=colors[5])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(bottomdrag_transfer)./1096)[2:end], label="Bottom drag",color=colors[8])
-    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq .* transfersum ./ 1096)[2:end], label="Sum of terms", linestyle=:dash)
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(tendency_transfer)./1096)[2:end], label="Tendency, Euler", color=:black)
+    lines!(ax, 1 ./ lr_freq[2:end], -(lr_freq.*(advection_transfer)./1096)[2:end], label="Advection")
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(coriolis_transfer)./1096)[2:end], label="Coriolis")
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(pressure_transfer)./1096)[2:end], label="Pressure gradient")
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(viscosity_transfer)./1096)[2:end], label="Viscosity")
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(bottomdrag_transfer)./1096)[2:end], label="Bottom drag")
+    lines!(ax, 1 ./ lr_freq[2:end], (lr_freq .* transfersum ./ 1096)[2:end], label="Sum of components", linestyle=:dash)
 
     axislegend(ax, position=:rt)
 

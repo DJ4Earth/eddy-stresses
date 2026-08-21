@@ -1,6 +1,91 @@
 # offline check to make sure I'm computing everything correctly. The momentum budget terms should
 # sum up to the euler tendencies I compute, du and dv
 # check passed
+function compute_timeaveraged_momentumbudget_offline()
+
+    Plr = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        RKo=2,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        # nn_forcing_momentum=false,
+        # nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=2,
+        initial_cond="rest",
+        # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
+    );
+    Slr = ShallowWaters.model_setup(Plr);
+
+
+    Plr2 = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        L_ratio=1,
+        g=1e-20,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        RKo=2,
+        ω=1e-22,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        # nn_forcing_momentum=false,
+        # nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=2,
+        initial_cond="rest",
+        # initpath = "./dissipation_constant/spinup_files/128_ZBparam_postspinup_cginitcond_3years_dailysaves"
+    );
+    Slr2 = ShallowWaters.model_setup(Plr2);
+
+    Seuler = deepcopy(Slr);
+    Sadv = deepcopy(Slr2);
+
+    t = 225 * Slr.grid.dtint
+    
+    for n = 1:1096
+
+        u_, v_, eta_ = ShallowWaters.add_halo(uhrcgall[:,:,n], vhrcgall[:,:,n], etahrcgall[:,:,n], Slr)
+
+        Seuler.Prog.u = u_
+        Seuler.Prog.v = v_
+        Seuler.Prog.η = eta_
+
+        Sadv.Prog.u = u_
+        Sadv.Prog.v = v_
+        Sadv.Prog.η = eta_
+
+        du, dv, adv_u, adv_v, fu, fv, detagdx, detagdy, bottomdragu, bottomdragv, viscu, viscv, Fx = compute_mom_budget(Seuler, Sadv, t, n);
+
+    end
+
+end
+
 function momentum_budget_offline()
 
     Plr = ShallowWaters.Parameter(T=Float64,
@@ -322,6 +407,124 @@ function momentum_budget_offline()
         padding = (0, 5, 5, 0),
         halign = :right)
     end
+
+
+    # KE budget components
+
+    fig = Figure(size=(1200, 650),fontsize=15);
+    Label(
+        fig[0, 3],
+        "Momentum budget, u-components",
+        fontsize = 20,
+        tellwidth = false
+    )
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcgall[:,:,n] .* ((2 .* du) ./ 384),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Euler tendency"),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    Colorbar(fig[1,2], hm1)
+    hidexdecorations!(ax1)
+
+    # ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # (adv_u + fv - detagdx + Fx + viscu + bottomdragu),
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Sum of budget terms"),
+    # colorrange=(-1.5e-5, 1.5e-5)
+    # );
+    # hidedecorations!(ax2)
+    # Colorbar(fig[1,4], hm2)
+
+    # ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # ((2 .* du) ./ 384) .- (adv_u + fv - detagdx + Fx + viscu + bottomdragu),
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Tendency - sum"),
+    # colorrange=(-1.5e-13, 1.5e-13)
+    # );
+    # hidedecorations!(ax13)
+    # Colorbar(fig[1,6], hm13)
+
+    ax3, hm3 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcgall[:,:,n] .* (adv_u),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Advection"),
+    colorrange=(-1.5e-5, 1.5e-5)
+    );
+    hidedecorations!(ax3)
+    Colorbar(fig[1,4], hm3)
+
+    ax4, hm4 = heatmap(fig[1,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcgall[:,:,n] .* fv,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Coriolis"),
+    colorrange=(-1.5e-4, 1.5e-4)
+    );
+    Colorbar(fig[1,6], hm4)
+    hidedecorations!(ax4)
+
+    ax5, hm5 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcgall[:,:,n] .* (-detagdx),
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Pressure gradient"),
+    colorrange=(-1.5e-4, 1.5e-4)
+    );
+    # hidedecorations!(ax5)
+    Colorbar(fig[2,2], hm5)
+
+    # ax6, hm6 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    # LinRange(0, 3840, 128),
+    # Fx,
+    # colormap=:balance,
+    # axis=(xlabel="km", ylabel="km", title="Wind stress"),
+    # # colorrange=(-1.5e-5, 1.5e-5)
+    # );
+    # hideydecorations!(ax6)
+    # Colorbar(fig[2,6], hm6)
+
+    ax7, hm7 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcgall[:,:,n] .* viscu,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Viscosity"),
+    colorrange=(-1.5e-6, 1.5e-6)
+    );
+    Colorbar(fig[2,4], hm7)
+
+    ax8, hm8 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    uhrcgall[:,:,n] .* bottomdragu,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="Bottom drag"),
+    colorrange=(-1.5e-7, 1.5e-7)
+    );
+    # hideydecorations!(ax8)
+    Colorbar(fig[2,6], hm8)
+
+    ga = fig[1, 1] = GridLayout()
+    gb = fig[1, 3] = GridLayout()
+    gc = fig[1, 5] = GridLayout()
+    gd = fig[2, 1] = GridLayout()
+    ge = fig[2, 3] = GridLayout()
+    gf = fig[2, 5] = GridLayout()
+    # gg = fig[3, 1] = GridLayout()
+    # gh = fig[3, 3] = GridLayout()
+
+    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
+    Label(layout[1, 1, TopLeft()], label,
+        fontsize = 15,
+        font = :bold,
+        padding = (0, 5, 5, 0),
+        halign = :right)
+    end
+
 
 end
 
