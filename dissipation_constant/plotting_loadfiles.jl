@@ -1,4 +1,4 @@
-function load_models()
+function load_models_eddyproject()
 
     ufiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[1];
     vfiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[2];
@@ -201,6 +201,28 @@ function load_models()
     umulti20all = cat(umulti20, umulti2010[:,:,157:end]; dims=3);
     vmulti20all = cat(vmulti20, vmulti2010[:,:,157:end]; dims=3);
     etamulti20all = cat(etamulti20, etamulti2010[:,:,157:end]; dims=3);
+
+end
+
+function load_generalizability_results()
+
+    u_multi2_50lat = cat(ncread("./dissipation_constant/generalizability/multi2_newlatitude_3years_dailysaves/u.nc", "u"),
+       ncread("./dissipation_constant/generalizability/multi2_newlatitude_7years_startfrom3year_weeklysaves/u.nc", "u"); dims=3);
+
+    v_multi2_50lat = cat(ncread("./dissipation_constant/generalizability/multi2_newlatitude_3years_dailysaves/v.nc", "v"),
+       ncread("./dissipation_constant/generalizability/multi2_newlatitude_7years_startfrom3year_weeklysaves/v.nc", "v"); dims=3);
+
+    eta_multi2_50lat = cat(ncread("./dissipation_constant/generalizability/multi2_newlatitude_3years_dailysaves/eta.nc", "eta"),
+       ncread("./dissipation_constant/generalizability/multi2_newlatitude_7years_startfrom3year_weeklysaves/eta.nc", "eta"); dims=3);
+
+    u_multi3_50lat = cat(ncread("./dissipation_constant/generalizability/multi3_newlatitude_3years_dailysaves/u.nc", "u"),
+       ncread("./dissipation_constant/generalizability/multi3_newlatitude_7years_startfrom3year_weeklysaves/u.nc", "u"); dims=3);
+
+    v_multi3_50lat = cat(ncread("./dissipation_constant/generalizability/multi3_newlatitude_3years_dailysaves/v.nc", "v"),
+       ncread("./dissipation_constant/generalizability/multi3_newlatitude_7years_startfrom3year_weeklysaves/v.nc", "v"); dims=3);
+
+    eta_multi3_50lat = cat(ncread("./dissipation_constant/generalizability/multi3_newlatitude_3years_dailysaves/eta.nc", "eta"),
+       ncread("./dissipation_constant/generalizability/multi3_newlatitude_7years_startfrom3year_weeklysaves/eta.nc", "eta"); dims=3);
 
 end
 

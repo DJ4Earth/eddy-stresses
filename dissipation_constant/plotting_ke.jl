@@ -248,6 +248,11 @@ function energy_plots()
     fourier = zeros(Float64, N)
     kespecpd = zeros(Float64, N)
 
+    # generalizability
+
+    multi2_50lat = zeros(Float64, N)
+    multi3_50lat = zeros(Float64, N)
+
     for j = 1:1096
 
         zb[j] = sum(abs2, uzb[:,:,j]) + sum(abs2, vzb[:,:,j])
@@ -258,7 +263,6 @@ function energy_plots()
         twentyday[j] = sum(abs2, u20s[:,:,j]) + sum(abs2, v20s[:,:,j])
         thirtyday[j] = sum(abs2, u30s[:,:,j]) + sum(abs2, v30s[:,:,j])
         multi2[j] = sum(abs2, umulti2[:,:,j]) + sum(abs2, vmulti2[:,:,j])
-        multi3[j] = sum(abs2, umulti3[:,:,j]) + sum(abs2, vmulti3[:,:,j])
         multi3more[j] = sum(abs2, umulti3more[:,:,j]) + sum(abs2, vmulti3more[:,:,j])
         multi5[j] = sum(abs2, umulti5[:,:,j]) + sum(abs2, vmulti5[:,:,j])
         multi10[j] = sum(abs2, umulti10[:,:,j]) + sum(abs2, vmulti10[:,:,j])
@@ -273,6 +277,9 @@ function energy_plots()
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
 
+        # generalizability stuff
+        multi2_50lat[j] = sum(abs2, u_multi2_50lat[:,:,j]) + sum(abs2, v_multi2_50lat[:,:,j])
+        multi3_50lat[j] = sum(abs2, u_multi3_50lat[:,:,j]) + sum(abs2, v_multi3_50lat[:,:,j])
     end
 
     N = 522
