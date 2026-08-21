@@ -1,7 +1,7 @@
 function create_models()
 
     T = Float64
-    Ndays = 3*365
+    Ndays = 4*365
 
     Shr = ShallowWaters.model_setup(T=T,
         output=true,
@@ -12,7 +12,7 @@ function create_models()
         L_ratio=1,
         g=9.81,
         H=500,
-        ϕ = 50.,
+        ϕ = 50,
         wind_forcing_x="double_gyre",
         Fx0=0.12,
         Lx=3840e3,
@@ -30,9 +30,8 @@ function create_models()
         N=1,
         α=2,
         nx=1024,
-        Ndays=3*365-367,
-        initial_cond="ncfile",
-        initpath="./dissipation_constant/generalizability/1024_postspinup_newlatitude/1024_postspinup_newlatitude_days1-367"
+        Ndays=4*365,
+        initial_cond="rest",
     );
 
     ShallowWaters.time_integration(Shr)
