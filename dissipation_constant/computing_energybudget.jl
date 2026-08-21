@@ -404,7 +404,7 @@ function energy_budget_offline()
     tendencyhr .- budgetsumhr,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="HR tendency - budget sum"),
-    colorrange=(-1.5e-5, 1.5e-5)
+    colorrange=(-1.5e-15, 1.5e-15)
     );
     Colorbar(fig[1,6], hm3)
 
@@ -419,7 +419,10 @@ function energy_budget_offline()
     sgs_viscosity = viscuhrcg .- visculr
     sgs_bottomdrag = bottomdraguhrcg .- bottomdragulr
 
-    sgs_sum = sgs_advection + sgs_coriolis + sgs_pressure + sgs_viscosity + sgs_bottomdrag
+    Fxhrcg, _ = filter_hr(Fxhr, viscvhr);
+    sgs_wind = Fxlr - Fxhrcg
+
+    sgs_sum = sgs_advection + sgs_coriolis + sgs_pressure + sgs_viscosity + sgs_bottomdrag - sgs_wind
 
     fig = Figure(size=(1050, 700), fontsize=15);
 
@@ -452,10 +455,10 @@ function energy_budget_offline()
 
     ax13, hm13 = heatmap(fig[1,5], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
-    (hrcgtendency .- lrtendency) .- sgs_sum,
+    (hrcgtendency .- lrtendency) .- sgs_advection,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Tendency - Sum"),
-    colorrange=(-2e-7, 2e-7)
+    colorrange=(-1.5e-5, 1.5e-5)
     );
     Colorbar(fig[1,6], hm13)
     hidexdecorations!(ax13)
@@ -554,7 +557,7 @@ function energy_budget_offline()
     transfersum = -advection_transfer + pressure_transfer + viscosity_transfer + coriolis_transfer + bottomdrag_transfer
 
     fig = Figure(size=(1050, 700), fontsize=15);
-    colors=Makie.resample_cmap(:lighttest, 8)
+    colors=Makie.resample_cmap(:lighttest, 9)
     ax = Axis(fig[1,1],
         xscale=log10,
         xlabel="Wavelength (km)",

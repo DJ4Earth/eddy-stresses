@@ -136,13 +136,13 @@ hm0 = heatmap!(
 ax1 = Axis(fig[1, 2],
     xlabel = "km",
     ylabel = "km",
-    title  = "Non-parameterized model"
+    title  = "ZB"
 )
 
 hm1 = heatmap!(
     ax1,
     xs, ys,
-    ζnoparam[:, :, 1],
+    ζzb[:, :, 1],
     colormap = :balance,
     colorrange = (-clim, clim)
 )
@@ -151,13 +151,13 @@ hideydecorations!(ax1)
 ax2 = Axis(fig[1, 3],
     xlabel = "km",
     ylabel = "km",
-    title  = "Parameterized model"
+    title  = "Multi3"
 )
 
 hm2 = heatmap!(
     ax2,
     xs, ys,
-    ζmulti2[:, :, 1],
+    ζmulti3more[:, :, 1],
     colormap = :balance,
     colorrange = (-clim, clim)
 )
@@ -169,8 +169,8 @@ Colorbar(fig[1, 4], hm1, label = "1/s")
 
 # Colorbar(fig[1, 4], hm2, label = "1/s")
 
-record(fig, "data_noparam_multi2_vorticity.mp4", 1:1096; framerate = framerate) do t
+record(fig, "vorticity.mp4", 1:1096; framerate = framerate) do t
     hm0[3][] = ζhrcg[:, :, t]
-    hm1[3][] = ζnoparam[:, :, t]
-    hm2[3][] = ζmulti2[:, :, t]
+    hm1[3][] = ζzb[:, :, t]
+    hm2[3][] = ζmulti3more[:, :, t]
 end

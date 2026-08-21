@@ -608,8 +608,8 @@ function compute_tendencies_witheuler!(du, dv, deta, S, t)
     # end
 
     # if (chkp.i % S.grid.nstep_diff) == 0
-        ShallowWaters.bottom_drag!(u0rhs, v0rhs, η0rhs, S.Diag, S)
-        ShallowWaters.diffusion!(u0rhs, v0rhs, S.Diag, S)
+        ShallowWaters.bottom_drag!(u, v, η, S.Diag, S)
+        ShallowWaters.diffusion!(u, v, S.Diag, S)
 
     # original function call
         # ShallowWaters.add_drag_diff_tendencies!(
