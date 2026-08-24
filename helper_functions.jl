@@ -225,7 +225,21 @@ function filter_hr(u, v)
     filtered_u = imfilter(u, reflect(ker));
     filtered_v = imfilter(v, reflect(ker));
 
-    return (filtered_u[8:8:end, 4:8:end] .+ filtered_u[8:8:end, 5:8:end]) .* 0.5, (filtered_v[4:8:end, 8:8:end] .+ filtered_v[5:8:end, 8:8:end]) .* 0.5;
+    return (filtered_u[8:8:end, 4:8:end] .+ filtered_u[8:8:end, 5:8:end]) .* 0.5, (filtered_v[4:8:end, 8:8:end] .+ filtered_v[5:8:end, 8:8:end]) .* 0.5
+
+end
+
+function filter_hr(u, v, eta)
+
+    ker = ImageFiltering.Kernel.gaussian((30e3/3750))
+
+    filtered_u = imfilter(u, reflect(ker));
+    filtered_v = imfilter(v, reflect(ker));
+    filtered_eta = imfilter(eta, reflect(ker));
+
+    return (filtered_u[8:8:end, 4:8:end] .+ filtered_u[8:8:end, 5:8:end]) .* 0.5,
+        (filtered_v[4:8:end, 8:8:end] .+ filtered_v[5:8:end, 8:8:end]) .* 0.5,
+        (filtered_eta[4:8:end,4:8:end] .+ filtered_eta[5:8:end,5:8:end] .+ filtered_eta[4:8:end,5:8:end] .+ filtered_eta[5:8:end,4:8:end]) .* .25
 
 end
 

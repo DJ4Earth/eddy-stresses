@@ -1,7 +1,7 @@
 function create_models()
 
     T = Float64
-    Ndays = 4*365
+    Ndays = 5*365
 
     Shr = ShallowWaters.model_setup(T=T,
         output=true,
@@ -182,17 +182,18 @@ function create_models()
     ShallowWaters.time_integration(Soffline);
 
     # now creating the online version, Ndays can be larger
-    Ndays = 10*365
+    Ndays = 5*365
     Ponline = ShallowWaters.Parameter(T=T,
         output=true,
         output_vars=["u", "v", "η", "ζ"],
-        # output_dt = 1,
-        output_dt=168,
+        output_dt = 1,
+        # output_dt=168,
         # output_dt=12600,
         L_ratio=1,
         g=9.81,
         H=500,
         cfl=.898,
+        ϕ = -60,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -210,11 +211,13 @@ function create_models()
         α=2,
         nx=128,
         Ndays=Ndays,
-        initial_cond="ncfile",
-        initpath="./dissipation_constant/results/result_online_multistateweights_10dayoptimization_5-20-35-50-65-75initdays_startfrom20daystate_10years_weeklysaves"
+        initial_cond="rest"
     );
 
+    ucg, vcg, etacg = filter_hr(u[:,:,end], v[:,:,end], eta[:,:,end])
+
     Sonline = ShallowWaters.model_setup(Ponline);
+    u0, v0, eta0 = ShallowWaters.add_halo(ucg,vcg,etacg,zeros(128,128),Sonline);
 
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_3-15-30-40-50-60-80-85daystart_3dayoptimization_initialweights20daystate_30iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_madnlp_states_5dayoptimization_startfrom1daystate_50iterations_geluactivation.jld2").solution
@@ -223,16 +226,16 @@ function create_models()
     # onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_30dayoptimzation_startfrom30day6iterations_constantdissipation_15iterations_21totaliterations_8hourdata_200maxhistory_fixedcfl.jld2").solution;
     # onlineweights = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
 
-    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
+    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_5-20-35-50-65-75daystart_10dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
     # onlineweights = load_object("./result_multistate_5-25-45-65daystart_20dayoptimization_initialweights20daystate_fixedcfl_15iterations_constdissipation.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-3-4-6-8-10-13-15-18-23-28-30-33-35-38-41-44-46-48-51-52-53-55-58-60-63-64-65-68-73-78-83-86-88-89daystart_1dayoptimizationinitialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1:2:89initdaystart_1dayoptimization_initialweightsmulti3daystate_fewerinitconds_15iterations.jld2").solution;
 
-    # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
+    onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
     # onlineweights = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
+
     # onlineweights = load_object("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/average_allresults.jld2")
     # onlineweights = load_object("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/average_allresults.jld2")
-    
     # onlineweights = load_object("./dissipation_constant/manystates_singleinitcond_10dayoptimizations_allstartfrom20daysingle/result_online_manyinitconds_initday40_10dayoptimzation_startfrom20dayoptimization_constantdissipation_25iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution;
     # onlineweights = load_object("./dissipation_constant/manystates_singleinitcond_3dayoptimizations_allstartfrom20daysingle/result_online_manyinitconds_initday33_3dayoptimzation_startfrom20dayoptimization_constantdissipation_40iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution;
     current = 1
@@ -245,11 +248,10 @@ function create_models()
             end
         end
     end
-    # Sonline.constants.cD = onlineweights[end]
 
-    # Sonline.Prog.u .= copy(initial_cond[1]);
-    # Sonline.Prog.v .= copy(initial_cond[2]);
-    # Sonline.Prog.η .= copy(initial_cond[3]);
+    Sonline.Prog.u .= u0;
+    Sonline.Prog.v .= v0;
+    Sonline.Prog.η .= eta0;
 
     P = ShallowWaters.time_integration(Sonline);
 
