@@ -12,7 +12,7 @@ function create_models()
         L_ratio=1,
         g=9.81,
         H=500,
-        ϕ = 50,
+        ϕ = -60,
         wind_forcing_x="double_gyre",
         Fx0=0.12,
         Lx=3840e3,
@@ -31,7 +31,8 @@ function create_models()
         α=2,
         nx=1024,
         Ndays=4*365,
-        initial_cond="rest",
+        initial_cond="ncfile",
+        initpath="./dissipation_constant/generalizability/1024_4yearspinup_latmin60"
     );
 
     ShallowWaters.time_integration(Shr)
