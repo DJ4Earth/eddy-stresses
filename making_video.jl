@@ -22,30 +22,29 @@ u3smag = ncread("./dissipation_smagorinsky/results_with_parameterization/result_
 
 fig = Figure(fontsize=15);
 
-fframerate = 15
+framerate = 15
 
 xs = LinRange(0, 3840, 128)
 ys = LinRange(0, 3840, 128)
 
-inv_scale = 1 / Shr.constants.scale
 # clim = maximum(abs.(ζhr[:,:,1000] .* inv_scale))  # compute ONCE
-clim = .0001
+clim = 1
 
 ax = Axis(fig[1, 1])
 
 hm = heatmap!(
     ax,
     xs, ys,
-    etamulti2[:, :, 1],
+    vort[:, :, 1],
     colormap = :balance,
-    colorrange = (-3, 3)
+    colorrange = (-clim, clim)
 )
 hidedecorations!(ax) 
 
 Colorbar(fig[1, 2], hm, label = "1/s")
 
-record(fig, "ssh_threeyears_multi2.mp4", 1:1096; framerate = framerate) do t
-    hm[3][] = etamulti2[:, :, t]
+record(fig, "temp.mp4", 1:24:45626; framerate = framerate) do t
+    hm[3][] = vort[:, :, t]
 end
 
 
