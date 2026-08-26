@@ -213,19 +213,22 @@ end
 
 function vorticity_plots()
 
+    xvals = 3:129
+    yvals = 3:129
     # three year 
-    hr = kde(vec(ζhr[:,:,1:1096]); npoints=16384);
-    hrcg = kde(vec(ζhrcg[:,:,1:1096]));
-    zb = kde(vec(ζzb));
-    noparam = kde(vec(ζnoparam));
-    multi2 = kde(vec( ζmulti2));
-    multi3more = kde(vec(ζmulti3more));
-    multi20 = kde(vec(ζmulti20));
-    five = kde(vec(ζ5s));
-    ten = kde(vec(ζ10s));
-    twenty = kde(vec(ζ20s));
-    thirty = kde(vec(ζ30s));
+    hr = kde(vec(ζhr[xvals,yvals,1:1096]); npoints=16384);
+    hrcg = kde(vec(ζhrcg[xvals,yvals,1:1096]));
+    zb = kde(vec(ζzb[xvals,yvals,:]));
+    noparam = kde(vec(ζnoparam[xvals,yvals,:]));
+    multi2 = kde(vec( ζmulti2[xvals,yvals,:]));
+    multi3more = kde(vec(ζmulti3more[xvals,yvals,:]));
+    multi20 = kde(vec(ζmulti20[xvals,yvals,:]));
+    five = kde(vec(ζ5s[xvals,yvals,:]));
+    ten = kde(vec(ζ10s[xvals,yvals,:]));
+    twenty = kde(vec(ζ20s[xvals,yvals,:]));
+    thirty = kde(vec(ζ30s[xvals,yvals,:]));
 
+    colors = Makie.wong_colors()
     fig = Figure(size = (650, 420));
     ax = Axis(
         fig[1, 1],
@@ -234,17 +237,17 @@ function vorticity_plots()
         title = "Three-year relative vorticity probability density"
         # yscale = log10
     )
-    lines!(ax, hr.x, hr.density, label="3.75 km", color=colors[1])
+    # lines!(ax, hr.x, hr.density, label="3.75 km", color=colors[1])
     lines!(ax, hrcg.x, hrcg.density, label="Filtered, coarse-grained 3.75 km",color=:black)
     lines!(ax, zb.x, zb.density, label="ZB20", color=:red)
     lines!(ax, noparam.x, noparam.density, label="No closure, 30 km",color=:gray)
-    # lines!(ax, multi2.x, multi2.density, label="Ensemble 2 day", color=colors[2])
-    # lines!(ax, multi3more.x, multi3more.density, label="Ensemble 3 day", color=colors[3])
-    # lines!(ax, multi10.x, multi10.density, label="Ensemble 10 day", color=colors[4])
-    lines!(ax, ten.x, ten.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
-    lines!(ax, twenty.x, twenty.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
-    lines!(ax, thirty.x, thirty.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
-    lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
+    lines!(ax, multi2.x, multi2.density, label="Ensemble 2 day", color=colors[2])
+    lines!(ax, multi3more.x, multi3more.density, label="Ensemble 3 day", color=colors[3])
+    lines!(ax, multi10.x, multi10.density, label="Ensemble 10 day", color=colors[4])
+    # lines!(ax, ten.x, ten.density, label="10 day", color=colors[2])#, linestyle=:dashdot)
+    # lines!(ax, twenty.x, twenty.density, label="20 day", color=colors[3])#, linestyle=:dashdot)
+    # lines!(ax, thirty.x, thirty.density, label="30 day", color=colors[4])#, linestyle=:dashdot)
+    # lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day", color=colors[6])#,linestyle=:dash)
 
     # lines!(ax, multi20.x, multi20.density, label="Ensemble 20 day")#,linestyle=:dash)
     # lines!(ax, thirty.x, thirty.density, label="30 day")#, linestyle=:dashdot)
@@ -255,17 +258,19 @@ function vorticity_plots()
 
     # 10 year figure
 
+    xvals = 1:129
+    yvals = 1:129
     hr10 = kde(vec(cat(ζhr[:,:,1:7:1096], ζhr[:,:,1097:end]; dims=3)); npoints=16384);
-    hrcg10 = kde(vec(cat(ζhrcg[:,:,1:7:1096], ζhrcg[:,:,1097:end]; dims=3)));
-    zb10 = kde(vec(ζzb10));
-    ten10 = kde(vec(ζ10s10));
-    twenty10 = kde(vec(ζ20s10));
-    thirty10 = kde(vec(ζ30s10));
-    noparam10 = kde(vec(ζnoparam10));
-    multi210 = kde(vec(ζmulti210));
-    multi3more10 = kde(vec(ζmulti3more10));
-    multi2010 = kde(vec(ζmulti2010));
-    multi1010 = kde(vec(ζmulti1010));
+    hrcg10 = kde(vec(cat(ζhrcg[xvals,yvals,1:7:1096], ζhrcg[xvals,yvals,1097:end]; dims=3)));
+    zb10 = kde(vec(ζzb10[xvals,yvals,:]));
+    ten10 = kde(vec(ζ10s10[xvals,yvals,:]));
+    twenty10 = kde(vec(ζ20s10[xvals,yvals,:]));
+    thirty10 = kde(vec(ζ30s10[xvals,yvals,:]));
+    noparam10 = kde(vec(ζnoparam10[xvals,yvals,:]));
+    multi210 = kde(vec(ζmulti210[xvals,yvals,:]));
+    multi3more10 = kde(vec(ζmulti3more10[xvals,yvals,:]));
+    multi2010 = kde(vec(ζmulti2010[xvals,yvals,:]));
+    multi1010 = kde(vec(ζmulti1010[xvals,yvals,:]));
 
     fig = Figure(size = (650, 420));
     ax = Axis(
