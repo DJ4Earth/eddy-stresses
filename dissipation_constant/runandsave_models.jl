@@ -95,11 +95,11 @@ function create_models()
 
     ShallowWaters.time_integration(Snoparam);
 
-    Ndays = 3*365
+    Ndays = 10*365
     PZB = ShallowWaters.Parameter(T=T,
         output=true,
         output_vars=["u", "v", "η", "ζ"],
-        output_dt=24,
+        output_dt=168,
         L_ratio=1,
         g=9.81,
         H=500,
@@ -121,13 +121,15 @@ function create_models()
         N=1,
         α=2,
         nx=128,
-        Ndays=Ndays
+        Ndays=Ndays,
+        initial_cond="ncfile",
+        initpath="./dissipation_constant/spinup_files/ZB20_10yearspostspinup_weeklysaves"
     );
 
     SZB = ShallowWaters.model_setup(PZB);
-    SZB.Prog.u .= copy(initial_cond[1]);
-    SZB.Prog.v .= copy(initial_cond[2]);
-    SZB.Prog.η .= copy(initial_cond[3]);
+    # SZB.Prog.u .= copy(initial_cond[1]);
+    # SZB.Prog.v .= copy(initial_cond[2]);
+    # SZB.Prog.η .= copy(initial_cond[3]);
 
     ShallowWaters.time_integration(SZB);
 
