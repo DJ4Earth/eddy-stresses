@@ -278,8 +278,8 @@ function energy_plots()
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
 
         # generalizability stuff
-        multi2_50lat[j] = sum(abs2, u_multi2_50lat[:,:,j]) + sum(abs2, v_multi2_50lat[:,:,j])
-        multi3_50lat[j] = sum(abs2, u_multi3_50lat[:,:,j]) + sum(abs2, v_multi3_50lat[:,:,j])
+        # multi2_50lat[j] = sum(abs2, u_multi2_50lat[:,:,j]) + sum(abs2, v_multi2_50lat[:,:,j])
+        # multi3_50lat[j] = sum(abs2, u_multi3_50lat[:,:,j]) + sum(abs2, v_multi3_50lat[:,:,j])
     end
 
     N = 522
@@ -308,7 +308,7 @@ function energy_plots()
         thirtyday10[j] = sum(abs2, u30s10[:,:,j]) + sum(abs2, v30s10[:,:,j])
 
         multi210[j] = sum(abs2, umulti210[:,:,j]) + sum(abs2, vmulti210[:,:,j])
-        multi310[j] = sum(abs2, umulti310[:,:,j]) + sum(abs2, vmulti310[:,:,j])
+        # multi310[j] = sum(abs2, umulti310[:,:,j]) + sum(abs2, vmulti310[:,:,j])
         multi3more10[j] = sum(abs2, umulti3more10[:,:,j]) + sum(abs2, vmulti3more10[:,:,j])
         # multi510[j] = sum(abs2, umulti510[:,:,j]) + sum(abs2, vmulti510[:,:,j])
         multi1010[j] = sum(abs2, umulti1010[:,:,j]) + sum(abs2, vmulti1010[:,:,j])
@@ -329,6 +329,7 @@ function energy_plots()
     multi210p = zeros(Float64, 522)
     multi310p = zeros(Float64, 522)
     multi1010p = zeros(Float64, 522)
+    zbp = zeros(Float64, 522)
 
     avg3single = zeros(Float64, 522)
     avg10single = zeros(Float64, 424)
@@ -336,6 +337,7 @@ function energy_plots()
             multi210p[j] = sum(abs2, umulti210more[:,:,j]) + sum(abs2, vmulti210more[:,:,j])
             multi310p[j] = sum(abs2, umulti310more[:,:,j]) + sum(abs2, vmulti310more[:,:,j])
             multi1010p[j] = sum(abs2, umulti1010more[:,:,j]) + sum(abs2, vmulti1010more[:,:,j])
+            zbp[j] = sum(abs2, uzb10more[:,:,j]) + sum(abs2, vzb10more[:,:,j])
             # avg3single[j] = sum(abs2, u3single[:,:,j]) + sum(abs2, v3single[:,:,j])
     end
 
@@ -413,6 +415,7 @@ function energy_plots()
     multi2all = cat(multi210, multi210p[2:end]; dims=1);
     multi3all = cat(multi3more10, multi310p[2:end]; dims=1);
     multi10all = cat(multi1010, multi1010p[2:end]; dims=1);
+    zball = cat(zb10, zbp[2:end]; dims=1);
 
     # 3 year, 10 year, 20 year
 
@@ -451,6 +454,7 @@ function energy_plots()
         ylabel="Energy",
         title="Spatially averaged KE over 20 years"
     )
+    lines!(ax4, LinRange(0, 20, 1043), zball ./ (128*127), label="ZB20",color=:red)
     lines!(ax4, LinRange(0, 20, 1043), multi2all ./ (128*127), label="Online closure, ensemble 2 day",color=colors[1])
     lines!(ax4, LinRange(0, 20, 1043), multi3all ./ (128*127), label="Online closure, ensemble 3 day",color=colors[2])
     lines!(ax4, LinRange(0, 20, 1043), multi10all ./ (128*127), label="Online closure, ensemble 3 day",color=colors[3])

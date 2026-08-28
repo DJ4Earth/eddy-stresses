@@ -140,6 +140,10 @@ function load_models_eddyproject()
     umulti1010more = ncread("./dissipation_constant/results/result_online_multistate_10dayoptimization_further10years_weeklysaves/u.nc", "u");
     vmulti1010more = ncread("./dissipation_constant/results/result_online_multistate_10dayoptimization_further10years_weeklysaves/v.nc", "v");
 
+    uzb10more = ncread("./dissipation_constant/spinup_files/ZB20_further10years_weeklysaves/u.nc", "u");
+    vzb10more = ncread("./dissipation_constant/spinup_files/ZB20_further10years_weeklysaves/v.nc", "v");
+    etazb10more = ncread("./dissipation_constant/spinup_files/ZB20_further10years_weeklysaves/eta.nc", "eta");
+
     # the following didn't work as loss functions
 
     ukespec = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");

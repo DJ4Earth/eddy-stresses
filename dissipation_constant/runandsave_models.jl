@@ -105,7 +105,7 @@ function create_models()
         H=500,
         ϕ = 45.,
         wind_forcing_x="double_gyre",
-        Fx0=1.2,
+        Fx0=.12,
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
