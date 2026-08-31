@@ -1,229 +1,5 @@
 function energy_plots()
 
-    # Energy ############################################################################
-
-    # high-resolution versus coarse-grained high resolution energy
-    t = 1098
-    fig = Figure(size=(800, 350), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uhr[:,1:end-1,t].^2 .+ vhr[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="3.75 km resolution E(10 days, x, y)"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,2], hm1, label=L"(m/s)^2")
-
-    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained E(10 days, x, y)"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,4], hm1, label=L"(m/s)^2")
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)"], [ga, gb])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # coarse-grained versus no parameterization
-    t = 31
-    fig = Figure(size=(800, 400), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Coarse-grained energy"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,2], hm1)
-
-    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 1024),
-    LinRange(0, 3840, 1024),
-    (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30 km, no parameterization"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,4], hm1)
-
-    # cg, zb, nn, no param
-    t = 1096
-    fig = Figure(size=(800, 650), fontsize=15);
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Coarsened, filtered 3.75 km"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,2], hm1)
-
-    ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="No closure"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,4], hm1)
-
-    ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="ZB closure"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[2,2], hm1)
-
-    ax1, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (u30s[:,1:end-1,t].^2 .+ v30s[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="Online, 20 day state"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[2,4], hm1, label=L"(m/s)^2")
-
-    # ax1, hm5 = heatmap(fig[3,1], LinRange(0, 3840, 128),
-    # LinRange(0, 3840, 128),
-    # (uofflinegelu[:,1:end-1,10].^2 .+ vofflinegelu[1:end-1,:,10].^2),
-    # colormap=:amp,
-    # axis=(xlabel="km", ylabel="km", title="30 km resolution E, offline closure after 3 days"),
-    # colorrange=(0,
-    # maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    # );
-    # Colorbar(fig[3,2], hm1)
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[2, 1] = GridLayout()
-    gd = fig[2, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
-    # same as the above but without the coarse-grained energy
-    # cg, zb, nn, no param
-    t = 200
-    fig = Figure(size=(900, 800), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    sum(unoparam[:,:,t]).^2 .+ sum(vnoparam[1:end-1,:,t]).^2,
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30km resolution E(10 days, x, y), no closure"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,2], hm1)
-
-    ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution E(10 days, x, y), ZB closure"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[1,4], hm2)
-
-    ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (u20s[:,1:end-1,t].^2 .+ v20s[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution E(10 days, x, y), online closure"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[2,2], hm3)
-
-    ax1, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (u30s[:,1:end-1,t].^2 .+ v30s[1:end-1,:,t].^2),
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="30 km resolution E(3 days, x, y), offline closure"),
-    colorrange=(0,
-    maximum(abs.(uhrcg[:,1:end-1,t].^2 .+ vhrcg[1:end-1,:,t].^2)))
-    );
-    Colorbar(fig[2,4], hm5)
-
-    # looking at the energy in the models past the three year mark
-    t = 286
-    fig = Figure(size=(900, 800), fontsize=15);
-
-    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    unoparam[:,1:end-1,t].^2 .+ vnoparam[1:end-1,:,t].^2,
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), no closure"),
-    colorrange=(0,
-        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
-    );
-    Colorbar(fig[1,2], hm1)
-
-    ax1, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2,
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), ZB20 closure"),
-    colorrange=(0,
-        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
-    );
-    Colorbar(fig[1,4], hm2)
-
-    ax1, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    umulti3more[:,1:end-1,t].^2 .+ vmulti3more[1:end-1,:,t].^2,
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), batched 3 day day closure"),
-    colorrange=(0,
-        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
-    );
-    Colorbar(fig[2,2], hm3)
-
-    ax1, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    umulti10[:,1:end-1,t].^2 .+ vmulti10[1:end-1,:,t].^2,
-    colormap=:amp,
-    axis=(xlabel="km", ylabel="km", title="E(2000 days, x, y), batched 20 day closure"),
-    colorrange=(0,
-        maximum(uzb[:,1:end-1,t].^2 .+ vzb[1:end-1,:,t].^2))
-    );
-    Colorbar(fig[2,4], hm5)
-
-    ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[2, 1] = GridLayout()
-    gd = fig[2, 3] = GridLayout()
-    for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)"], [ga, gb, gc, gd])
-    Label(layout[1, 1, TopLeft()], label,
-        fontsize = 15,
-        font = :bold,
-        padding = (0, 5, 5, 0),
-        halign = :right)
-    end
-
     # spatially averaged energy over integration (3 year integrations on all)
 
     N = 1096
@@ -247,11 +23,6 @@ function energy_plots()
     hybrid = zeros(Float64, N)
     fourier = zeros(Float64, N)
     kespecpd = zeros(Float64, N)
-
-    # generalizability
-
-    multi2_50lat = zeros(Float64, N)
-    multi3_50lat = zeros(Float64, N)
 
     for j = 1:1096
 
@@ -277,9 +48,6 @@ function energy_plots()
         # push!(relu5day, sum(uonline5dayrelu[:,1:end-1,j].^2 .+ vonline5dayrelu[1:end-1,:,j].^2))
         # push!(reluKEspec, sum(uonlinekespecpdrelu[:,1:end-1,j].^2 .+ vonlinekespecpdrelu[1:end-1,:,j].^2))
 
-        # generalizability stuff
-        # multi2_50lat[j] = sum(abs2, u_multi2_50lat[:,:,j]) + sum(abs2, v_multi2_50lat[:,:,j])
-        # multi3_50lat[j] = sum(abs2, u_multi3_50lat[:,:,j]) + sum(abs2, v_multi3_50lat[:,:,j])
     end
 
     N = 522
@@ -675,5 +443,38 @@ function energy_plots()
     # lines!(ax2, LinRange(0, 10*365, 522), single1040_50[1:522] ./ 128^2, label="40")
     lines!(ax2, LinRange(0, 10*365, 522), single1050_50[1:522] ./ 128^2, label="50")
     Legend(fig[2, 2], ax2)
+
+end
+
+function generalizability_energy()
+
+    multi3_50lat = zeros(T, 1461)
+    hrcg_50lat = zeros(T, 1461)
+    multi3_neg60lat = zeros(T, 1461)
+    hrcg_neg60lat = zeros(T, 1461)
+
+    for j = 1:1460
+        multi3_50lat[j] = sum(abs2, u_multi3_50lat[:,:,j*24]) + sum(abs2, v_multi3_50lat[:,:,j*24])
+        multi3_neg60lat[j] = sum(abs2, u_multi3_neg60lat[:,:,j*24]) + sum(abs2, v_multi3_neg60lat[:,:,j*24])
+
+        hrcg_50lat[j] = sum(abs2, uhrcg_50lat[:,:,j]) + sum(abs2, vhrcg_50lat[:,:,j])
+        hrcg_neg60lat[j] = sum(abs2, uhrcg_neg60lat[:,:,j]) + sum(abs2, vhrcg_neg60lat[:,:,j])
+    end
+
+    fig = Figure(size=(1000, 300));
+    ax = Axis(fig[1,1]);
+    lines!(ax, hrcg_50lat[1:1096] ./ (127*128), label="Coarse-grained HR, 50 degree latitude")
+    lines!(ax, multi3_50lat[1:1096] ./ (127*128), label="NN, 50 degree latitude")
+    lines!(ax, hrcg[1:1096] ./ (127*128), label="Coarse-grained HR, 45 degree latitude")
+    lines!(ax, multi3more[1:1096] ./ (127*128), label="NN, 45 degree latitude")
+    lines!(ax, hrcg_neg60lat[1:1096] ./ (127*128), label="Coarse-grained HR, -60 degree latitude")
+    lines!(ax, multi3_neg60lat[1:1096] ./ (127*128), label="NN, -60 degree latitude")
+    Legend(fig[2, 1], ax, orientation = :horizontal)
+
+    fig = Figure();
+    ax = Axis(fig[1,1]);
+    lines!(ax, hrcg_neg60lat[1:end-1] ./ (127*128), label="HRCG")
+    lines!(ax, multi3_neg60lat[1:end-1] ./ (127*128), label="NN")
+
 
 end

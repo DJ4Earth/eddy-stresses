@@ -58,28 +58,28 @@ function prognostic_plots()
     axis=(xlabel="km", ylabel="km", title="Filtered, \n coarse-grained 3.75 km"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[1,2], hm, label="m")
+    # Colorbar(fig[1,2], hm, label="m")
     hidexdecorations!(ax)
 
     index=1:522
-    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
+    ax1, hm1 = heatmap(fig[1,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etanoparam10[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="No closure, 30 km"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[1,4], hm1, label="m")
+    # Colorbar(fig[1,4], hm1, label="m")
     hidedecorations!(ax1)
 
-    ax2, hm2 = heatmap(fig[1,4], LinRange(0, 3840, 128),
+    ax2, hm2 = heatmap(fig[1,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etazb10[:,:,index], dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="ZB20"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[1,5], hm1, label="m")
+    # Colorbar(fig[1,5], hm1, label="m")
     hidedecorations!(ax2)
 
     ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
@@ -89,36 +89,36 @@ function prognostic_plots()
     axis=(xlabel="km", ylabel="km", title="Ensemble 2 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,2], hm1, label="m")
+    # Colorbar(fig[2,2], hm1, label="m")
 
-    ax4, hm4 = heatmap(fig[2,3], LinRange(0, 3840, 128),
+    ax4, hm4 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etamulti3more10, dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 3 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,4], hm4, label="m")
+    # Colorbar(fig[2,4], hm4, label="m")
     hideydecorations!(ax4)
 
-    ax5, hm5 = heatmap(fig[2,5], LinRange(0, 3840, 128),
+    ax5, hm5 = heatmap(fig[2,3], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     sum(etamulti1010, dims=3)[:,:,1] ./ total,
     colormap=:balance,
     axis=(xlabel="km", ylabel="km", title="Ensemble 10 day"),
     colorrange=(-maximum(abs.(timeavg_hr)),maximum(abs.(timeavg_hr)))
     );
-    Colorbar(fig[2,6], hm1, label="m")
+    # Colorbar(fig[2,6], hm1, label="m")
     hideydecorations!(ax5)
 
-    # Colorbar(fig[2:3,4], hm5, label="m")
+    Colorbar(fig[1:2,4], hm5, label="m")
 
     ga = fig[1, 1] = GridLayout()
-    gb = fig[1, 3] = GridLayout()
-    gc = fig[1, 5] = GridLayout()
+    gb = fig[1, 2] = GridLayout()
+    gc = fig[1, 3] = GridLayout()
     gd = fig[2, 1] = GridLayout()
-    ge = fig[2, 3] = GridLayout()
-    gf = fig[2, 5] = GridLayout()
+    ge = fig[2, 2] = GridLayout()
+    gf = fig[2, 3] = GridLayout()
     for (label, layout) in zip(["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"], [ga, gb, gc, gd, ge, gf])
     Label(layout[1, 1, TopLeft()], label,
         fontsize = 15,
@@ -263,5 +263,197 @@ function prognostic_plots()
         padding = (0, 5, 5, 0),
         halign = :right)
     end
+
+end
+
+function generalizability()
+
+    fig = Figure(size=(600, 900), fontsize=15);
+    fig.layout.alignmode = Outside();
+    # Label(
+    #     fig[0, 1:2],
+    #     "3-year averaged sea-surface height",
+    #     fontsize = 15,
+    #     tellwidth = false
+    # )
+    Label(fig[0, 1], "Coarse-grained, 3.75 km",tellwidth=false)
+    Label(fig[0, 2], "Multi 3",tellwidth=false)
+
+    index = vcat(1:1096)
+    total = length(index)
+
+    cghr = sum(etahrcgall[:,:,1:1096], dims=3)[:,:,1]/total
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="45 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(etamulti3more[:,:,1:1096], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="45 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+    hidedecorations!(ax2)
+
+    cghr50 = sum(etahrcg_50lat[:,:,1:1096], dims=3)[:,:,1]/total
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr50,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="50 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidexdecorations!(ax3)
+
+    ax2, hm2 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(eta_multi3_50lat[:,:,1:24:(24*365*3)], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="50 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidedecorations!(ax2)
+
+    cghr0 = sum(etahrcg_0lat[:,:,1:1096], dims=3)[:,:,1]/total
+    ax33, hm33 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr0,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="0 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidexdecorations!(ax33)
+
+    ax22, hm22 = heatmap(fig[3,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(eta_multi3_0lat[:,:,1:1096], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="0 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidedecorations!(ax22)
+
+    cghrneg60 = sum(etahrcg_neg60lat[:,:,1:1096], dims=3)[:,:,1]/total
+    ax3, hm3 = heatmap(fig[4,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghrneg60,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="-60 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+
+    ax2, hm2 = heatmap(fig[4,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    sum(eta_multi3_neg60lat[:,:,1:24:(24*365*3)], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="-60 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hideydecorations!(ax2)
+    Colorbar(fig[1:4, 3], hm2, label="m")
+
+    # difference plots
+
+    fig = Figure(size=(600, 900), fontsize=15);
+    fig.layout.alignmode = Outside();
+    # Label(
+    #     fig[0, 1:2],
+    #     "3-year averaged sea-surface height",
+    #     fontsize = 15,
+    #     tellwidth = false
+    # )
+    Label(fig[0, 1], "Coarse-grained, 3.75 km",tellwidth=false)
+    Label(fig[0, 2], "Multi 3",tellwidth=false)
+
+    index = vcat(1:1096)
+    total = length(index)
+
+    cghr = sum(etahrcgall[:,:,1:1096], dims=3)[:,:,1]/total
+
+    ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="45 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+    hidexdecorations!(ax1)
+
+    ax2, hm2 = heatmap(fig[1,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr .- sum(etamulti3more[:,:,1:1096], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="45 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    # Colorbar(fig[1,2], hm1, label="m")
+    hidedecorations!(ax2)
+
+    cghr50 = sum(etahrcg_50lat[:,:,1:1096], dims=3)[:,:,1]/total
+    ax3, hm3 = heatmap(fig[2,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr50,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="50 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidexdecorations!(ax3)
+
+    ax2, hm2 = heatmap(fig[2,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr50 .- sum(eta_multi3_50lat[:,:,1:24:(24*365*3)], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="50 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidedecorations!(ax2)
+
+    cghr0 = sum(etahrcg_0lat[:,:,1:1096], dims=3)[:,:,1]/total
+    ax33, hm33 = heatmap(fig[3,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr0,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="0 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidexdecorations!(ax33)
+
+    ax22, hm22 = heatmap(fig[3,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghr0 .- sum(eta_multi3_0lat[:,:,1:1096], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="0 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hidedecorations!(ax22)
+
+    cghrneg60 = sum(etahrcg_neg60lat[:,:,1:1096], dims=3)[:,:,1]/total
+    ax3, hm3 = heatmap(fig[4,1], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghrneg60,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="-60 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+
+    ax2, hm2 = heatmap(fig[4,2], LinRange(0, 3840, 128),
+    LinRange(0, 3840, 128),
+    cghrneg60 .- sum(eta_multi3_neg60lat[:,:,1:24:(24*365*3)], dims=3)[:,:,1]/total,
+    colormap=:balance,
+    axis=(xlabel="km", ylabel="km", title="-60 degree latitude"),
+    colorrange=(-maximum(abs.(cghr)),maximum(abs.(cghr)))
+    );
+    hideydecorations!(ax2)
+    Colorbar(fig[1:4, 3], hm2, label="m")
+
 
 end

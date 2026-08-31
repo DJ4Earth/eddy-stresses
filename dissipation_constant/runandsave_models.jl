@@ -164,8 +164,6 @@ function create_models()
 
     Soffline = ShallowWaters.model_setup(Poffline);
 
-    offlineweights = load_object("./offline_relu_newercheck.jld2");
-    # offlineweights = load_object("./dissipation_constant/tuned_weights/result_offline_150iterations_reluactivation_111925.jld2").solution
     # offlineweights = load_object("./dissipation_constant/tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution
     current = 1
     for m in (Soffline.Diag.CNNVars.model_Su, Soffline.Diag.CNNVars.model_Sv)
@@ -196,7 +194,7 @@ function create_models()
         g=9.81,
         H=500,
         cfl=.898,
-        ϕ = -60,
+        ϕ = 0,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -217,7 +215,9 @@ function create_models()
         initial_cond="rest"
     );
 
-    ucg, vcg, etacg = filter_hr(u[:,:,end], v[:,:,end], eta[:,:,end])
+    ucg = uhrcg_0lat[:,:,1]
+    vcg = vhrcg_0lat[:,:,1]
+    etacg = etahrcg_0lat[:,:,1]
 
     Sonline = ShallowWaters.model_setup(Ponline);
     u0, v0, eta0 = ShallowWaters.add_halo(ucg,vcg,etacg,zeros(128,128),Sonline);

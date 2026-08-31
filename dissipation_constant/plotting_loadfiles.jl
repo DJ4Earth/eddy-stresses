@@ -210,23 +210,35 @@ end
 
 function load_generalizability_results()
 
-    u_multi2_50lat = cat(ncread("./dissipation_constant/generalizability/multi2_newlatitude_3years_dailysaves/u.nc", "u"),
-       ncread("./dissipation_constant/generalizability/multi2_newlatitude_7years_startfrom3year_weeklysaves/u.nc", "u"); dims=3);
+    hrcgneg60 = load_object("./dissipation_constant/generalizability/data/cg1024_4yearspostspinup_neg60degreelat.jld2");
+    uhrcg_neg60lat = hrcgneg60[1];
+    vhrcg_neg60lat = hrcgneg60[2];
+    etahrcg_neg60lat = hrcgneg60[3];
 
-    v_multi2_50lat = cat(ncread("./dissipation_constant/generalizability/multi2_newlatitude_3years_dailysaves/v.nc", "v"),
-       ncread("./dissipation_constant/generalizability/multi2_newlatitude_7years_startfrom3year_weeklysaves/v.nc", "v"); dims=3);
+    hrcg50 = load_object("./dissipation_constant/generalizability/data/cg1024_4yearspostspinup_50degreelat.jld2");
+    uhrcg_50lat = hrcg50[1];
+    vhrcg_50lat = hrcg50[2];
+    etahrcg_50lat = hrcg50[3];
 
-    eta_multi2_50lat = cat(ncread("./dissipation_constant/generalizability/multi2_newlatitude_3years_dailysaves/eta.nc", "eta"),
-       ncread("./dissipation_constant/generalizability/multi2_newlatitude_7years_startfrom3year_weeklysaves/eta.nc", "eta"); dims=3);
+    hrcg0 = load_object("./dissipation_constant/generalizability/data/cg1024_4yearspostspinup_0degreelat.jld2");
+    uhrcg_0lat = hrcg0[1];
+    vhrcg_0lat = hrcg0[2];
+    etahrcg_0lat = hrcg0[3];
 
-    u_multi3_50lat = cat(ncread("./dissipation_constant/generalizability/multi3_newlatitude_3years_dailysaves/u.nc", "u"),
-       ncread("./dissipation_constant/generalizability/multi3_newlatitude_7years_startfrom3year_weeklysaves/u.nc", "u"); dims=3);
+    u_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/u.nc", "u");
+    v_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/v.nc", "v");
+    eta_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/eta.nc", "eta");
+    vort_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/relvort.nc", "relvort");
 
-    v_multi3_50lat = cat(ncread("./dissipation_constant/generalizability/multi3_newlatitude_3years_dailysaves/v.nc", "v"),
-       ncread("./dissipation_constant/generalizability/multi3_newlatitude_7years_startfrom3year_weeklysaves/v.nc", "v"); dims=3);
+    u_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/u.nc", "u");
+    v_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/v.nc", "v");
+    eta_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/eta.nc", "eta");
+    vort_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/relvort.nc", "relvort");
 
-    eta_multi3_50lat = cat(ncread("./dissipation_constant/generalizability/multi3_newlatitude_3years_dailysaves/eta.nc", "eta"),
-       ncread("./dissipation_constant/generalizability/multi3_newlatitude_7years_startfrom3year_weeklysaves/eta.nc", "eta"); dims=3);
+    u_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/u.nc", "u");
+    v_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/v.nc", "v");
+    eta_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/eta.nc", "eta");
+    vort_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/relvort.nc", "relvort");
 
 end
 
