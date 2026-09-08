@@ -240,6 +240,36 @@ function load_generalizability_results()
     eta_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/eta.nc", "eta");
     vort_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/relvort.nc", "relvort");
 
+    u_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/u.nc", "u");
+    v_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/v.nc", "v");
+    eta_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/eta.nc", "eta");
+    vort_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/relvort.nc", "relvort");
+
+    u_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/u.nc", "u");
+    v_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/v.nc", "v");
+    eta_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/eta.nc", "eta");
+    vort_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/relvort.nc", "relvort");
+
+    u_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/u.nc", "u");
+    v_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/v.nc", "v");
+    eta_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/eta.nc", "eta");
+    vort_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/relvort.nc", "relvort");
+
+    u_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/u.nc", "u");
+    v_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/v.nc", "v");
+    eta_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/eta.nc", "eta");
+    vort_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/relvort.nc", "relvort");
+
+    u_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/u.nc", "u");
+    v_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/v.nc", "v");
+    eta_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/eta.nc", "eta");
+    vort_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/relvort.nc", "relvort");
+
+    u_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/u.nc", "u");
+    v_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/v.nc", "v");
+    eta_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/eta.nc", "eta");
+    vort_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/relvort.nc", "relvort");
+
 end
 
 function load_Sfiles()

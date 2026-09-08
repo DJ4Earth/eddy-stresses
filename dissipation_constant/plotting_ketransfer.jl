@@ -424,7 +424,7 @@ function ketransfer_plots()
     lines!(ax, 1 ./ lr_freq[2:end], (-lr_freq.*(advection_transfer)./1096)[2:end], label="Nonlinear advection",color=:plum4)
     # I accidentally divided by \Delta^2 when I computed the SGS forcing from the nonlinear advection approximation, so that's why
     # this one has a multiplication by \Delta
-    lines!(ax, 1 ./ lr_freq[2:end], ((lr_freq*30000).*(totalu_approx + totalv_approx) ./ (1096))[2:end], label="Nonlinear advection approximation", color=:blue)
+    lines!(ax, 1 ./ lr_freq[2:end], ((lr_freq*30000).*(totalu_approx + totalv_approx) ./ (1096))[2:end], label="Symmetric tensor", color=:blue)
     lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_ZB + totalv_ZB) ./ s)[2:end], label="ZB20", color=:red)
     lines!(ax, 1 ./ lr_freq[2:end], (lr_freq.*(totalu_multi2 + totalv_multi2) ./ s)[2:end], label="Ensemble 2 day", color=colors[1])
 

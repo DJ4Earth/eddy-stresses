@@ -260,7 +260,6 @@ function offline_S_firstthreeyears()
         tellwidth = false
     )
 
-    t = 1096
     ax1, hm1 = heatmap(fig[1,1], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
     (tend_rk4_hrcg[1][:,:,t]./48 .- tend_rk4_cg[1][:,:,t]./384),
@@ -296,7 +295,7 @@ function offline_S_firstthreeyears()
     LinRange(0, 3840, 128),
     S.grid.Δ .* Suapprox[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    axis=(xlabel="km", ylabel="km", title="Symmetric tensor"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
     colorrange=(-1.5e-5, 1.5e-5)
     );
@@ -435,7 +434,7 @@ function offline_S_firstthreeyears()
     LinRange(0, 3840, 128),
     S.grid.Δ .* Svapprox[:,:,t],
     colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title="Nonlinear advection approx."),
+    axis=(xlabel="km", ylabel="km", title="Symmetric tensor"),
     # colorrange=(-maximum(abs.(Suhr[:,:,j])),maximum(abs.(Suhr[:,:,j])))
     colorrange=(-1.5e-5, 1.5e-5)
     );

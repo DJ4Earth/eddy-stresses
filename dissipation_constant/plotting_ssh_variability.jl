@@ -120,7 +120,7 @@ function ssh_variability()
         halign = :right)
     end
 
-    # absolute different in variability
+    # difference in variability
     temp = std(etahrcgall[:,:,index], dims=[3])[:,:,1]
 
     fig = Figure(size=(850, 450), fontsize=15);
