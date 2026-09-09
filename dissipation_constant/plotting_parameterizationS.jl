@@ -219,37 +219,6 @@ function offline_S_firstthreeyears()
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Smulti20);
     ShallowWaters.CNN_momentum(uhrcg_, vhrcg_, Soffline);
 
-    # quick comparison
-
-    fig = Figure(fontsize=15, size = (900, 300));
-
-    ax00, hm00 = heatmap(fig[1,1], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (advec_hrcg[1][:,:,t] .- advec_cg[1][:,:,t]),
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"(S_{\text{adv}})_u"),
-    colorrange=(-1e-5, 1e-5)
-    );
-
-    ax0, hm0 = heatmap(fig[1,2], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    Szb.Diag.ZBVars.S_u ./ s,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"(S_{\text{ZB}})_u"),
-    colorrange=(-1e-5, 1e-5)
-    );
-    hideydecorations!(ax0)
-
-    ax1, hm1 = heatmap(fig[1,3], LinRange(0, 3840, 128),
-    LinRange(0, 3840, 128),
-    (advec_hrcg[1][:,:,t] .- advec_cg[1][:,:,t]) .- Szb.Diag.ZBVars.S_u ./ s,
-    colormap=:balance,
-    axis=(xlabel="km", ylabel="km", title=L"(S_{\text{adv}})_u - (S_{\text{ZB}})_u"),
-    colorrange=(-1e-5, 1e-5)
-    );
-    Colorbar(fig[1,4], hm1)
-    hideydecorations!(ax1)
-
     # S_u
     fig = Figure(size=(900, 780), fontsize=15);
 
