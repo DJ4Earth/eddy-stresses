@@ -3,12 +3,6 @@ function load_models_eddyproject()
     ufiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[1];
     vfiltered = load_object("./dissipation_constant/spinup_files/1024_filtered_uveta_imfilter_3years_postspinup_dailysaves.jld2")[2];
 
-    # ufiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[1];
-    # vfiltered_NA = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderNA.jld2")[2];
-
-    # ufiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[1];
-    # vfiltered_zero = load_object("./dissipation_constant/spinup_files/1024_filtered_uv_imfilter_3years_postspinup_dailysaves_borderzero.jld2")[2];
-
     uhrcgall = cat(load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_3years_postspinup_dailysaves_correctedsetup.jld2")[1],
         load_object("./dissipation_constant/spinup_files/1024_filtered_downsized_uveta_imfilter_7years_startfrom3yearpostspinup_weeklysaves.jld2")[1][:,:,2:end]; dims=3
     );
@@ -144,27 +138,8 @@ function load_models_eddyproject()
     vzb10more = ncread("./dissipation_constant/spinup_files/ZB20_further10years_weeklysaves/v.nc", "v");
     etazb10more = ncread("./dissipation_constant/spinup_files/ZB20_further10years_weeklysaves/eta.nc", "eta");
 
-    # the following didn't work as loss functions
-
-    ukespec = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vkespec = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etakespec = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
-    ukespecpd = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vkespecpd = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etakespecpd = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_kespecpdweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
-    ufourier = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vfourier = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etafourier = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_fourierweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
-    uhybrid = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/u.nc", "u");
-    vhybrid = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/v.nc", "v");
-    etahybrid = ncread("./dissipation_constant/results/maybeneed/128_online_gelu_hybridweights_3dayoptimization_startfrom5daystate_3years_dailysaves/eta.nc", "eta");
-
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
-    # imfilter(hru[:,:,j], reflect(ker))
-
+=
     # adding the above loads into a single file, making it easier to plot
     # entries 1 - 1096 correspond to daily saves over the first three years, 1097-1451 correspond to the next 7 years at weekly saves
     # these do not contain the first three years of weekly saves in the 10 year runs, since those are already accounted for
@@ -205,70 +180,6 @@ function load_models_eddyproject()
     umulti20all = cat(umulti20, umulti2010[:,:,157:end]; dims=3);
     vmulti20all = cat(vmulti20, vmulti2010[:,:,157:end]; dims=3);
     etamulti20all = cat(etamulti20, etamulti2010[:,:,157:end]; dims=3);
-
-end
-
-function load_generalizability_results()
-
-    hrcgneg60 = load_object("./dissipation_constant/generalizability/data/cg1024_4yearspostspinup_neg60degreelat.jld2");
-    uhrcg_neg60lat = hrcgneg60[1];
-    vhrcg_neg60lat = hrcgneg60[2];
-    etahrcg_neg60lat = hrcgneg60[3];
-
-    hrcg50 = load_object("./dissipation_constant/generalizability/data/cg1024_4yearspostspinup_50degreelat.jld2");
-    uhrcg_50lat = hrcg50[1];
-    vhrcg_50lat = hrcg50[2];
-    etahrcg_50lat = hrcg50[3];
-
-    hrcg0 = load_object("./dissipation_constant/generalizability/data/cg1024_4yearspostspinup_0degreelat.jld2");
-    uhrcg_0lat = hrcg0[1];
-    vhrcg_0lat = hrcg0[2];
-    etahrcg_0lat = hrcg0[3];
-
-    u_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/u.nc", "u");
-    v_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/v.nc", "v");
-    eta_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/eta.nc", "eta");
-    vort_multi3_50lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat50_5years_hourlysaves/relvort.nc", "relvort");
-
-    u_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/u.nc", "u");
-    v_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/v.nc", "v");
-    eta_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/eta.nc", "eta");
-    vort_multi3_0lat = ncread("./dissipation_constant/generalizability/runs/multi3_lat0_5years_hourlysaves/relvort.nc", "relvort");
-
-    u_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/u.nc", "u");
-    v_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/v.nc", "v");
-    eta_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/eta.nc", "eta");
-    vort_multi3_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi3_latmin60_5years_hourlysaves/relvort.nc", "relvort");
-
-    u_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/u.nc", "u");
-    v_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/v.nc", "v");
-    eta_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/eta.nc", "eta");
-    vort_multi2_50lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat50_5years_dailysaves/relvort.nc", "relvort");
-
-    u_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/u.nc", "u");
-    v_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/v.nc", "v");
-    eta_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/eta.nc", "eta");
-    vort_multi2_0lat = ncread("./dissipation_constant/generalizability/runs/multi2_lat0_5years_dailysaves/relvort.nc", "relvort");
-
-    u_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/u.nc", "u");
-    v_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/v.nc", "v");
-    eta_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/eta.nc", "eta");
-    vort_multi2_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi2_latmin60_5years_dailysaves/relvort.nc", "relvort");
-
-    u_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/u.nc", "u");
-    v_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/v.nc", "v");
-    eta_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/eta.nc", "eta");
-    vort_multi10_50lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat50_5years_dailysaves/relvort.nc", "relvort");
-
-    u_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/u.nc", "u");
-    v_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/v.nc", "v");
-    eta_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/eta.nc", "eta");
-    vort_multi10_0lat = ncread("./dissipation_constant/generalizability/runs/multi10_lat0_5years_dailysaves/relvort.nc", "relvort");
-
-    u_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/u.nc", "u");
-    v_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/v.nc", "v");
-    eta_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/eta.nc", "eta");
-    vort_multi10_neg60lat = ncread("./dissipation_constant/generalizability/runs/multi10_latmin60_5years_dailysaves/relvort.nc", "relvort");
 
 end
 

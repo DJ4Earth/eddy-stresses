@@ -301,7 +301,6 @@ function offline_S_firstthreeyears()
     );
     hidexdecorations!(ax2)
 
-
     s = Szb.grid.Δ * Szb.grid.scale
     ax3, hm3 = heatmap(fig[2,2], LinRange(0, 3840, 128),
     LinRange(0, 3840, 128),
