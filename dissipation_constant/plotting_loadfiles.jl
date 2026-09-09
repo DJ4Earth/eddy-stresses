@@ -139,7 +139,7 @@ function load_models_eddyproject()
     etazb10more = ncread("./dissipation_constant/spinup_files/ZB20_further10years_weeklysaves/eta.nc", "eta");
 
     ker = ImageFiltering.Kernel.gaussian((30e3/3750));
-=
+
     # adding the above loads into a single file, making it easier to plot
     # entries 1 - 1096 correspond to daily saves over the first three years, 1097-1451 correspond to the next 7 years at weekly saves
     # these do not contain the first three years of weekly saves in the 10 year runs, since those are already accounted for
