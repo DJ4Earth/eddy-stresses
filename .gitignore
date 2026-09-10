@@ -4,7 +4,6 @@
 *.txt
 *.bash
 *.h5
-*.jld2
 *.nc
 *.mp4
 *.png
@@ -15,6 +14,7 @@
 /results_with_parameterization
 /tuned_weights_newdissipation
 /notusinganymore
+/dissipation_constant/tuned_weights/didntwork
 
 # figures and files not needed 
 /dissipation_smagorinsky
@@ -24,5 +24,9 @@
 /dissipation_constant/computing_*
 /dissipation_constant/ke_transfers
 /dissipation_constant/debugging.jl
+/dissipation_constant/generalizability
+/dissipation_constant/fixing_singleinitcondruns
+/dissipation_constant/offline_files
+/dissipation_constant/results
 
 run_experiment.jl
