@@ -22,6 +22,7 @@
 /dissipation_constant/eddypaper_figures
 /dissipation_constant/spinup_files
 /dissipation_constant/computing_*
-
+/dissipation_constant/ke_transfers
+/dissipation_constant/debugging.jl
 
 run_experiment.jl
