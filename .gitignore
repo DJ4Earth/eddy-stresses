@@ -8,15 +8,20 @@
 *.nc
 *.mp4
 *.png
+
+# ignoring data files
 /old_dissipation
 /spinup_files_newdissipation
 /results_with_parameterization
 /tuned_weights_newdissipation
 /notusinganymore
+
+# figures and files not needed 
 /dissipation_smagorinsky
 /dissipation_constant/manystates_notensemble_madnlp.jl
 /dissipation_constant/eddypaper_figures
 /dissipation_constant/spinup_files
+/dissipation_constant/computing_*
 
 
 run_experiment.jl
