@@ -651,7 +651,6 @@ function run_state()
         Lx=3840e3,
         seasonal_wind_x=false,
         topography="flat",
-        adv_scheme="Sadourny",
         bc="nonperiodic",
         bottom_drag="quadratic",
         tracer_advection=false,
@@ -669,12 +668,12 @@ function run_state()
 
     Slr = ShallowWaters.model_setup(Plr);
 
-    # param_guess = load_object("./tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
-    # param_guess = load_object("./tuned_weights/result_online_madnlp_states_1dayoptimization_startfromoffline_100iterations_geluactivation_112125.jld2").solution;
-    # param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution
-    # param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
-    # param_guess = load_object("./dissipation_constant/tuned_weights/states_noetainloss/result_online_state_30dayoptimzation_startfrom20day_constantdissipation_6iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
-    param_guess = load_object("./dissipation_constant/tuned_weights/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
+    # param_guess = load_object("./dissipation_constant/tuned_weights/result_offline_150iterations_geluactivation_111925.jld2").solution;
+    # param_guess = load_object("./dissipation_constant/tuned_weights/single_initial_condition/result_online_states_1dayoptimization_startfromoffline_100iterations_geluactivation.jld2").solution;
+    # param_guess = load_object("./dissipation_constant/tuned_weights/single_initial_condition/result_online_state_10dayoptimization_startfrom5daystate_noeta_30iterations.jld2").solution
+    # param_guess = load_object("./dissipation_constant/tuned_weights/single_initial_condition/result_online_state_20dayoptimzation_startfrom10day_constantdissipation_10iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
+    # param_guess = load_object("./dissipation_constant/tuned_weights/single_initial_condition/result_online_state_30dayoptimzation_startfrom20day_constantdissipation_6iterations_8hourdata_200maxhistory_fixedcfl.jld2").solution
+    param_guess = load_object("./dissipation_constant/tuned_weights/ensemble_initial_condition/result_multistate_1-4-8-13-18-23-28-33-38-41-44-48-53-58-63-68-73-78-83-86daystart_3dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution
 
     # lvar is by default -Inf * ones(Float64, nvar)
     # uvar is by default Inf * ones(Float64, nvar)
