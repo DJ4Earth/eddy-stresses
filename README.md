@@ -1,40 +1,111 @@
-# Estimation and UQ of eddy momentum stresses
+This is the supporting repo for "An online-learned neural network-based parameterization in a differentiable shallow water model". It contains scripts for the different experiments that were run, functions used for creating figures, and the tuned weights. In addition to this repo, one can find the synthetic data files at the Zenodo source **need to add link**. The relevant files included here are:
 
-![Surface displacement after ten years of integration](./my_figures/time_averaged_ssh_square_050624.png)
+1. eddy_paper.jl
+2. ./dissipation_constant/states_madnlp.jl
+3. ./dissipation_constant/ensemble_states_madnlp.jl
 
-The goal of this project is to leverage a differentiable Oceananigans.jl to estimate eddy momentum stresses in an idealized domain. We are also interested in quantifying the uncertainties in these eddy momentum stresses.
+These online experiments are designed to work alongside [ShallowWaters.jl](https://github.com/milankl/ShallowWaters.jl), a single layer ocean model. All experiments were run with the following ShallowWaters model configuration:
 
-**Eddy momentum stresses** (often referred to as Reynolds stresses) represent the effect of small-scale (mesoscale) eddies on the large-scale mean flow. Since ocean models are often too coarse to resolve small-scale eddy effects (like eddy momentum stresses), these effects need to be parameterized in ocean models. For more background information on mesoscale eddies, mesoscale eddy parameterizations, eddy momentum stresses, and techniques to estimate the latter, see the issue "Background material".
+```julia
+ShallowWaters.Parameter(T=T,
+        output=false,
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        adv_scheme="Sadourny",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays
+    );
+```
+This sets the model up to be a flat bottomed, non-periodic domain with wind-driven double barotropic gyre circulation. The forcing functions to run with either the baseline ZB20 (Eq. 5 [here](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020GL088376)) or the convolutional neural network source terms are within ShallowWaters.jl. Important to note that the NN forcing term is setup as an extension: to use it one needs to run 
+```julia
+using ShallowWaters#main
+using Lux
+```
+All tuned weights from experiments are provided here in 
 
-Our initial plan is roughly as follows (but can definitely adapted and changed anytime!):
+`./dissipation_constant/tuned_weights`
 
-1) We could use and compare the following techniques to **estimate the eddy momentum stresses**:
+and are split into folders depending on if they were the result of a single initial condition experiment or an ensemble initial condition experiment. 
 
-	a) "online estimation" with the full model adjoint (similar to Ferreira et al. (2005), except that they estimated a different kind of eddy stress: not the Reynolds stresses). Here, we have to decide if we want to (i) estimate the full eddy momentum stresses, or (ii) estimate a coefficient in front of a prescribed parameterized term (essentially a viscosity coefficient);
-	
-	b) "online estimation" via machine learning: plug a neural network or neural ODE into oceananigans.jl and "train" the full model, including the neural network parameters as a whole ("whole-model-learning");
-	
-	c) "offline estimation" via machine learning: train a convolutional neural network offline, then plug this into oceananigans.jl
+The single initial condition experiments were all run in the script 
 
-Most previous studies have pursued the "offline" approach c). But since their machine learning model is written in a different language (often python) than the ocean model (pretty much always FORTRAN), "plugging" the trained convolutional neural network back into the model has been usually difficult for those previous studies. Another common problem is that approach c) does not lead to stable model solutions. Approaches a) and b) have pretty much not been pursued before because most models are not differentiable.
+`./dissipation_constant/states_madnlp.jl`
 
-2) As a second step, we can do **uncertainty quantification (UQ)**. We could infer the posterior uncertainty 
+and the ensemble initial condition experiments were run in
 
-	a) on the coefficients, consistent with approach 1)(a). This would involve the Hessian, see e.g., Loose & Heimbach (2021);
+`./dissipation_constant/ensemble_states_madnlp.jl`.
 
-	b) on the neural network weights, consistent with approach 1)(b). We think that no-one has ever considered to compute the Hessian of the loss function with respect to the neural network (NN) weights, so this could be a compelling path to answer the question of “how do you quantify uncertainties in NN training?”.
+The initial offline weights were learned in
 
-This repo serves for opening and working on issues and milestones. The associated project helps us to stay organized, and keep track of issues and progress. 
+`./dissipation_constant/initial_weights_offlineproblem.jl`
+
+To run ShallowWaters with a NN forcing term, one can do
+
+```julia
+	using ShallowWaters#main
+	using Lux
+ 	Ndays = 10
+    Ponline = ShallowWaters.Parameter(T=Float64,
+        output=false,
+        output_vars=["u", "v", "η", "ζ"],
+        L_ratio=1,
+        g=9.81,
+        H=500,
+        cfl=.898,
+        wind_forcing_x="double_gyre",
+        Lx=3840e3,
+        seasonal_wind_x=false,
+        topography="flat",
+        bc="nonperiodic",
+        bottom_drag="quadratic",
+        tracer_advection=false,
+        tracer_relaxation=false,
+        zb_forcing_momentum=false,
+        zb_forcing_dissipation=false,
+        zb_filtered=true,
+        nn_forcing_momentum=false,
+        nn_forcing_dissipation=true,
+        N=1,
+        α=2,
+        nx=128,
+        Ndays=Ndays,
+        initial_cond="rest"
+    );
+
+    Sonline = ShallowWaters.model_setup(Ponline);
+
+    onlineweights = load_object("./dissipation_constant/tuned_weights/ensemble_initial_condition/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
 
 
-**References mentioned above**: 
+	# after loading the weights into variable onlineweights, this for loop places them into the NN structure created when initializing the model. Important to note
+	# that all of the tuned weights are specific to a certain NN size -- changing the size will cause the weights to be incompatible. 
+  	current = 1
+	for m in (Sonline.Diag.CNNVars.model_Su, Sonline.Diag.CNNVars.model_Sv)
+        for layers in m[1]
+            for array in layers
+                    sz = prod(size(array))
+                    array .= reshape(onlineweights[current:(current + sz - 1)], size(array)...)
+                    current += sz
+            end
+        end
+	end
 
-Bolton, Thomas, and Laure Zanna. “Applications of Deep Learning to Ocean Data Inference and Subgrid Parameterization.” Journal of Advances in Modeling Earth Systems 0, no. 0. Accessed February 3, 2019. https://doi.org/10.1029/2018MS001472.
-
-Ferreira, David, John Marshall, and Patrick Heimbach. “Estimating Eddy Stresses by Fitting Dynamics to Observations Using a Residual-Mean Ocean Circulation Model and Its Adjoint.” Journal of Physical Oceanography 35, no. 10 (October 1, 2005): 1891–1910. https://doi.org/10.1175/JPO2785.1.
-
-Guillaumin, Arthur P., and Laure Zanna. “Stochastic-Deep Learning Parameterization of Ocean Momentum Forcing.” Journal of Advances in Modeling Earth Systems 13, no. 9 (2021): e2021MS002534. https://doi.org/10.1029/2021MS002534.
-
-
-  
-  
+    P = ShallowWaters.time_integration(Sonline);
+```
