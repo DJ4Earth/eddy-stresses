@@ -13,6 +13,10 @@
 /results_with_parameterization
 /tuned_weights_newdissipation
 /notusinganymore
+/dissipation_smagorinsky
+/dissipation_constant/manystates_notensemble_madnlp.jl
+/dissipation_constant/eddypaper_figures
+/dissipation_constant/spinup_files
 
 
 run_experiment.jl
