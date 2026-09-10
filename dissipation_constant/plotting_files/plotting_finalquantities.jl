@@ -1,11 +1,4 @@
 using Statistics
-"""
-This script will compute the 
-    1. 10-year-mean KE bias, 
-    2. KE variance, 
-    3. SSH RMSE
-for a final table for the eddy parameterization paper.
-"""
 
 function compute_energy(energy_true, u, v)
 
