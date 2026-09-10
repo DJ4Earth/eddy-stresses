@@ -194,7 +194,6 @@ function create_models()
         g=9.81,
         H=500,
         cfl=.898,
-        ϕ = -60,
         wind_forcing_x="double_gyre",
         Lx=3840e3,
         seasonal_wind_x=false,
@@ -215,9 +214,6 @@ function create_models()
         initial_cond="rest"
     );
 
-    ucg = uhrcg_neg60lat[:,:,1]
-    vcg = vhrcg_neg60lat[:,:,1]
-    etacg = etahrcg_neg60lat[:,:,1]
 
     Sonline = ShallowWaters.model_setup(Ponline);
     u0, v0, eta0 = ShallowWaters.add_halo(ucg,vcg,etacg,zeros(128,128),Sonline);
