@@ -16,9 +16,9 @@ using LaTeXStrings
 
 Random.seed!(8)
 
-if !Base.isdefined(@__MODULE__, :ShallowWaters)
-    include("../ShallowWaters.jl/src/ShallowWaters.jl")
-    using .ShallowWaters
-end
+# if !Base.isdefined(@__MODULE__, :ShallowWaters)
+#     include("../ShallowWaters.jl/src/ShallowWaters.jl")
+#     using .ShallowWaters
+# end
 
 include("helper_functions.jl")

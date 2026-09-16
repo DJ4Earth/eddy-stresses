@@ -30,6 +30,7 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+ShallowWaters = "56019723-2d87-4a65-81ff-59d5d8913e3c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 

@@ -27,6 +27,6 @@
 /dissipation_constant/generalizability
 /dissipation_constant/fixing_singleinitcondruns
 /dissipation_constant/offline_files
-/dissipation_constant/results
+/dissipation_constant/coarse_resolution_runs_withtunedweights
 
 run_experiment.jl
