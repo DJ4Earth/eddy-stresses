@@ -52,6 +52,9 @@ The initial offline weights were learned in
 
 `./dissipation_constant/initial_weights_offlineproblem.jl`
 
+
+### Quick start
+
 To run ShallowWaters with a NN forcing term, one can do
 
 ```julia
@@ -87,6 +90,7 @@ To run ShallowWaters with a NN forcing term, one can do
 
     Sonline = ShallowWaters.model_setup(Ponline);
 
+	# one of the tuned set of weights from the ensemble initial condition experiments
     onlineweights = load_object("./dissipation_constant/tuned_weights/ensemble_initial_condition/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
 
 	# after loading the weights into variable onlineweights, this for loop places them into the NN structure created when initializing the model. Important to note
