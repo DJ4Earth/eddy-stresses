@@ -1,8 +1,4 @@
-This is the supporting repo for "An online-learned neural network-based parameterization in a differentiable shallow water model". It contains scripts for the different experiments that were run, functions used for creating figures, and the tuned weights. In addition to this repo, one can find the synthetic data files at the Zenodo source **need to add link**. The relevant files included here are:
-
-1. eddy_paper.jl
-2. ./dissipation_constant/states_madnlp.jl
-3. ./dissipation_constant/ensemble_states_madnlp.jl
+This is the supporting repo for "An online-learned neural network-based parameterization in a differentiable shallow water model". It contains scripts for the different experiments that were run, functions used for creating figures, and the tuned weights. In addition to this repo, one can find the synthetic data files at the Zenodo source **need to add link**. Some of the larger data files used, including the fine-resolution runs, are only found in the Zenodo folder. 
 
 These online experiments are designed to work alongside [ShallowWaters.jl](https://github.com/milankl/ShallowWaters.jl), a single layer ocean model. All experiments were run with the following ShallowWaters model configuration:
 
@@ -42,7 +38,7 @@ All tuned weights from experiments are provided here in
 
 `./dissipation_constant/tuned_weights`
 
-and are split into folders depending on if they were the result of a single initial condition experiment or an ensemble initial condition experiment. 
+and are split into folders depending on if they were the result of a single initial condition experiment or an ensemble initial condition experiment. The initial, offline weights are outside these folders.
 
 The single initial condition experiments were all run in the script 
 
@@ -92,7 +88,6 @@ To run ShallowWaters with a NN forcing term, one can do
     Sonline = ShallowWaters.model_setup(Ponline);
 
     onlineweights = load_object("./dissipation_constant/tuned_weights/ensemble_initial_condition/result_multistate_1-4-6-8-10-13-15-18-23-28-33-38-41-44-48-51-53-58-63-65-68-73-78-83-86-88daystart_2dayoptimization_initialweightsmulti3daystate_20iterations.jld2").solution;
-
 
 	# after loading the weights into variable onlineweights, this for loop places them into the NN structure created when initializing the model. Important to note
 	# that all of the tuned weights are specific to a certain NN size -- changing the size will cause the weights to be incompatible. 
