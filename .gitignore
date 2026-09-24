@@ -28,5 +28,6 @@
 /dissipation_constant/fixing_singleinitcondruns
 /dissipation_constant/offline_files
 /dissipation_constant/coarse_resolution_runs_withtunedweights
+/dissipation_constant/final_figures
 
 run_experiment.jl
